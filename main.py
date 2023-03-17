@@ -15,7 +15,6 @@ from device_classes.heat_sensor import HeatSensor
 
 from messages import messages
 from server import server
-server.authUser("testing1@gmail.com", "123456")#<<<<<<TODO move to accountscreen
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
 import kivy
@@ -5675,8 +5674,14 @@ def settings_setter(config):
         logic.heat_sensor_timer=900
     elif heat_duration == '1800':
         logic.heat_sensor_timer=1800
+
     report_status=config.getboolean('config','report_pending')
     App.get_running_app().report_pending=report_status
+
+    account_email=config['account']['email']
+    account_password=config['account']['password']
+    if (account_email and account_password):
+        server.authUser(f'{account_email}', f'{account_password}')
 
 def language_setter(*args,config=None):
     def widget_walker(widget,current_language):
