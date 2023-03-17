@@ -174,6 +174,9 @@ already, than it will overwrite it)\n\n[/color][/size]''',
 'screen_name' : "[size=50][color=#ffffff][b][u][i]       Account       ",
 'information_title' : "[size=20][color=#ffffff][b]Credentials",
 'details_title' : "[size=20][color=#ffffff][b]Details",
+'details_body' : '''[size=18][color=#ffffff]Connecting your Hood Control device
+with an account allows remote monitoring
+and diagnostics''',
 'status_title' : "[size=20][color=#ffffff][b]Status",
 'side_bar_unlink' : "[size=20][color=#ffffff][b]Unlink Account",
 'side_bar_reconnect' : "[size=20][color=#ffffff][b]Reconnect Account",
