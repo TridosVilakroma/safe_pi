@@ -14,6 +14,8 @@ from device_classes.switch_fans import SwitchFans
 from device_classes.heat_sensor import HeatSensor
 
 from messages import messages
+from server import server
+server.authUser("testing1@gmail.com", "123456")#<<<<<<TODO move to accountscreen
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
 import kivy
@@ -3287,7 +3289,6 @@ class PreferenceScreen(Screen):
         self.widgets['account']=account
         account.ref='account'
         account.bind(on_release=self.account_func)
-        account.disabled=True
 
         clean_mode=RoundedButton(text=current_language['clean_mode'],
                         size_hint =(1, 1),
@@ -5225,8 +5226,24 @@ class AccountScreen(Screen):
             size_hint =(.9, .005),
             pos_hint = {'x':.05, 'y':.85})
 
+        information_email=TextInput(
+            disabled=True,
+            multiline=False,
+            hint_text='Enter account email',
+            size_hint =(.9, .2),
+            pos_hint = {'x':.05, 'y':.5})
+        information_email.bind(on_text_validate=self.email_validate)
+        self.widgets['information_email']=information_email
 
-
+        information_password=TextInput(
+            disabled=True,
+            multiline=False,
+            password=True,
+            hint_text='Enter password',
+            size_hint =(.9, .2),
+            pos_hint = {'x':.05, 'y':.20})
+        information_password.bind(on_text_validate=self.password_validate)
+        self.widgets['information_password']=information_password
 
         details_box=RoundedColorLayout(
             bg_color=(0,0,0,.85),
@@ -5249,7 +5266,13 @@ class AccountScreen(Screen):
             size_hint =(.9, .005),
             pos_hint = {'x':.05, 'y':.85})
 
-
+        details_body=Label(
+            text=current_language['details_body'],
+            markup=True,
+            size_hint =(.9, .75),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['details_body']=details_body
+        details_body.ref='details_body'
 
         status_box=RoundedColorLayout(
             bg_color=(0,0,0,.85),
@@ -5382,9 +5405,12 @@ class AccountScreen(Screen):
 
         information_box.add_widget(information_title)
         information_box.add_widget(information_seperator)
+        information_box.add_widget(information_email)
+        information_box.add_widget(information_password)
 
         details_box.add_widget(details_title)
         details_box.add_widget(details_seperator)
+        details_box.add_widget(details_body)
 
         status_box.add_widget(status_title)
         status_box.add_widget(status_seperator)
@@ -5402,7 +5428,6 @@ class AccountScreen(Screen):
         self.add_widget(back)
         self.add_widget(back_main)
         self.add_widget(seperator_line)
-        self.add_widget(account_admin_hint)
         self.add_widget(information_box)
         self.add_widget(details_box)
         self.add_widget(status_box)
@@ -5414,15 +5439,53 @@ class AccountScreen(Screen):
     def account_back_main (self,button):
         self.parent.transition = SlideTransition(direction='down')
         self.manager.current='main'
+    def l(self,*args):
+        Clock.schedule_interval(self.listen_to_server,.75)
+        Clock.schedule_interval(server.refresh_token,45*60)#45 minutes; token expires every hour.
+    def email_validate(self,button,*args):
+        print(button)
+        config=App.get_running_app().config_
+        config.set('account','email',f'{button.text}')
+        with open(preferences_path,'w') as configfile:
+            config.write(configfile)
+    def password_validate(self,button,*args):
+        config=App.get_running_app().config_
+        config.set('account','password',f'{button.text}')
+        with open(preferences_path,'w') as configfile:
+            config.write(configfile)
 
     def check_admin_mode(self,*args):
         if App.get_running_app().admin_mode_start>time.time():
-            pass
+            if self.widgets['account_admin_hint'].parent:
+                self.remove_widget(self.widgets['account_admin_hint'])
+            self.widgets['information_email'].disabled=False
+            self.widgets['information_password'].disabled=False
+        else:
+            if not self.widgets['account_admin_hint'].parent:
+                self.add_widget(self.widgets['account_admin_hint'])
+            self.widgets['information_email'].disabled=True
+            self.widgets['information_password'].disabled=True
 
 
     def on_pre_enter(self, *args):
         self.check_admin_mode()
+        if App.get_running_app().config_['account']['email']:
+            self.widgets['information_email'].text=App.get_running_app().config_['account']['email']
+            self.widgets['information_password'].text=App.get_running_app().config_['account']['password']
         return super().on_pre_enter(*args)
+
+    def listen_to_server(*args):
+        if 1 not in server.device_requests.values():
+            return
+
+        main_screen=App.get_running_app().context_screen.get_screen('main')
+        for i in server.device_requests.items():
+            if not i[1]:
+                continue
+            if i[0] in main_screen.widgets:
+                main_screen.widgets[i[0]].trigger_action()
+
+        server.reset_reqs()
 
 def listen(app_object,*args):
     event_log=logic.fs.milo
@@ -5577,7 +5640,7 @@ class Hood_Control(App):
         settings_setter(self.config_)
         Clock.schedule_once(partial(language_setter,config=self.config_))
         self.context_screen=ScreenManager()
-        # self.context_screen.add_widget(AccountScreen(name='account'))
+        self.context_screen.add_widget(AccountScreen(name='account'))
         self.context_screen.add_widget(ControlGrid(name='main'))
         self.context_screen.add_widget(ActuationScreen(name='alert'))
         self.context_screen.add_widget(SettingsScreen(name='settings'))
@@ -5589,7 +5652,7 @@ class Hood_Control(App):
         self.context_screen.add_widget(DocumentScreen(name='documents'))
         self.context_screen.add_widget(TroubleScreen(name='trouble'))
         self.context_screen.add_widget(MountScreen(name='mount'))
-        self.context_screen.add_widget(AccountScreen(name='account'))
+        # self.context_screen.add_widget(AccountScreen(name='account'))
         listener_event=Clock.schedule_interval(partial(listen, self.context_screen),.75)
         device_update_event=Clock.schedule_interval(partial(logic.update_devices),.75)
         device_save_event=Clock.schedule_interval(partial(logic.save_devices),600)
@@ -5650,4 +5713,6 @@ finally:
     print("devices saved")
     logic.clean_exit()
     print("pins set as inputs")
+    server.clean_exit()
+    print("streams closed")
     quit()
