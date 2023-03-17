@@ -180,32 +180,25 @@ class RoundedButton(Button):
                 self.shape_color.rgba = self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3]
 
 class RoundedToggleButton(ToggleButton):
-    '''RoundedToggleButton has two key differences from ToggleButton
+    '''`RoundedToggleButton` has two key differences from `ToggleButton`
     
-     1- RoundedToggleButton stores background_color as self.bg_color;
+     1- `RoundedToggleButton` stores background_color as `self.bg_color`;
      it uses this to keep its round shape colored correctly.
      
-     2- RoundedToggleButton toggles on_release.
+     2- `RoundedToggleButton` toggles on_release.
      this is accomplisehed by overwriting these methods:
 
-    def _do_press(self):
+    `def _do_press(self):`
         pass
 
-    def _do_release(self, *args):
-        pass
-
-    def on_release(self, *args):
+    `def _do_release(self, *args):`
         if (not self.allow_no_selection and
                 self.group and self.state == 'down'):
             return
 
         self._release_group(self)
         self.state = 'normal' if self.state == 'down' else 'down'
-
-    **WARNING**
-    The on_release method will change states AFTER callbacks have been dispatched,
-    so any callbacks depending on a button object being passed along with a 
-    state will need to reverse the expected state value.'''
+    '''
 
     def __init__(self,**kwargs):
         super(RoundedToggleButton,self).__init__(**kwargs)
@@ -238,9 +231,6 @@ class RoundedToggleButton(ToggleButton):
         pass
 
     def _do_release(self, *args):
-        pass
-
-    def on_release(self, *args):
         if (not self.allow_no_selection and
                 self.group and self.state == 'down'):
             return
@@ -1341,17 +1331,17 @@ class AnimatedCarousel(Carousel):
 
 class ControlGrid(Screen):
     def fans_switch(self,button):
-        if button.state == 'normal':
+        if button.state == 'down':
             logic.fs.moli['exhaust']=1
             logic.fs.moli['mau']=1
-        elif button.state == 'down':
+        elif button.state == 'normal':
             logic.fs.moli['exhaust']=0
             logic.fs.moli['mau']=0
 
     def lights_switch(self,button):
-        if button.state == 'normal':
+        if button.state == 'down':
             logic.fs.moli['lights']=1
-        elif button.state == 'down':
+        elif button.state == 'normal':
             logic.fs.moli['lights']=0
 
     def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
@@ -1649,10 +1639,10 @@ class ControlGrid(Screen):
             if self.widgets['ramp_progress'].opacity<1:
                 self._fade_in.start(self.widgets['ramp_progress'])
 
-        if button.state=='down':
+        if button.state=='normal':
             #if fans are turned off
             fade_out()
-        if button.state=='normal':
+        if button.state=='down':
             #if fans are turned on
             fade_in()
 
