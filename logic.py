@@ -325,11 +325,11 @@ class Logic():
         try:
             server.toggleDevice(server.devices.exhaust , self.milo['exhaust'])
         except Exception as e:
-            print(e)
+            print(f'logic.py server_update(): {e}')
         try:
             server.toggleDevice(server.devices.lights, self.milo['lights'])
         except Exception as e:
-            print(e)
+            print(f'logic.py server_update(): {e}')
         self.last_server_state=copy.deepcopy(self.milo)
 
     def auxillary(self):

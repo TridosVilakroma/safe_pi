@@ -85,7 +85,7 @@ class Db_service():
         except Exception as e:
             # Assumption is that any exception is from email not being found
             # TODO Should check error message to confirm email is not found
-            print(e)
+            print(f'server.py authUser(): {e}')
             self.user = self.auth.create_user_with_email_and_password(email, password)
             # print(self.user)
             
@@ -129,7 +129,7 @@ class Db_service():
             self.toggleDevice(self.devices.req_fans , 0)
             self.toggleDevice(self.devices.req_lights , 0)
         except Exception as e:
-            print(e)
+            print(f'server.py reset_reqs(): {e}')
 
     def message_stream_handler(self, response):
         print(response)
@@ -195,7 +195,7 @@ class Db_service():
             try:
                 i.close()
             except Exception as e:
-                print(e)
+                print(f'server.py clean_exit(): {e}')
 
 
 
