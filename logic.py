@@ -1,4 +1,4 @@
-import os,time,json
+import os,time,json,copy
 import device_classes.mau as mau
 import device_classes.exhaust as exhaust
 import device_classes.light as light
@@ -8,6 +8,7 @@ import device_classes.micro_switch as micro_switch
 import device_classes.heat_sensor as heat_sensor
 import device_classes.switch_light as switch_light
 import device_classes.switch_fans as switch_fans
+from server import server
 if os.name == 'nt':
     import RPi_test.GPIO as GPIO
 else:
@@ -187,6 +188,7 @@ def clean_list(list,element):
 
 class Logic():
     def __init__(self) -> None:
+        self.last_server_state={}
         self.aux_state=[]
         self.state='Normal'
         self.running=False
@@ -317,6 +319,19 @@ class Logic():
             self.state='Normal'
             self.milo['micro_switch']=off
 
+    def server_update(self,*args):
+        if self.last_server_state==self.milo:
+            return
+        try:
+            server.toggleDevice(server.devices.exhaust , self.milo['exhaust'])
+        except Exception as e:
+            print(e)
+        try:
+            server.toggleDevice(server.devices.lights, self.milo['lights'])
+        except Exception as e:
+            print(e)
+        self.last_server_state=copy.deepcopy(self.milo)
+
     def auxillary(self):
         self.trouble()
         if 'heat_sensor' in self.aux_state and not self.fired:
@@ -333,6 +348,7 @@ class Logic():
     def update(self):
         self.state_manager()
         self.auxillary()
+        self.server_update()
 get_devices()
 fs=Logic()
 def logic():
