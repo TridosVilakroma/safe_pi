@@ -5330,16 +5330,17 @@ class AccountScreen(Screen):
             pos_hint = {'center_x':.9, 'center_y':.5375},)
         self.widgets['status_box']=status_box
 
-        side_bar_reconnect=RoundedButton(
-            text=current_language['side_bar_reconnect'],
+        side_bar_connect=RoundedButton(
+            text=current_language['side_bar_connect'],
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.875},
             background_normal='',
             background_color=(0,0,0,.9),
             markup=True)
-        self.widgets['side_bar_reconnect']=side_bar_reconnect
-        side_bar_reconnect.ref='side_bar_reconnect'
-        # side_bar_reconnect.bind(on_press=self.side_bar_reconnect)
+        self.widgets['side_bar_connect']=side_bar_connect
+        side_bar_connect.ref='side_bar_connect'
+        side_bar_connect.bind(on_press=partial(print,'hey'))
+        side_bar_connect.bind(on_press=self.setup_connection)
 
         side_bar_unlink=RoundedButton(
             text=current_language['side_bar_unlink'],
@@ -5416,7 +5417,7 @@ class AccountScreen(Screen):
         status_box.add_widget(status_scroll)
         status_scroll.add_widget(status_scroll_layout)
 
-        side_bar_box.add_widget(side_bar_reconnect)
+        side_bar_box.add_widget(side_bar_connect)
         side_bar_box.add_widget(side_bar_unlink)
         side_bar_box.add_widget(side_bar_add)
         side_bar_box.add_widget(side_bar_remove)
@@ -5438,7 +5439,7 @@ class AccountScreen(Screen):
     def account_back_main (self,button):
         self.parent.transition = SlideTransition(direction='down')
         self.manager.current='main'
-    def l(self,*args):
+    def setup_connection(self,*args):
         Clock.schedule_interval(self.listen_to_server,.75)
         Clock.schedule_interval(server.refresh_token,45*60)#45 minutes; token expires every hour.
     def email_validate(self,button,*args):
@@ -5459,11 +5460,23 @@ class AccountScreen(Screen):
                 self.remove_widget(self.widgets['account_admin_hint'])
             self.widgets['information_email'].disabled=False
             self.widgets['information_password'].disabled=False
+            self.widgets['side_bar_connect'].disabled=False
+            self.widgets['side_bar_connect'].shape_color.rgba=(0,0,0,.9)
+            self.widgets['side_bar_unlink'].disabled=False
+            self.widgets['side_bar_add'].disabled=False
+            self.widgets['side_bar_remove'].disabled=False
+            self.widgets['side_bar_refresh'].disabled=False
         else:
             if not self.widgets['account_admin_hint'].parent:
                 self.add_widget(self.widgets['account_admin_hint'])
             self.widgets['information_email'].disabled=True
             self.widgets['information_password'].disabled=True
+            self.widgets['side_bar_connect'].disabled=True
+            self.widgets['side_bar_connect'].shape_color.rgba=(.1,.1,.1,.8)
+            self.widgets['side_bar_unlink'].disabled=True
+            self.widgets['side_bar_add'].disabled=True
+            self.widgets['side_bar_remove'].disabled=True
+            self.widgets['side_bar_refresh'].disabled=True
 
 
     def on_pre_enter(self, *args):

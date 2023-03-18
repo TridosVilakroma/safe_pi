@@ -179,7 +179,7 @@ with an account allows remote monitoring
 and diagnostics''',
 'status_title' : "[size=20][color=#ffffff][b]Status",
 'side_bar_unlink' : "[size=20][color=#ffffff][b]Unlink Account",
-'side_bar_reconnect' : "[size=20][color=#ffffff][b]Reconnect Account",
+'side_bar_connect' : "[size=20][color=#ffffff][b]Connect Account",
 'side_bar_add' : "[size=20][color=#ffffff][b]Add Device",
 'side_bar_remove' : "[size=20][color=#ffffff][b]Remove Device",
 'side_bar_refresh' : "[size=20][color=#ffffff][b]Refresh From Server",
