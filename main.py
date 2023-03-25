@@ -1369,7 +1369,7 @@ class ControlGrid(Screen):
         self._keyboard=Window.request_keyboard(self._keyboard_closed, self, 'text')
         self._keyboard.bind(on_key_down=self._on_keyboard_down)
 
-        self.value_up=Animation(value=1000,d=4.2,t='in_out_quad')
+        self.value_up=Animation(value=1000,d=18,t='in_out_quad')
         self.value_down=Animation(value=0,d=1,t='in_out_circ')
         self.fade=Animation(opacity=0,d=1)
         self._fade_in=Animation(opacity=1,d=.5)
