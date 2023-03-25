@@ -322,6 +322,10 @@ class Logic():
     def server_update(self,*args):
         if self.last_server_state==self.milo:
             return
+        if not hasattr(server,'path'):
+            return
+        if not hasattr(server,'user'):
+            return
         try:
             server.toggleDevice(server.devices.exhaust , self.milo['exhaust'])
         except Exception as e:

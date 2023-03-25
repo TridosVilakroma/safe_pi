@@ -63,12 +63,14 @@ class Db_service():
         # Init auth service
         self.auth = firebase.auth()
 
-        self.device_requests={
+        self._device_requests={
             'fans':0,
             'lights':0,
             'dry_contact':0,
             'maint_override':0,
             'maint_override_light':0}
+
+        self.device_requests=self._device_requests.copy()
 
         self.active_streams=[]
 
