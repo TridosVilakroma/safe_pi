@@ -27,6 +27,7 @@ in accordance with applicable codes.
     'train' : "[size=32][b][color=#000000]  Training [/color][/b][/size]",
     'about' : "[size=32][b][color=#000000]  About [/color][/b][/size]",
     'account' : "[size=32][b][color=#000000]  Account [/color][/b][/size]",
+    'network' : "[size=32][b][color=#000000]  Network [/color][/b][/size]",
     'about_overlay_text' : """[size=20][color=#ffffff]Hood Control™ developed
 by Fire Safe Extinguisher Service.
 PO Box 1071, Murray, Kentucky
@@ -171,7 +172,7 @@ already, than it will overwrite it)\n\n[/color][/size]''',
 'message_title' : "[size=50][color=#ffffff][b]Message Center",
 'msg_scroll_title' : "[size=30][color=#ffffff][b][u]All Messages",
 'msg_back' : "[size=30][color=#000000][b]Close",
-'screen_name' : "[size=50][color=#ffffff][b][u][i]       Account       ",
+'account_screen_name' : "[size=50][color=#ffffff][b][u][i]       Account       ",
 'information_title' : "[size=20][color=#ffffff][b]Credentials",
 'details_title' : "[size=20][color=#ffffff][b]Details",
 'status_title' : "[size=20][color=#ffffff][b]Status",
@@ -180,6 +181,15 @@ already, than it will overwrite it)\n\n[/color][/size]''',
 'side_bar_add' : "[size=20][color=#ffffff][b]Add Device",
 'side_bar_remove' : "[size=20][color=#ffffff][b]Remove Device",
 'side_bar_refresh' : "[size=20][color=#ffffff][b]Refresh From Server",
+'network_screen_name' : "[size=50][color=#ffffff][b][u][i]       Network       ",
+'network_information_title' : "[size=20][color=#ffffff][b]Current Network",
+'network_details_title' : "[size=20][color=#ffffff][b]Details",
+'network_status_title' : "[size=20][color=#ffffff][b]Available Networks",
+'side_bar_scan' : "[size=20][color=#ffffff][b]Scan for networks",
+'side_bar_disconnect' : "[size=20][color=#ffffff][b]Disconnect",
+'side_bar_name' : "[size=20][color=#ffffff][b]Set device name",
+'side_bar_password' : "[size=20][color=#ffffff][b]Set device password",
+'side_bar_info' : "[size=20][color=#ffffff][b]Current network info",
 
 }
 
