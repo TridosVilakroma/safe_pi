@@ -1,4 +1,4 @@
-import os,json,time,shutil,math,random
+import os,json,time,shutil,math,random,subprocess
 import traceback,errno
 from datetime import datetime
 from kivy.config import Config
@@ -5497,6 +5497,27 @@ class NetworkScreen(Screen):
             size_hint =(.9, .005),
             pos_hint = {'x':.05, 'y':.85})
 
+        information_ssid=Label(
+            text=f'SSID: 0',#{subprocess.check_output("netsh wlan show networks interface=Wi-Fi").split()}',
+            markup=True,
+            size_hint =(.9, .05), 
+            pos_hint = {'center_x':.5, 'center_y':.675},)
+        self.widgets['information_ssid']=information_ssid
+
+        information_status=Label(
+            text=f'Status: {0}',
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.45},)
+        self.widgets['information_status']=information_status
+
+        information_signal=Label(
+            text=f'Signal: {0}',
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.225},)
+        self.widgets['information_signal']=information_signal
+
         details_box=RoundedColorLayout(
             bg_color=(0,0,0,.85),
             size_hint =(.35, .4),
@@ -5647,6 +5668,9 @@ class NetworkScreen(Screen):
 
         information_box.add_widget(information_title)
         information_box.add_widget(information_seperator)
+        information_box.add_widget(information_ssid)
+        information_box.add_widget(information_status)
+        information_box.add_widget(information_signal)
 
         details_box.add_widget(details_title)
         details_box.add_widget(details_seperator)
