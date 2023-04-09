@@ -5182,6 +5182,12 @@ class MountScreen(Screen):
         self.widgets['file_selector_external'].selection=[]
         self.widgets['file_selector_internal'].selection=[]
 
+    def on_pre_enter(self, *args):
+        self.refresh_button_func()
+        self.widgets['file_selector_internal'].path=self.internal_path
+        self.widgets['file_selector_external'].path=self.external_path
+        return super().on_pre_enter(*args)
+
 class AccountScreen(Screen):
     def __init__(self, **kwargs):
         super(AccountScreen,self).__init__(**kwargs)
