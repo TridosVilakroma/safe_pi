@@ -287,3 +287,8 @@ para 3 segundos.
     'admin_confirm' : '[size=30][b][color=#000000] Continue [/color][/b][/size]',
     'admin_cancel' : '[size=30][b][color=#000000] Cancel [/color][/b][/size]',
 }
+
+for i in english:
+    if i in spanish:
+        continue
+    spanish[i] = english[i]
