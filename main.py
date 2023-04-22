@@ -5509,7 +5509,6 @@ class AccountScreen(Screen):
         self._keep_ref(server.refresh_token,45*60)#45 minutes; token expires every hour.
 
     def listen_to_server(*args):
-        print('kayak')
         if 1 not in server.device_requests.values():
             return
 
