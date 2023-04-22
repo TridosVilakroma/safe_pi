@@ -150,6 +150,7 @@ schedule a visit to service and inspect your system.''',
         filter_active_messages() is called to reduce each
         category of message to a single entry.
         '''
+        self.config.read(preferences_path) #update from hood_control.ini
         self._active_messages=[]
         for message in self.index.values():
             if message.recurrence==0:
