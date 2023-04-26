@@ -2828,8 +2828,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         markup=True)
 
         get_device_pin=Spinner(
-                        text="Select GPIO Pin; BCM Mode",
-                        values=(str(i) for i in logic.available_pins),
+                        text="Select GPIO Pin",
+                        values=(general.pin_decode(i) for i in logic.available_pins),
                         size_hint =(.5, .05),
                         pos_hint = {'x':.40, 'y':.7})
         get_device_pin.bind(text=partial(self.get_device_pin_func,current_device))
