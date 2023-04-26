@@ -14,9 +14,11 @@ else:
     import RPi.GPIO as GPIO
 
 heat_sensor_timer=300
-#there are only 25 GPIO pins available for input/output.
+#there are only 19 GPIO pins available for input/output.
+#pins 0-8[BCM] are set as pull-up (use as input exclusively; not outputs)
 #the additional 15 are grounds, constant powers, and reserved for hats.
-available_pins=[i for i in range(2,28)]
+available_pins=[8,10,11,12,13,15,16,18,19,
+                21,22,23,32,33,35,36,37,38,40]#i for i in range(2,28)]
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
