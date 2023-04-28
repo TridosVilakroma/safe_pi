@@ -20,7 +20,7 @@ heat_sensor_timer=300
 available_pins=[8,10,11,12,13,15,16,18,19,
                 21,22,23,32,33,35,36,37,38,40]#i for i in range(2,28)]
 
-GPIO.setmode(GPIO.BCM)
+GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
 
 off=0
