@@ -1344,21 +1344,8 @@ class ControlGrid(Screen):
         elif button.state == 'normal':
             logic.fs.moli['lights']=0
 
-    def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
-        if keycode[1]=='m':
-            print('sytem actuation')
-            GPIO.micro=1
-        elif keycode[1]=='c':
-            print('sytem rearmed')
-            GPIO.heatsensor=0
-            GPIO.micro=0
-        elif keycode[1]=='h':
-            print('heat sensor activated')
-            GPIO.heatsensor=1
-            self.fans_switch(self.widgets['fans'])
-
     def _keyboard_closed(self):
-        print("keyboard unbound")
+        print("main.py ControlGrid _keyboard_closed(): keyboard unbound")
 
     def __init__(self, **kwargs):
         super(ControlGrid, self).__init__(**kwargs)
