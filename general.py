@@ -29,4 +29,4 @@ def pin_decode(pin_number):
            19:10,21:9,22:25,23:11,
            32:12,33:13,35:19,36:16,
            37:26,38:20,40:21}
-    return f'Board: {int(pin_number)}; BCM:{int(index[pin_number])}'
+    return f'Board: {int(pin_number)} <> BCM: {int(index[pin_number])}'
