@@ -2891,7 +2891,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         elif value=="Fans Switch":
             current_device.color=(0/255, 0/255, 0/255,.85)
     def get_device_pin_func(self,current_device,button,value):
-        current_device.pin=int(value)
+        #value is get_device_pin.text
+        #string is split to pull out BOARD int
+        current_device.pin=int(value.split()[1])
 
     def edit_device_overlay(self,device):
         class InfoShelf():
@@ -2992,7 +2994,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         get_device_pin=Spinner(
                         text=str(device.pin),
-                        values=(str(i) for i in logic.available_pins),
+                        values=(general.pin_decode(i) for i in logic.available_pins),
                         size_hint =(.5, .05),
                         pos_hint = {'x':.40, 'y':.7})
         get_device_pin.bind(text=partial(self.edit_device_pin_func,current_device))
@@ -3064,7 +3066,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         elif value=="Fans Switch":
             current_device.color=(0/255, 0/255, 0/255,.85)
     def edit_device_pin_func(self,current_device,button,value):
-        current_device.pin=int(value)
+        #value is get_device_pin.text
+        #string is split to pull out BOARD int
+        current_device.pin=int(value.split()[1])
 
 
     def devices_back (self,button):
