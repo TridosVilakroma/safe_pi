@@ -211,7 +211,7 @@ class RoundedToggleButton(ToggleButton):
             if self.background_down=="":
                 self.shape_color = Color(self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3])
             self.shape = RoundedRectangle(pos=self.pos, size=self.size, radius=[20])
-            self.bind(pos=self.update_shape, size=self.update_shape,state=self.color_swap)
+            self.bind(pos=self.update_shape, size=self.update_shape)
     def update_shape(self, *args):
         self.shape.pos = self.pos
         self.shape.size = self.size
@@ -237,6 +237,7 @@ class RoundedToggleButton(ToggleButton):
 
         self._release_group(self)
         self.state = 'normal' if self.state == 'down' else 'down'
+        self.color_swap()
 
 class LayoutButton(FloatLayout,RoundedButton):
     pass
@@ -1330,7 +1331,7 @@ class AnimatedCarousel(Carousel):
 #<<<<<<<<<<>>>>>>>>>>#
 
 class ControlGrid(Screen):
-    def fans_switch(self,button):
+    def fans_switch(self,button,*args):
         if button.state == 'down':
             logic.fs.moli['exhaust']=1
             logic.fs.moli['mau']=1
@@ -1338,7 +1339,7 @@ class ControlGrid(Screen):
             logic.fs.moli['exhaust']=0
             logic.fs.moli['mau']=0
 
-    def lights_switch(self,button):
+    def lights_switch(self,button,*args):
         if button.state == 'down':
             logic.fs.moli['lights']=1
         elif button.state == 'normal':
@@ -1380,8 +1381,8 @@ class ControlGrid(Screen):
                     markup=True)
         self.widgets['fans']=fans
         fans.ref='fans'
-        fans.bind(on_release=self.fans_switch)
-        fans.bind(on_release=self.ramp_animate)
+        fans.bind(state=self.fans_switch)
+        fans.bind(state=self.ramp_animate)
 
         lights=RoundedToggleButton(text=current_language['lights'],
                     size_hint =(.45, .5),
@@ -1462,7 +1463,7 @@ class ControlGrid(Screen):
             size_hint =(1,1),
             pos_hint = {'center_x':.5, 'center_y':.5})
         self.widgets['messenger_button']=messenger_button
-        fans.bind(on_release=self.widgets['messenger_button'].evoke)
+        fans.bind(state=self.widgets['messenger_button'].evoke)
         lights.bind(on_release=self.widgets['messenger_button'].evoke)
 
         message_label=Label(
