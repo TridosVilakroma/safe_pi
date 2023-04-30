@@ -47,18 +47,17 @@ def get_devices():
             if i.pin in available_pins:
                 available_pins.remove(i.pin)
                 set_pin_mode(i)
+            elif i.pin==0:
+                print(f"logic.get_devices(): {i}.pin == 0")
             devices.append(i)
 
 def set_pin_mode(device):
-    if device.pin==0:
-        print(f"logic.set_pin_mode(): {device}.pin == 0")
+    if device.mode=="in":
+        GPIO.setup(device.pin,GPIO.IN,pull_up_down = GPIO.PUD_DOWN)
+    elif device.mode=="out":
+        GPIO.setup(device.pin, GPIO.OUT,initial=GPIO.LOW)
     else:
-        if device.mode=="in":
-            GPIO.setup(device.pin,GPIO.IN,pull_up_down = GPIO.PUD_DOWN)
-        elif device.mode=="out":
-            GPIO.setup(device.pin, GPIO.OUT,initial=GPIO.LOW)
-        else:
-            print(f"logic.set_pin_mode(): {device}.mode is not \"in\" or \"out\"")
+        print(f"logic.set_pin_mode(): {device}.mode is not \"in\" or \"out\"")
 
 def exfans_on():
     for i in (i for i in devices if isinstance(i,exhaust.Exhaust)):
