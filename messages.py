@@ -64,6 +64,9 @@ class Interval:
             _month,day=divmod(self.day+other.day+_day,_month_length)
             _year,month=divmod(self.month+other.month+_month,12)
             year=self.year+other.year+_year
+            hour=max(1,hour)
+            day=max(1,day)
+            month=max(1,month)
 
             return type(other)(
                 second=second,
