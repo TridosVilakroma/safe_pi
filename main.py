@@ -1462,8 +1462,8 @@ class ControlGrid(Screen):
             size_hint =(1,1),
             pos_hint = {'center_x':.5, 'center_y':.5})
         self.widgets['messenger_button']=messenger_button
-        fans.bind(on_press=self.widgets['messenger_button'].evoke)
-        lights.bind(on_press=self.widgets['messenger_button'].evoke)
+        fans.bind(on_release=self.widgets['messenger_button'].evoke)
+        lights.bind(on_release=self.widgets['messenger_button'].evoke)
 
         message_label=Label(
             text=current_language['message_label'],
