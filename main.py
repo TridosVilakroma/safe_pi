@@ -816,7 +816,7 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
         if not App.get_running_app().config_.getboolean('preferences','evoke'):
             return
         if messages.active_messages[0].gravity>=10\
-            or random.randint(0,10)-messages.active_messages[0].gravity<=0:
+            or random.randint(0,45)-messages.active_messages[0].gravity<=0:
                 cg.widget_fade()
                 cl.fade()
                 Clock.schedule_once(cg.widget_fade,5)
