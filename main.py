@@ -1045,7 +1045,7 @@ class BigWheelClock(Carousel):
         return super().on_touch_up(touch)
 
     def _set_sys_time(*args):
-        if Clock.get_boottime()>5:
+        if Clock.get_boottime()>20:
             if App.get_running_app().context_screen.has_screen('main'):
                 w=App.get_running_app().context_screen.get_screen('main').widgets
                 h=w['hour_wheel'].index+1
