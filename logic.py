@@ -246,8 +246,9 @@ class Logic():
                 exfans_on()
                 self.milo['exhaust']=on
             elif self.moli['exhaust']==off or not fan_switch_on():
-                exfans_off()
-                self.milo['exhaust']=off
+                if 'heat_sensor' not in self.aux_state:
+                    exfans_off()
+                    self.milo['exhaust']=off
             if self.moli['mau']==on or fan_switch_on():
                 maufans_on()
                 self.milo['mau']=on
@@ -276,15 +277,13 @@ class Logic():
                 maufans_on()
                 self.milo['exhaust']=on
                 self.milo['mau']=on
-                self.milo['heat_sensor']=on
                 print('heat timer active')
             else:
                 if self.moli['exhaust']==off and self.moli['mau']==off:
                     exfans_off()
                     maufans_off()
-                self.milo['exhaust']=off
-                self.milo['mau']=off
-                self.milo['heat_sensor']=off
+                    self.milo['exhaust']=off
+                    self.milo['mau']=off
                 clean_list(self.aux_state,'heat_sensor')
 
 
