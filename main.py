@@ -5798,8 +5798,7 @@ def listen(app_object,*args):
                     heat_trouble.ref='heat_trouble'
 
                     def fan_switch(*args):
-                        app_object.get_screen('main').widgets['fans'].state = 'down'
-                        app_object.get_screen('main').fans_switch(app_object.get_screen('main').widgets['fans'])
+                        app_object.get_screen('main').widgets['fans'].trigger_action()
 
                     heat_trouble.bind(on_release=fan_switch)
                     heat_trouble.bind(on_ref_press=fan_switch)
