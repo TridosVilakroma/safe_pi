@@ -5738,7 +5738,7 @@ def listen(app_object,*args):
         if event_log['lights']==1:
             pass
     #heat sensor
-        if event_log['heat_sensor']==1:
+        if 'heat_sensor' in logic.fs.aux_state:#if event_log['heat_sensor']==1:
             if main_screen.widgets['fans'].state=='normal':
                 main_screen.widgets['fans'].text = current_language['fans_heat']
         else:
