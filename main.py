@@ -1392,7 +1392,7 @@ class ControlGrid(Screen):
                     markup=True)
         self.widgets['lights']=lights
         lights.ref='lights'
-        lights.bind(on_release=self.lights_switch)
+        lights.bind(state=self.lights_switch)
 
         clock_label=ClockText(
             markup=True,
@@ -1464,7 +1464,7 @@ class ControlGrid(Screen):
             pos_hint = {'center_x':.5, 'center_y':.5})
         self.widgets['messenger_button']=messenger_button
         fans.bind(state=self.widgets['messenger_button'].evoke)
-        lights.bind(on_release=self.widgets['messenger_button'].evoke)
+        lights.bind(state=self.widgets['messenger_button'].evoke)
 
         message_label=Label(
             text=current_language['message_label'],
@@ -1839,7 +1839,7 @@ class ActuationScreen(Screen):
             markup=True)
         self.widgets['acknowledge']=acknowledge
         acknowledge.ref='acknowledge'
-        acknowledge.bind(on_release=self.acknowledge_func)
+        acknowledge.bind(state=self.acknowledge_func)
 
         service=RoundedButton(
             text=current_language['service'],
@@ -1851,7 +1851,7 @@ class ActuationScreen(Screen):
             markup=True)
         self.widgets['service']=service
         service.ref='service'
-        service.bind(on_release=self.service_func)
+        service.bind(state=self.service_func)
 
         dialogue_box=RoundedColorLayout(
             bg_color=(.1,.1,.1,.9),
@@ -3526,7 +3526,7 @@ class PreferenceScreen(Screen):
                 logic.fs.moli['maint_override_light']=0
             else:
                 logic.fs.moli['maint_override_light']=1
-        light_button.bind(on_press=light_button_func)
+        light_button.bind(state=light_button_func)
 
         def disable_button_func(button):
             logic.fs.moli['maint_override']=0
