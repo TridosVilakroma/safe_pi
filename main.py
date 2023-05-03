@@ -3484,6 +3484,9 @@ class PreferenceScreen(Screen):
 
     def override_overlay(self):
         logic.fs.moli['maint_override']=1
+        ls=App.get_running_app().context_screen.get_screen('main').widgets['lights']
+        if ls.state=='down':
+            ls.trigger_action()
         overlay_menu=self.widgets['overlay_menu']
         overlay_menu.title=''
         overlay_menu.separator_height=0
@@ -3521,7 +3524,7 @@ class PreferenceScreen(Screen):
         disable_progress._progress_colour=(245/250, 216/250, 41/250,1)
         self.widgets['disable_progress']=disable_progress
 
-        def light_button_func(button):
+        def light_button_func(button,*args):
             if logic.fs.moli['maint_override_light']==1:
                 logic.fs.moli['maint_override_light']=0
             else:
@@ -3530,6 +3533,7 @@ class PreferenceScreen(Screen):
 
         def disable_button_func(button):
             logic.fs.moli['maint_override']=0
+            logic.fs.moli['maint_override_light']=0
             self.widgets['overlay_menu'].dismiss()
 
         def progress_bar_update(dt,*args):
