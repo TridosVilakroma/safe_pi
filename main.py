@@ -2839,6 +2839,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         if current_device.name=="default":
             print("main.new_device_save(): can not save device without name")
             return
+        if current_device.pin==0:
+            print("main.new_device_save(): can not save device without pin designation")
+            return
         data={
             "device_name":current_device.name,
             "gpio_pin":current_device.pin,
@@ -3001,6 +3004,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
     def edit_device_save(self,current_device,device,button):
         if current_device.name=="default":
             print("main.edit_device_save(): can not save device without name")
+            return
+        if current_device.pin==0:
+            print("main.edit_device_save(): can not save device without pin designation")
             return
         data={
             "device_name":current_device.name,
