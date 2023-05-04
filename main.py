@@ -1858,7 +1858,7 @@ class ActuationScreen(Screen):
             markup=True)
         self.widgets['service']=service
         service.ref='service'
-        service.bind(state=self.service_func)
+        service.bind(on_release=self.service_func)
 
         dialogue_box=RoundedColorLayout(
             bg_color=(.1,.1,.1,.9),
@@ -1946,9 +1946,12 @@ class ActuationScreen(Screen):
         self.pulse()
         self.widgets['acknowledge'].text=current_language['acknowledge']
         self.widgets['acknowledge'].disabled=False
-        self.widgets['acknowledge'].state='normal'
+        if self.widgets['acknowledge'].state=='down':
+            self.widgets['acknowledge'].trigger_action()
 
     def acknowledge_func(self,button,*args):
+        if self.widgets['acknowledge'].state=='normal':
+            return
         print('actuation acknowledged')
         self.anime.cancel_all(self.widgets['alert'])
         self.widgets['alert'].bg_color=(249/250, 25/250, 25/250,.85)
@@ -5868,6 +5871,28 @@ def listen(app_object,*args):
             if 'gasvalve_trouble' in troubles_screen.widgets:
                 trouble_display.remove_widget(troubles_screen.widgets['gasvalve_trouble'])
                 del troubles_screen.widgets['gasvalve_trouble']
+
+    #micro switch released
+        if trouble_log['actuation']==1:
+            if 'actuation_trouble' not in troubles_screen.widgets:
+                actuation_trouble=trouble_template('actuation_trouble_title',
+                'actuation_trouble_body',
+                link_text='actuation_trouble_link',ref_tag='actuation_trouble')
+                actuation_trouble.ref='actuation_trouble'
+
+                def actuation_trouble_func(*args):
+                    App.get_running_app().service_pin_entered=False
+
+
+                actuation_trouble.bind(on_release=actuation_trouble_func)
+                actuation_trouble.bind(on_ref_press=actuation_trouble_func)
+                troubles_screen.widgets['actuation_trouble']=actuation_trouble
+                troubles_screen.widgets['actuation_trouble'].bind(texture_size=lambda instance, value: setattr(instance, 'height', value[1]))
+                trouble_display.add_widget(actuation_trouble)
+        elif trouble_log['actuation']==0:
+            if 'actuation_trouble' in troubles_screen.widgets:
+                trouble_display.remove_widget(troubles_screen.widgets['actuation_trouble'])
+                del troubles_screen.widgets['actuation_trouble']
 
 
 class Hood_Control(App):
