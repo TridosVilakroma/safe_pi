@@ -203,7 +203,8 @@ class Logic():
         self.troubles={
             'heat_override':0,
             'short_duration':0,
-            'gv_trip':0
+            'gv_trip':0,
+            'actuation':0
         }
 
         self.moli={
@@ -304,6 +305,11 @@ class Logic():
             self.milo['troubles']['gv_trip']=1
         else:
             self.milo['troubles']['gv_trip']=0
+    #micro switch released
+        if self.state=='Fire':
+            self.milo['troubles']['actuation']=1
+        else:
+            self.milo['troubles']['actuation']=0
 
     def fire(self):
         if not self.fired:
