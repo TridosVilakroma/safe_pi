@@ -320,7 +320,8 @@ class Logic():
     def auxillary(self):
         self.trouble()
         if 'heat_sensor' in self.aux_state and not self.fired:
-            self.heat_sensor()
+            if not self.moli['maint_override']==1:
+                self.heat_sensor()
 
     def state_manager(self):
         if self.state=='Fire':
