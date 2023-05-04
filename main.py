@@ -1948,7 +1948,7 @@ class ActuationScreen(Screen):
         self.widgets['acknowledge'].disabled=False
         self.widgets['acknowledge'].state='normal'
 
-    def acknowledge_func(self,button):
+    def acknowledge_func(self,button,*args):
         print('actuation acknowledged')
         self.anime.cancel_all(self.widgets['alert'])
         self.widgets['alert'].bg_color=(249/250, 25/250, 25/250,.85)
