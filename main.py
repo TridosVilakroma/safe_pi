@@ -516,7 +516,11 @@ class ClockText(ButtonBehavior,LabelColor):
             self.parent.widgets['widget_carousel'].fade_out()
 
     def _bounce(self,*args):
-        App.get_running_app().context_screen.get_screen('main').widgets['widget_carousel'].bounce()
+        wc=App.get_running_app().context_screen.get_screen('main').widgets['widget_carousel']
+        if wc.skip_bounce:
+            wc.skip_bounce=False
+            return
+        wc.bounce()
 
     def _create_clock(self,*args):
         Clock.schedule_once(self._return,10)
@@ -1272,6 +1276,7 @@ class AnimatedCarousel(Carousel):
         super(AnimatedCarousel,self).__init__(**kwargs)
         self.opacity=0
         self.anim_length=.5
+        self.skip_bounce=False
 
     def on_touch_move(self, touch):
         cl=App.get_running_app().context_screen.get_screen('main').widgets['clock_label']
@@ -1660,11 +1665,13 @@ class ControlGrid(Screen):
     def update_msg_card(self,*args):
         self.widgets['message_label'].text=f'[size=50][color=#ffffff][b]{messages.active_messages[0].card}'
     def msg_icon_func (self,button):
+        wc=App.get_running_app().context_screen.get_screen('main').widgets['widget_carousel']
         if self.widgets['clock_label'].opacity!=1:
             return
         if self.widgets['messenger_button'].pos_hint=={'center_x':.5,'center_y':.55}:
             return
         self.widget_fade()
+        wc.skip_bounce=True
         if self.widgets['clock_label'].time_size==120:
             self.widgets['widget_carousel'].index=1
         self.widgets['clock_label'].animate()
