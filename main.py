@@ -1,4 +1,4 @@
-import os,json,time,shutil,math,random
+import os,json,time,shutil,math,random,subprocess
 import traceback,errno
 from datetime import datetime
 from kivy.config import Config
@@ -212,7 +212,7 @@ class RoundedToggleButton(ToggleButton):
             if self.background_down=="":
                 self.shape_color = Color(self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3])
             self.shape = RoundedRectangle(pos=self.pos, size=self.size, radius=[20])
-            self.bind(pos=self.update_shape, size=self.update_shape,state=self.color_swap)
+            self.bind(pos=self.update_shape, size=self.update_shape)
     def update_shape(self, *args):
         self.shape.pos = self.pos
         self.shape.size = self.size
@@ -238,6 +238,7 @@ class RoundedToggleButton(ToggleButton):
 
         self._release_group(self)
         self.state = 'normal' if self.state == 'down' else 'down'
+        self.color_swap()
 
 class LayoutButton(FloatLayout,RoundedButton):
     pass
@@ -516,7 +517,11 @@ class ClockText(ButtonBehavior,LabelColor):
             self.parent.widgets['widget_carousel'].fade_out()
 
     def _bounce(self,*args):
-        App.get_running_app().context_screen.get_screen('main').widgets['widget_carousel'].bounce()
+        wc=App.get_running_app().context_screen.get_screen('main').widgets['widget_carousel']
+        if wc.skip_bounce:
+            wc.skip_bounce=False
+            return
+        wc.bounce()
 
     def _create_clock(self,*args):
         Clock.schedule_once(self._return,10)
@@ -816,7 +821,7 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
         if not App.get_running_app().config_.getboolean('preferences','evoke'):
             return
         if messages.active_messages[0].gravity>=10\
-            or random.randint(0,10)-messages.active_messages[0].gravity<=0:
+            or random.randint(0,45)-messages.active_messages[0].gravity<=0:
                 cg.widget_fade()
                 cl.fade()
                 Clock.schedule_once(cg.widget_fade,5)
@@ -1045,7 +1050,7 @@ class BigWheelClock(Carousel):
         return super().on_touch_up(touch)
 
     def _set_sys_time(*args):
-        if Clock.get_boottime()>5:
+        if Clock.get_boottime()>20:
             if App.get_running_app().context_screen.has_screen('main'):
                 w=App.get_running_app().context_screen.get_screen('main').widgets
                 h=w['hour_wheel'].index+1
@@ -1272,6 +1277,7 @@ class AnimatedCarousel(Carousel):
         super(AnimatedCarousel,self).__init__(**kwargs)
         self.opacity=0
         self.anim_length=.5
+        self.skip_bounce=False
 
     def on_touch_move(self, touch):
         cl=App.get_running_app().context_screen.get_screen('main').widgets['clock_label']
@@ -1331,7 +1337,7 @@ class AnimatedCarousel(Carousel):
 #<<<<<<<<<<>>>>>>>>>>#
 
 class ControlGrid(Screen):
-    def fans_switch(self,button):
+    def fans_switch(self,button,*args):
         if button.state == 'down':
             logic.fs.moli['exhaust']=1
             logic.fs.moli['mau']=1
@@ -1339,27 +1345,14 @@ class ControlGrid(Screen):
             logic.fs.moli['exhaust']=0
             logic.fs.moli['mau']=0
 
-    def lights_switch(self,button):
+    def lights_switch(self,button,*args):
         if button.state == 'down':
             logic.fs.moli['lights']=1
         elif button.state == 'normal':
             logic.fs.moli['lights']=0
 
-    def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
-        if keycode[1]=='m':
-            print('sytem actuation')
-            GPIO.micro=1
-        elif keycode[1]=='c':
-            print('sytem rearmed')
-            GPIO.heatsensor=0
-            GPIO.micro=0
-        elif keycode[1]=='h':
-            print('heat sensor activated')
-            GPIO.heatsensor=1
-            self.fans_switch(self.widgets['fans'])
-
     def _keyboard_closed(self):
-        print("keyboard unbound")
+        print("main.py ControlGrid _keyboard_closed(): keyboard unbound")
 
     def __init__(self, **kwargs):
         super(ControlGrid, self).__init__(**kwargs)
@@ -1368,9 +1361,8 @@ class ControlGrid(Screen):
         self.ud={}
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
         self._keyboard=Window.request_keyboard(self._keyboard_closed, self, 'text')
-        self._keyboard.bind(on_key_down=self._on_keyboard_down)
 
-        self.value_up=Animation(value=1000,d=4.2,t='in_out_quad')
+        self.value_up=Animation(value=1000,d=18,t='in_out_quad')
         self.value_down=Animation(value=0,d=1,t='in_out_circ')
         self.fade=Animation(opacity=0,d=1)
         self._fade_in=Animation(opacity=1,d=.5)
@@ -1395,8 +1387,8 @@ class ControlGrid(Screen):
                     markup=True)
         self.widgets['fans']=fans
         fans.ref='fans'
-        fans.bind(on_release=self.fans_switch)
-        fans.bind(on_release=self.ramp_animate)
+        fans.bind(state=self.fans_switch)
+        fans.bind(state=self.ramp_animate)
 
         lights=RoundedToggleButton(text=current_language['lights'],
                     size_hint =(.45, .5),
@@ -1406,7 +1398,7 @@ class ControlGrid(Screen):
                     markup=True)
         self.widgets['lights']=lights
         lights.ref='lights'
-        lights.bind(on_release=self.lights_switch)
+        lights.bind(state=self.lights_switch)
 
         clock_label=ClockText(
             markup=True,
@@ -1477,8 +1469,8 @@ class ControlGrid(Screen):
             size_hint =(1,1),
             pos_hint = {'center_x':.5, 'center_y':.5})
         self.widgets['messenger_button']=messenger_button
-        fans.bind(on_press=self.widgets['messenger_button'].evoke)
-        lights.bind(on_press=self.widgets['messenger_button'].evoke)
+        fans.bind(state=self.widgets['messenger_button'].evoke)
+        lights.bind(state=self.widgets['messenger_button'].evoke)
 
         message_label=Label(
             text=current_language['message_label'],
@@ -1674,11 +1666,13 @@ class ControlGrid(Screen):
     def update_msg_card(self,*args):
         self.widgets['message_label'].text=f'[size=50][color=#ffffff][b]{messages.active_messages[0].card}'
     def msg_icon_func (self,button):
+        wc=App.get_running_app().context_screen.get_screen('main').widgets['widget_carousel']
         if self.widgets['clock_label'].opacity!=1:
             return
         if self.widgets['messenger_button'].pos_hint=={'center_x':.5,'center_y':.55}:
             return
         self.widget_fade()
+        wc.skip_bounce=True
         if self.widgets['clock_label'].time_size==120:
             self.widgets['widget_carousel'].index=1
         self.widgets['clock_label'].animate()
@@ -1853,7 +1847,7 @@ class ActuationScreen(Screen):
             markup=True)
         self.widgets['acknowledge']=acknowledge
         acknowledge.ref='acknowledge'
-        acknowledge.bind(on_release=self.acknowledge_func)
+        acknowledge.bind(state=self.acknowledge_func)
 
         service=RoundedButton(
             text=current_language['service'],
@@ -1953,9 +1947,12 @@ class ActuationScreen(Screen):
         self.pulse()
         self.widgets['acknowledge'].text=current_language['acknowledge']
         self.widgets['acknowledge'].disabled=False
-        self.widgets['acknowledge'].state='normal'
+        if self.widgets['acknowledge'].state=='down':
+            self.widgets['acknowledge'].trigger_action()
 
-    def acknowledge_func(self,button):
+    def acknowledge_func(self,button,*args):
+        if self.widgets['acknowledge'].state=='normal':
+            return
         print('actuation acknowledged')
         self.anime.cancel_all(self.widgets['alert'])
         self.widgets['alert'].bg_color=(249/250, 25/250, 25/250,.85)
@@ -2829,8 +2826,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         markup=True)
 
         get_device_pin=Spinner(
-                        text="Select GPIO Pin; BCM Mode",
-                        values=(str(i) for i in logic.available_pins),
+                        text="Select GPIO Pin",
+                        values=(general.pin_decode(i) for i in logic.available_pins),
                         size_hint =(.5, .05),
                         pos_hint = {'x':.40, 'y':.7})
         get_device_pin.bind(text=partial(self.get_device_pin_func,current_device))
@@ -2852,6 +2849,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
     def new_device_save(self,current_device,button):
         if current_device.name=="default":
             print("main.new_device_save(): can not save device without name")
+            return
+        if current_device.pin==0:
+            print("main.new_device_save(): can not save device without pin designation")
             return
         data={
             "device_name":current_device.name,
@@ -2892,7 +2892,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         elif value=="Fans Switch":
             current_device.color=(0/255, 0/255, 0/255,.85)
     def get_device_pin_func(self,current_device,button,value):
-        current_device.pin=int(value)
+        #value is get_device_pin.text
+        #string is split to pull out BOARD int
+        current_device.pin=int(value.split()[1])
 
     def edit_device_overlay(self,device):
         class InfoShelf():
@@ -2993,7 +2995,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         get_device_pin=Spinner(
                         text=str(device.pin),
-                        values=(str(i) for i in logic.available_pins),
+                        values=(general.pin_decode(i) for i in logic.available_pins),
                         size_hint =(.5, .05),
                         pos_hint = {'x':.40, 'y':.7})
         get_device_pin.bind(text=partial(self.edit_device_pin_func,current_device))
@@ -3013,6 +3015,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
     def edit_device_save(self,current_device,device,button):
         if current_device.name=="default":
             print("main.edit_device_save(): can not save device without name")
+            return
+        if current_device.pin==0:
+            print("main.edit_device_save(): can not save device without pin designation")
             return
         data={
             "device_name":current_device.name,
@@ -3065,7 +3070,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         elif value=="Fans Switch":
             current_device.color=(0/255, 0/255, 0/255,.85)
     def edit_device_pin_func(self,current_device,button,value):
-        current_device.pin=int(value)
+        #value is get_device_pin.text
+        #string is split to pull out BOARD int
+        current_device.pin=int(value.split()[1])
 
 
     def devices_back (self,button):
@@ -3230,7 +3237,7 @@ class PreferenceScreen(Screen):
         self.widgets['pref_scroll']=pref_scroll
 
         scroll_layout=EventpassGridLayout(
-            size_hint_y=1.8,
+            size_hint_y=1.95,
             size_hint_x=.95,
             cols=1,
             padding=10,
@@ -3288,6 +3295,17 @@ class PreferenceScreen(Screen):
         self.widgets['account']=account
         account.ref='account'
         account.bind(on_release=self.account_func)
+
+        network=RoundedButton(text=current_language['network'],
+                        size_hint =(1, 1),
+                        pos_hint = {'x':.01, 'y':.7},
+                        background_down='',
+                        background_color=(100/250, 100/250, 100/250,.9),#(200/250, 200/250, 200/250,.9),
+                        markup=True)
+        self.widgets['network']=network
+        network.ref='network'
+        network.bind(on_release=self.network_func)
+        network.disabled=True
 
         clean_mode=RoundedButton(text=current_language['clean_mode'],
                         size_hint =(1, 1),
@@ -3352,6 +3370,7 @@ class PreferenceScreen(Screen):
         scroll_layout.add_widget(train)
         scroll_layout.add_widget(commission)
         scroll_layout.add_widget(account)
+        scroll_layout.add_widget(network)
         scroll_layout.add_widget(about)
         scroll_layout.add_widget(pins)
         pref_scroll.add_widget(scroll_layout)
@@ -3481,6 +3500,9 @@ class PreferenceScreen(Screen):
 
     def override_overlay(self):
         logic.fs.moli['maint_override']=1
+        ls=App.get_running_app().context_screen.get_screen('main').widgets['lights']
+        if ls.state=='down':
+            ls.trigger_action()
         overlay_menu=self.widgets['overlay_menu']
         overlay_menu.title=''
         overlay_menu.separator_height=0
@@ -3518,15 +3540,16 @@ class PreferenceScreen(Screen):
         disable_progress._progress_colour=(245/250, 216/250, 41/250,1)
         self.widgets['disable_progress']=disable_progress
 
-        def light_button_func(button):
+        def light_button_func(button,*args):
             if logic.fs.moli['maint_override_light']==1:
                 logic.fs.moli['maint_override_light']=0
             else:
                 logic.fs.moli['maint_override_light']=1
-        light_button.bind(on_press=light_button_func)
+        light_button.bind(state=light_button_func)
 
         def disable_button_func(button):
             logic.fs.moli['maint_override']=0
+            logic.fs.moli['maint_override_light']=0
             self.widgets['overlay_menu'].dismiss()
 
         def progress_bar_update(dt,*args):
@@ -3746,6 +3769,9 @@ class PreferenceScreen(Screen):
     def account_func (self,button):
         self.parent.transition = SlideTransition(direction='left')
         self.manager.current='account'
+    def network_func (self,button):
+        self.parent.transition = SlideTransition(direction='left')
+        self.manager.current='network'
     def clean_mode_func(self,button):
         self.parent.transition = SlideTransition(direction='left')
         self.maint_overlay()
@@ -5167,6 +5193,12 @@ class MountScreen(Screen):
         self.widgets['file_selector_external'].selection=[]
         self.widgets['file_selector_internal'].selection=[]
 
+    def on_pre_enter(self, *args):
+        self.refresh_button_func()
+        self.widgets['file_selector_internal'].path=self.internal_path
+        self.widgets['file_selector_external'].path=self.external_path
+        return super().on_pre_enter(*args)
+
 class AccountScreen(Screen):
     def __init__(self, **kwargs):
         super(AccountScreen,self).__init__(**kwargs)
@@ -5198,12 +5230,12 @@ class AccountScreen(Screen):
         back_main.bind(on_press=self.account_back_main)
 
         screen_name=Label(
-            text=current_language['screen_name'],
+            text=current_language['account_screen_name'],
             markup=True,
             size_hint =(.4, .05),
             pos_hint = {'center_x':.15, 'center_y':.925},)
         self.widgets['screen_name']=screen_name
-        screen_name.ref='screen_name'
+        screen_name.ref='account_screen_name'
 
         information_box=RoundedColorLayout(
             bg_color=(0,0,0,.85),
@@ -5532,6 +5564,279 @@ class AccountScreen(Screen):
             i.cancel()
         self.scheduled_funcs=[]
         delattr(server,'user')
+class NetworkScreen(Screen):
+    def __init__(self, **kwargs):
+        super(NetworkScreen,self).__init__(**kwargs)
+        self.cols = 2
+        self.widgets={}
+        bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
+
+        back=RoundedButton(
+            text=current_language['settings_back'],
+            size_hint =(.4, .1),
+            pos_hint = {'x':.06, 'y':.015},
+            background_down='',
+            background_color=(200/255, 200/255, 200/255,.9),
+            markup=True)
+        self.widgets['back']=back
+        back.ref='settings_back'
+        back.bind(on_press=self.network_back)
+
+        back_main=RoundedButton(
+            text=current_language['preferences_back_main'],
+            size_hint =(.4, .1),
+            pos_hint = {'x':.52, 'y':.015},
+            background_normal='',
+            background_color=(245/250, 216/250, 41/250,.9),
+            markup=True)
+        self.widgets['back_main']=back_main
+        back_main.ref='preferences_back_main'
+        back_main.bind(on_press=self.network_back_main)
+
+        screen_name=Label(
+            text=current_language['network_screen_name'],
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.15, 'center_y':.925},)
+        self.widgets['screen_name']=screen_name
+        screen_name.ref='network_screen_name'
+
+        information_box=RoundedColorLayout(
+            bg_color=(0,0,0,.85),
+            size_hint =(.35, .25),
+            pos_hint = {'center_x':.225, 'center_y':.75},)
+        self.widgets['information_box']=information_box
+
+        information_title=Label(
+            text=current_language['network_information_title'],
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.925},)
+        self.widgets['information_title']=information_title
+        information_title.ref='network_information_title'
+
+        information_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+
+        information_ssid=Label(
+            text=f'SSID: 0',#{subprocess.check_output("netsh wlan show networks interface=Wi-Fi").split()}',
+            markup=True,
+            size_hint =(.9, .05), 
+            pos_hint = {'center_x':.5, 'center_y':.675},)
+        self.widgets['information_ssid']=information_ssid
+
+        information_status=Label(
+            text=f'Status: {0}',
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.45},)
+        self.widgets['information_status']=information_status
+
+        information_signal=Label(
+            text=f'Signal: {0}',
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.225},)
+        self.widgets['information_signal']=information_signal
+
+        details_box=RoundedColorLayout(
+            bg_color=(0,0,0,.85),
+            size_hint =(.35, .4),
+            pos_hint = {'center_x':.225, 'center_y':.4},)
+        self.widgets['details_box']=details_box
+
+        details_title=Label(
+            text=current_language['network_details_title'],
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.925},)
+        self.widgets['details_title']=details_title
+        details_title.ref='network_details_title'
+
+        details_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+
+
+        status_box=RoundedColorLayout(
+            bg_color=(0,0,0,.85),
+            size_hint =(.35, .675),
+            pos_hint = {'center_x':.6, 'center_y':.5375},)
+        self.widgets['status_box']=status_box
+
+        status_title=Label(
+            text=current_language['network_status_title'],
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.925},)
+        self.widgets['status_title']=status_title
+        status_title.ref='network_status_title'
+
+        status_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+
+        status_scroll=OutlineScroll(
+            size_hint =(.9,.75),
+            pos_hint = {'center_x':.5, 'center_y':.45},
+            bg_color=(1,1,1,.15),
+            bar_width=8,
+            bar_color=(245/250, 216/250, 41/250,.9),
+            bar_inactive_color=(245/250, 216/250, 41/250,.35),
+            do_scroll_y=True,
+            do_scroll_x=False)
+
+        status_scroll_layout = GridLayout(
+            cols=1,
+            spacing=10,
+            size_hint_y=None,
+            padding=5)
+
+        # Make sure the height is such that there is something to scroll.
+        status_scroll_layout.bind(minimum_height=status_scroll_layout.setter('height'))
+
+        for i in range(20):#status_request:
+            btn = RoundedButton(
+                background_normal='',
+                background_color=(.1,.1,.1,1),
+                text=str(i),
+                size_hint_y=None,
+                height=40)
+            # btn.bind(on_release=partial(self.load_selected_msg,i))
+            status_scroll_layout.add_widget(btn)
+
+
+        side_bar_box=RoundedColorLayout(
+            bg_color=(.5,.5,.5,.85),
+            size_hint =(.175, .675),
+            pos_hint = {'center_x':.9, 'center_y':.5375},)
+        self.widgets['status_box']=status_box
+
+        side_bar_scan=RoundedButton(
+            text=current_language['side_bar_scan'],
+            size_hint =(.9, .15),
+            pos_hint = {'center_x':.5, 'center_y':.875},
+            background_normal='',
+            background_color=(0,0,0,.9),
+            markup=True)
+        self.widgets['side_bar_scan']=side_bar_scan
+        side_bar_scan.ref='side_bar_scan'
+        # side_bar_scan.bind(on_press=self.side_bar_scan)
+
+        side_bar_info=RoundedButton(
+            text=current_language['side_bar_info'],
+            size_hint =(.9, .15),
+            pos_hint = {'center_x':.5, 'center_y':.6875},
+            background_normal='',
+            background_color=(0,0,0,.9),
+            markup=True)
+        self.widgets['side_bar_info']=side_bar_info
+        side_bar_info.ref='side_bar_info'
+        # side_bar_info.bind(on_press=self.side_bar_info)
+
+        side_bar_name=RoundedButton(
+            text=current_language['side_bar_name'],
+            size_hint =(.9, .15),
+            pos_hint = {'center_x':.5, 'center_y':.5},
+            background_normal='',
+            background_color=(0,0,0,.9),
+            markup=True)
+        self.widgets['side_bar_name']=side_bar_name
+        side_bar_name.ref='side_bar_name'
+        # side_bar_name.bind(on_press=self.side_bar_name)
+
+        side_bar_password=RoundedButton(
+            text=current_language['side_bar_password'],
+            size_hint =(.9, .15),
+            pos_hint = {'center_x':.5, 'center_y':.3125},
+            background_normal='',
+            background_color=(0,0,0,.9),
+            markup=True)
+        self.widgets['side_bar_password']=side_bar_password
+        side_bar_password.ref='side_bar_password'
+        # side_bar_password.bind(on_press=self.side_bar_password)
+
+        side_bar_disconnect=RoundedButton(
+            text=current_language['side_bar_disconnect'],
+            size_hint =(.9, .15),
+            pos_hint = {'center_x':.5, 'center_y':.125},
+            background_normal='',
+            background_color=(0,0,0,.9),
+            markup=True)
+        self.widgets['side_bar_reconnect']=side_bar_disconnect
+        side_bar_disconnect.ref='side_bar_disconnect'
+        # side_bar_reconnect.bind(on_press=self.side_bar_disconnect)
+
+        account_admin_hint=ExactLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
+                color=(0,0,0,1),
+                pos_hint = {'center_x':.5, 'y':.14},
+                markup=True)
+        self.widgets['account_admin_hint']=account_admin_hint
+
+        seperator_line=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.98, .001),
+            pos_hint = {'x':.01, 'y':.13})
+
+
+        information_box.add_widget(information_title)
+        information_box.add_widget(information_seperator)
+        information_box.add_widget(information_ssid)
+        information_box.add_widget(information_status)
+        information_box.add_widget(information_signal)
+
+        details_box.add_widget(details_title)
+        details_box.add_widget(details_seperator)
+
+        status_box.add_widget(status_title)
+        status_box.add_widget(status_seperator)
+        status_box.add_widget(status_scroll)
+        status_scroll.add_widget(status_scroll_layout)
+
+        side_bar_box.add_widget(side_bar_scan)
+        side_bar_box.add_widget(side_bar_disconnect)
+        side_bar_box.add_widget(side_bar_name)
+        side_bar_box.add_widget(side_bar_password)
+        side_bar_box.add_widget(side_bar_info)
+
+        self.add_widget(bg_image)
+        self.add_widget(screen_name)
+        self.add_widget(back)
+        self.add_widget(back_main)
+        self.add_widget(seperator_line)
+        # self.add_widget(account_admin_hint)
+        self.add_widget(information_box)
+        self.add_widget(details_box)
+        self.add_widget(status_box)
+        self.add_widget(side_bar_box)
+
+    def network_back(self,button):
+        self.parent.transition = SlideTransition(direction='right')
+        self.manager.current='preferences'
+    def network_back_main(self,button):
+        self.parent.transition = SlideTransition(direction='down')
+        self.manager.current='main'
+
+    def check_admin_mode(self,*args):
+        if App.get_running_app().admin_mode_start>time.time():
+            pass
+
+
+    def on_pre_enter(self, *args):
+        # self.check_admin_mode()
+        return super().on_pre_enter(*args)
 
 
 def listen(app_object,*args):
@@ -5561,7 +5866,7 @@ def listen(app_object,*args):
         if event_log['lights']==1:
             pass
     #heat sensor
-        if event_log['heat_sensor']==1:
+        if 'heat_sensor' in logic.fs.aux_state:#if event_log['heat_sensor']==1:
             if main_screen.widgets['fans'].state=='normal':
                 main_screen.widgets['fans'].text = current_language['fans_heat']
         else:
@@ -5621,8 +5926,7 @@ def listen(app_object,*args):
                     heat_trouble.ref='heat_trouble'
 
                     def fan_switch(*args):
-                        app_object.get_screen('main').widgets['fans'].state = 'down'
-                        app_object.get_screen('main').fans_switch(app_object.get_screen('main').widgets['fans'])
+                        app_object.get_screen('main').widgets['fans'].trigger_action()
 
                     heat_trouble.bind(on_release=fan_switch)
                     heat_trouble.bind(on_ref_press=fan_switch)
@@ -5676,6 +5980,28 @@ def listen(app_object,*args):
                 trouble_display.remove_widget(troubles_screen.widgets['gasvalve_trouble'])
                 del troubles_screen.widgets['gasvalve_trouble']
 
+    #micro switch released
+        if trouble_log['actuation']==1:
+            if 'actuation_trouble' not in troubles_screen.widgets:
+                actuation_trouble=trouble_template('actuation_trouble_title',
+                'actuation_trouble_body',
+                link_text='actuation_trouble_link',ref_tag='actuation_trouble')
+                actuation_trouble.ref='actuation_trouble'
+
+                def actuation_trouble_func(*args):
+                    App.get_running_app().service_pin_entered=False
+
+
+                actuation_trouble.bind(on_release=actuation_trouble_func)
+                actuation_trouble.bind(on_ref_press=actuation_trouble_func)
+                troubles_screen.widgets['actuation_trouble']=actuation_trouble
+                troubles_screen.widgets['actuation_trouble'].bind(texture_size=lambda instance, value: setattr(instance, 'height', value[1]))
+                trouble_display.add_widget(actuation_trouble)
+        elif trouble_log['actuation']==0:
+            if 'actuation_trouble' in troubles_screen.widgets:
+                trouble_display.remove_widget(troubles_screen.widgets['actuation_trouble'])
+                del troubles_screen.widgets['actuation_trouble']
+
 
 class Hood_Control(App):
     def build(self):
@@ -5700,6 +6026,7 @@ class Hood_Control(App):
         self.context_screen.add_widget(TroubleScreen(name='trouble'))
         self.context_screen.add_widget(MountScreen(name='mount'))
         # self.context_screen.add_widget(AccountScreen(name='account'))
+        self.context_screen.add_widget(NetworkScreen(name='network'))
         listener_event=Clock.schedule_interval(partial(listen, self.context_screen),.75)
         device_update_event=Clock.schedule_interval(partial(logic.update_devices),.75)
         device_save_event=Clock.schedule_interval(partial(logic.save_devices),600)

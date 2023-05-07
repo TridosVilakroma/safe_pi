@@ -15,11 +15,13 @@ else:
     import RPi.GPIO as GPIO
 
 heat_sensor_timer=300
-#there are only 25 GPIO pins available for input/output.
+#there are only 19 GPIO pins available for input/output.
+#pins 0-8[BCM] are set as pull-up (use as input exclusively; not outputs)
 #the additional 15 are grounds, constant powers, and reserved for hats.
-available_pins=[i for i in range(2,28)]
+available_pins=[8,10,11,12,13,15,16,18,19,
+                21,22,23,32,33,35,36,37,38,40]#i for i in range(2,28)]
 
-GPIO.setmode(GPIO.BCM)
+GPIO.setmode(GPIO.BOARD)
 GPIO.setwarnings(False)
 
 off=0
@@ -46,18 +48,17 @@ def get_devices():
             if i.pin in available_pins:
                 available_pins.remove(i.pin)
                 set_pin_mode(i)
+            elif i.pin==0:
+                print(f"logic.get_devices(): {i}.pin == 0")
             devices.append(i)
 
 def set_pin_mode(device):
-    if device.pin==0:
-        print(f"logic.set_pin_mode(): {device}.pin == 0")
+    if device.mode=="in":
+        GPIO.setup(device.pin,GPIO.IN,pull_up_down = GPIO.PUD_DOWN)
+    elif device.mode=="out":
+        GPIO.setup(device.pin, GPIO.OUT,initial=GPIO.LOW)
     else:
-        if device.mode=="in":
-            GPIO.setup(device.pin,GPIO.IN,pull_up_down = GPIO.PUD_DOWN)
-        elif device.mode=="out":
-            GPIO.setup(device.pin, GPIO.OUT,initial=GPIO.LOW)
-        else:
-            print(f"logic.set_pin_mode(): {device}.mode is not \"in\" or \"out\"")
+        print(f"logic.set_pin_mode(): {device}.mode is not \"in\" or \"out\"")
 
 def exfans_on():
     for i in (i for i in devices if isinstance(i,exhaust.Exhaust)):
@@ -176,7 +177,8 @@ if os.name == 'posix':
                 return True
         return False
 def clean_exit():
-    all_pins=[i for i in range(2,28)]
+    all_pins=[8,10,11,12,13,15,16,18,19,
+              21,22,23,32,33,35,36,37,38,40]
     GPIO.setup(all_pins, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
 
 def clean_list(list,element):
@@ -203,7 +205,8 @@ class Logic():
         self.troubles={
             'heat_override':0,
             'short_duration':0,
-            'gv_trip':0
+            'gv_trip':0,
+            'actuation':0
         }
 
         self.moli={
@@ -247,8 +250,9 @@ class Logic():
                 exfans_on()
                 self.milo['exhaust']=on
             elif self.moli['exhaust']==off or not fan_switch_on():
-                exfans_off()
-                self.milo['exhaust']=off
+                if 'heat_sensor' not in self.aux_state:
+                    exfans_off()
+                    self.milo['exhaust']=off
             if self.moli['mau']==on or fan_switch_on():
                 maufans_on()
                 self.milo['mau']=on
@@ -277,15 +281,13 @@ class Logic():
                 maufans_on()
                 self.milo['exhaust']=on
                 self.milo['mau']=on
-                self.milo['heat_sensor']=on
                 print('heat timer active')
             else:
                 if self.moli['exhaust']==off and self.moli['mau']==off:
                     exfans_off()
                     maufans_off()
-                self.milo['exhaust']=off
-                self.milo['mau']=off
-                self.milo['heat_sensor']=off
+                    self.milo['exhaust']=off
+                    self.milo['mau']=off
                 clean_list(self.aux_state,'heat_sensor')
 
 
@@ -305,6 +307,11 @@ class Logic():
             self.milo['troubles']['gv_trip']=1
         else:
             self.milo['troubles']['gv_trip']=0
+    #micro switch released
+        if self.state=='Fire':
+            self.milo['troubles']['actuation']=1
+        else:
+            self.milo['troubles']['actuation']=0
 
     def fire(self):
         if not self.fired:
@@ -339,7 +346,8 @@ class Logic():
     def auxillary(self):
         self.trouble()
         if 'heat_sensor' in self.aux_state and not self.fired:
-            self.heat_sensor()
+            if not self.moli['maint_override']==1:
+                self.heat_sensor()
 
     def state_manager(self):
         if self.state=='Fire':

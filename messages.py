@@ -64,6 +64,9 @@ class Interval:
             _month,day=divmod(self.day+other.day+_day,_month_length)
             _year,month=divmod(self.month+other.month+_month,12)
             year=self.year+other.year+_year
+            hour=max(1,hour)
+            day=max(1,day)
+            month=max(1,month)
 
             return type(other)(
                 second=second,
@@ -150,6 +153,7 @@ schedule a visit to service and inspect your system.''',
         filter_active_messages() is called to reduce each
         category of message to a single entry.
         '''
+        self.config.read(preferences_path) #update from hood_control.ini
         self._active_messages=[]
         for message in self.index.values():
             if message.recurrence==0:
