@@ -14,6 +14,7 @@ from device_classes.switch_fans import SwitchFans
 from device_classes.heat_sensor import HeatSensor
 
 from messages import messages
+from logs.custom import custom_logic as CLogic
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
 import kivy
@@ -5897,6 +5898,7 @@ def listen(app_object,*args):
 
 class Hood_Control(App):
     def build(self):
+        self.custom_logic_flag=False
         self.service_pin_entered=False
         self.admin_mode_start=time.time()
         self.report_pending=False#overwritten in settings_setter() from config file
@@ -5919,6 +5921,7 @@ class Hood_Control(App):
         self.context_screen.add_widget(MountScreen(name='mount'))
         self.context_screen.add_widget(AccountScreen(name='account'))
         self.context_screen.add_widget(NetworkScreen(name='network'))
+        Clock.schedule_interval(custom_logic,.5)
         listener_event=Clock.schedule_interval(partial(listen, self.context_screen),.75)
         device_update_event=Clock.schedule_interval(partial(logic.update_devices),.75)
         device_save_event=Clock.schedule_interval(partial(logic.save_devices),600)
@@ -5934,6 +5937,7 @@ class Hood_Control(App):
         return False  # let the app close
 
 def settings_setter(config):
+    hc=App.get_running_app()
     heat_duration=config['preferences']['heat_timer']
     if heat_duration == '300':
         logic.heat_sensor_timer=300
@@ -5941,8 +5945,12 @@ def settings_setter(config):
         logic.heat_sensor_timer=900
     elif heat_duration == '1800':
         logic.heat_sensor_timer=1800
+
     report_status=config.getboolean('config','report_pending')
-    App.get_running_app().report_pending=report_status
+    hc.report_pending=report_status
+
+    hc.custom_logic_flag=hc.config_.getboolean('preferences','custom')
+
 
 def language_setter(*args,config=None):
     def widget_walker(widget,current_language):
@@ -5964,6 +5972,13 @@ def language_setter(*args,config=None):
         current_language=eval(f'lang_dict.{lang_pref}')
     for i in App.get_running_app().root.screens:
         widget_walker(i,current_language)
+
+def custom_logic(*args):
+    hc=App.get_running_app()
+    flag=hc.custom_logic_flag
+    if not flag:
+        return
+    CLogic.update()
 
 logic_control = Thread(target=logic.logic,daemon=True)
 logic_control.start()
