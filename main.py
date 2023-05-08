@@ -4241,6 +4241,60 @@ class PinScreen(Screen):
             self.widgets['device_reload_overlay'].dismiss()
         device_reload_cancel.bind(on_release=device_reload_cancel_func)
 
+        custom_logic_overlay=PinPop('custom_logic')
+        self.popups.append(custom_logic_overlay)
+        self.widgets['custom_logic_overlay']=custom_logic_overlay
+        custom_logic_overlay.ref='heat_overlay'
+        custom_logic_overlay.widgets['overlay_layout']=custom_logic_overlay.overlay_layout
+
+        clb=App.get_running_app().custom_logic_flag
+        clt_state=current_language['custom_logic_text_enable'] if clb else current_language['custom_logic_text_disable']
+        custom_logic_text=Label(
+            text=clt_state+current_language['custom_logic_text'],
+            markup=True,
+            size_hint =(1,.6),
+            pos_hint = {'x':0, 'y':.35},)
+        self.widgets['custom_logic_text']=custom_logic_text
+        custom_logic_text.ref='custom_logic_text'
+
+        custom_logic_confirm=RoundedButton(text=current_language['custom_logic_confirm'],
+                        size_hint =(.35, .25),
+                        pos_hint = {'x':.05, 'y':.05},
+                        background_down='',
+                        background_color=(245/250, 216/250, 41/250,.9),
+                        markup=True)
+        self.widgets['custom_logic_confirm']=custom_logic_confirm
+        custom_logic_confirm.ref='custom_logic_confirm'
+
+        custom_logic_cancel=RoundedButton(text=current_language['custom_logic_cancel'],
+                        size_hint =(.35, .25),
+                        pos_hint = {'x':.6, 'y':.05},
+                        background_down='',
+                        background_color=(245/250, 216/250, 41/250,.9),
+                        markup=True)
+        self.widgets['custom_logic_cancel']=custom_logic_cancel
+        custom_logic_cancel.ref='custom_logic_cancel'
+
+        def custom_logic_confirm_func(button):
+            App.get_running_app().custom_logic_flag = not App.get_running_app().custom_logic_flag
+            clf=App.get_running_app().custom_logic_flag
+            config=self.root.config_
+            config.set('preferences','custom',f'{clf}')
+            with open(preferences_path,'w') as configfile:
+                config.write(configfile)
+            self.widgets['custom_logic_overlay'].dismiss()
+        custom_logic_confirm.bind(on_release=custom_logic_confirm_func)
+
+        def custom_logic_cancel_func(button):
+            self.widgets['custom_logic_overlay'].dismiss()
+        custom_logic_cancel.bind(on_release=custom_logic_cancel_func)
+
+        def clo_on_open(self,*args):
+            clb=App.get_running_app().custom_logic_flag
+            clt_state=current_language['custom_logic_text_enable'] if not clb else current_language['custom_logic_text_disable']
+            self.widgets['custom_logic_text'].text=clt_state+current_language['custom_logic_text']
+        custom_logic_overlay.on_pre_open=partial(clo_on_open,self)
+
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_text)
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_confirm)
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_cancel)
@@ -4262,6 +4316,9 @@ class PinScreen(Screen):
         self.widgets['device_reload_overlay'].widgets['overlay_layout'].add_widget(device_reload_text)
         self.widgets['device_reload_overlay'].widgets['overlay_layout'].add_widget(device_reload_confirm)
         self.widgets['device_reload_overlay'].widgets['overlay_layout'].add_widget(device_reload_cancel)
+        self.widgets['custom_logic_overlay'].widgets['overlay_layout'].add_widget(custom_logic_text)
+        self.widgets['custom_logic_overlay'].widgets['overlay_layout'].add_widget(custom_logic_confirm)
+        self.widgets['custom_logic_overlay'].widgets['overlay_layout'].add_widget(custom_logic_cancel)
 
         seperator_line=Image(source=gray_seperator_line,
                     allow_stretch=True,
