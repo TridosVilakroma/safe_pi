@@ -1,5 +1,15 @@
+import logic
+
+
+
+
+
+
+
+
+
 
 
 
 def update(*args):
-    print('custom logic active')
+    print(logic.fs.cilo)
