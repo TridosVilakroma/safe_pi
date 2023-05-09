@@ -23,7 +23,7 @@ def cleanup():
    print ('pins released as inputs')
 def setwarnings(flag):
    pass
-def input(number,source):
+def input(number,source='x'):
    pass
    if source =='m':
       if micro == 1:

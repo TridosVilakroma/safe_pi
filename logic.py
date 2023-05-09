@@ -131,6 +131,11 @@ def pin_off(pin):
     if func==GPIO.OUT:
         GPIO.output(pin,off)
 
+def pin_on(pin):
+    func = GPIO.gpio_function(pin)
+    if func==GPIO.OUT:
+        GPIO.output(pin,on)
+
 dry_contact=12
 lights_pin=7
 if os.name == 'nt':
@@ -224,6 +229,9 @@ class Logic():
             'micro_switch':off,
             'troubles':self.troubles
         }
+        self.coli={}#device:state(0,1)
+        self.cilo={8:0,10:0,11:0,12:0,13:0,15:0,16:0,18:0,19:0,
+                21:0,22:0,23:0,32:0,33:0,35:0,36:0,37:0,38:0,40:0}
 
     def normal(self):
         if micro_switch_active():
@@ -324,11 +332,24 @@ class Logic():
             self.state='Normal'
             self.milo['micro_switch']=off
 
+    def custom(self):
+        try:
+            for device,state in self.coli.values():
+                if state:
+                    pin_on(device.pin)
+                elif not state:
+                    pin_off(device.pin)
+            for pin,state in self.cilo.items():
+                state=GPIO.input(pin)
+        except Exception as e:
+            print('logic.py Logic.custom(): ',e)
+
     def auxillary(self):
         self.trouble()
         if 'heat_sensor' in self.aux_state and not self.fired:
             if not self.moli['maint_override']==1:
                 self.heat_sensor()
+        self.custom()
 
     def state_manager(self):
         if self.state=='Fire':
