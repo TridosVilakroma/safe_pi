@@ -3305,7 +3305,7 @@ class PreferenceScreen(Screen):
         self.widgets['network']=network
         network.ref='network'
         network.bind(on_release=self.network_func)
-        network.disabled=True
+        # network.disabled=True
 
         clean_mode=RoundedButton(text=current_language['clean_mode'],
                         size_hint =(1, 1),
@@ -5564,6 +5564,7 @@ class AccountScreen(Screen):
             i.cancel()
         self.scheduled_funcs=[]
         delattr(server,'user')
+
 class NetworkScreen(Screen):
     def __init__(self, **kwargs):
         super(NetworkScreen,self).__init__(**kwargs)
@@ -6013,7 +6014,7 @@ class Hood_Control(App):
         settings_setter(self.config_)
         Clock.schedule_once(partial(language_setter,config=self.config_))
         self.context_screen=ScreenManager()
-        self.context_screen.add_widget(AccountScreen(name='account'))
+        self.context_screen.add_widget(NetworkScreen(name='network'))
         self.context_screen.add_widget(ControlGrid(name='main'))
         self.context_screen.add_widget(ActuationScreen(name='alert'))
         self.context_screen.add_widget(SettingsScreen(name='settings'))
@@ -6025,8 +6026,8 @@ class Hood_Control(App):
         self.context_screen.add_widget(DocumentScreen(name='documents'))
         self.context_screen.add_widget(TroubleScreen(name='trouble'))
         self.context_screen.add_widget(MountScreen(name='mount'))
-        # self.context_screen.add_widget(AccountScreen(name='account'))
-        self.context_screen.add_widget(NetworkScreen(name='network'))
+        self.context_screen.add_widget(AccountScreen(name='account'))
+        # self.context_screen.add_widget(NetworkScreen(name='network'))
         listener_event=Clock.schedule_interval(partial(listen, self.context_screen),.75)
         device_update_event=Clock.schedule_interval(partial(logic.update_devices),.75)
         device_save_event=Clock.schedule_interval(partial(logic.save_devices),600)
