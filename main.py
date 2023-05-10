@@ -15,6 +15,12 @@ from device_classes.heat_sensor import HeatSensor
 
 from messages import messages
 from logs.custom import custom_logic as CLogic
+import importlib
+custom_imports=[]
+for i in next(os.walk('logs/custom/packages'))[1]:
+    custom_device_path=os.path.join('logs','custom','packages',i,i)
+    custom_imports.append(importlib.import_module(custom_device_path))
+print(custom_imports)
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
 import kivy
@@ -2764,6 +2770,10 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                     "Heat":"heat_sensor.HeatSensor",
                     "Light Switch":"switch_light.SwitchLight",
                     "Fans Switch":"switch_fans.SwitchFans"}
+                for i in next(os.walk('logs/custom/packages'))[1]:
+                    custom_device_path=os.path.join('logs/custom/packages',i)
+                    self.device_types[i]=int()
+
         current_device=InfoShelf()
 
         overlay_menu=self.widgets['overlay_menu']
