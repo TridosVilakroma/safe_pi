@@ -16,11 +16,10 @@ from device_classes.heat_sensor import HeatSensor
 from messages import messages
 from logs.custom import custom_logic as CLogic
 import importlib
-custom_imports=[]
+custom_packages=[]
 for i in next(os.walk('logs/custom/packages'))[1]:
-    custom_device_path=os.path.join('logs','custom','packages',i,i)
-    custom_imports.append(importlib.import_module(custom_device_path))
-print(custom_imports)
+    custom_device_path=f'logs.custom.packages.{i}.{i}'
+    custom_packages.append(importlib.import_module(custom_device_path))
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
 import kivy
@@ -2703,19 +2702,35 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         self.info_overlay(device,False)
 
     def delete_device_confirm(self,device,*args):
-        logic.devices.remove(device)
-        logic.pin_off(device.pin)
-        logic.available_pins.append(device.pin)
-        logic.available_pins.sort()
-        os.remove(rf"logs/devices/{device.name}.json")
-        with open(rf"logs/devices/device_list.json","r+") as read_file:
-            d_list=json.load(read_file)
-            del d_list[device.name]
-            read_file.seek(0)
-            json.dump(d_list,read_file,indent=0)
-            read_file.truncate()
-        self.aggregate_devices()
-        self.widgets['overlay_menu'].dismiss()
+        standard_devices=["Exfan","MAU","Heat","Light","Dry","GV","Micro","Light Switch","Fans Switch"]
+        if device.type in standard_devices:
+            logic.devices.remove(device)
+            logic.pin_off(device.pin)
+            logic.available_pins.append(device.pin)
+            logic.available_pins.sort()
+            os.remove(rf"logs/devices/{device.name}.json")
+            with open(rf"logs/devices/device_list.json","r+") as read_file:
+                d_list=json.load(read_file)
+                del d_list[device.name]
+                read_file.seek(0)
+                json.dump(d_list,read_file,indent=0)
+                read_file.truncate()
+            self.aggregate_devices()
+            self.widgets['overlay_menu'].dismiss()
+        else: #custom device
+            CLogic.devices.remove(device)
+            CLogic.pin_off(device.pin)
+            CLogic.available_pins.append(device.pin)
+            CLogic.available_pins.sort()
+            os.remove(rf"logs/custom/devices/{device.name}.json")
+            with open(rf"logs/custom/devices/device_list.json","r+") as read_file:
+                d_list=json.load(read_file)
+                del d_list[device.name]
+                read_file.seek(0)
+                json.dump(d_list,read_file,indent=0)
+                read_file.truncate()
+            self.aggregate_devices()
+            self.widgets['overlay_menu'].dismiss()
 
     def create_clock(self,device,*args):
         scheduled_delete=partial(self.delete_device_confirm,device)
@@ -2753,6 +2768,10 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             button.source=delete_normal
 
     def new_device_overlay(self,open=True):
+        standard_devices=["Exfan","MAU","Heat","Light","Dry","GV","Micro","Light Switch","Fans Switch"]
+        all_devices=[i for i in standard_devices]
+        for i in custom_packages:
+            all_devices.append(str(i.__name__).split('.')[-1])
         class InfoShelf():
             def __init__(self) -> None:
                 self.name='default'
@@ -2770,9 +2789,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                     "Heat":"heat_sensor.HeatSensor",
                     "Light Switch":"switch_light.SwitchLight",
                     "Fans Switch":"switch_fans.SwitchFans"}
-                for i in next(os.walk('logs/custom/packages'))[1]:
-                    custom_device_path=os.path.join('logs/custom/packages',i)
-                    self.device_types[i]=int()
+                for i in custom_packages:
+                    _name=str(i.__name__).split('.')[-1]
+                    self.device_types[_name]=os.path.splitext(os.path.basename(i.__file__))[0]
 
         current_device=InfoShelf()
 
@@ -2825,7 +2844,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         get_device_type=Spinner(
                         text="Exfan",
-                        values=("Exfan","MAU","Heat","Light","Dry","GV","Micro","Light Switch","Fans Switch"),
+                        values=(str(i) for i in all_devices),
                         size_hint =(.5, .05),
                         pos_hint = {'x':.40, 'y':.8})
         get_device_type.bind(text=partial(self.get_device_type_func,current_device))
@@ -2857,27 +2876,46 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         self.widgets['overlay_menu'].dismiss()
 
     def new_device_save(self,current_device,button):
+        standard_devices=["Exfan","MAU","Heat","Light","Dry","GV","Micro","Light Switch","Fans Switch"]
         if current_device.name=="default":
             print("main.new_device_save(): can not save device without name")
             return
         if current_device.pin==0:
             print("main.new_device_save(): can not save device without pin designation")
             return
-        data={
-            "device_name":current_device.name,
-            "gpio_pin":current_device.pin,
-            "run_time":current_device.run_time,
-            "color":current_device.color}
-        with open(rf"logs/devices/{current_device.name}.json","w+") as write_file:
-            json.dump(data, write_file,indent=0)
-        with open(rf"logs/devices/device_list.json","r+") as read_file:
-            d_list=json.load(read_file)
-            d_list[current_device.name]=current_device.device_types[current_device.type]
-            read_file.seek(0)
-            json.dump(d_list,read_file,indent=0)
-            read_file.truncate()
-        self.aggregate_devices()
-        self.widgets['overlay_menu'].dismiss()
+        if current_device.type in standard_devices:
+            data={
+                "device_name":current_device.name,
+                "gpio_pin":current_device.pin,
+                "run_time":current_device.run_time,
+                "color":current_device.color}
+            with open(rf"logs/devices/{current_device.name}.json","w+") as write_file:
+                json.dump(data, write_file,indent=0)
+            with open(rf"logs/devices/device_list.json","r+") as read_file:
+                d_list=json.load(read_file)
+                d_list[current_device.name]=current_device.device_types[current_device.type]
+                read_file.seek(0)
+                json.dump(d_list,read_file,indent=0)
+                read_file.truncate()
+            self.aggregate_devices()
+            self.widgets['overlay_menu'].dismiss()
+
+        else:    #custom devices
+            data={
+                "device_name":current_device.name,
+                "gpio_pin":current_device.pin,
+                "run_time":current_device.run_time,
+                "color":current_device.color}
+            with open(rf"logs/custom/devices/{current_device.name}.json","w+") as write_file:
+                json.dump(data, write_file,indent=0)
+            with open(rf"logs/custom/devices/device_list.json","r+") as read_file:
+                d_list=json.load(read_file)
+                d_list[current_device.name]=f'{current_device.type}.{current_device.type}'
+                read_file.seek(0)
+                json.dump(d_list,read_file,indent=0)
+                read_file.truncate()
+            self.aggregate_devices()
+            self.widgets['overlay_menu'].dismiss()
 
     def get_name_func(self,current_device,button,*args):
         current_device.name=button.text
@@ -2901,12 +2939,18 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             current_device.color=(0/255, 0/255, 0/255,.85)
         elif value=="Fans Switch":
             current_device.color=(0/255, 0/255, 0/255,.85)
+        else:
+            current_device.color=(245/250, 200/250, 20/250,.85)
     def get_device_pin_func(self,current_device,button,value):
         #value is get_device_pin.text
         #string is split to pull out BOARD int
         current_device.pin=int(value.split()[1])
 
     def edit_device_overlay(self,device):
+        standard_devices=["Exfan","MAU","Heat","Light","Dry","GV","Micro","Light Switch","Fans Switch"]
+        all_devices=[i for i in standard_devices]
+        for i in custom_packages:
+            all_devices.append(str(i.__name__).split('.')[-1])
         class InfoShelf():
             def __init__(self,device) -> None:
                 self.name=device.name
@@ -2928,6 +2972,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                     self.type="Light Switch"
                 elif isinstance(device,SwitchFans):
                     self.type="Fans Switch"
+                else:
+                    self.type=device.type
                 self.pin=device.pin
                 self.color=device.color
                 self.run_time=device.run_time
@@ -2941,6 +2987,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                     "Heat":"heat_sensor.HeatSensor",
                     "Light Switch":"switch_light.SwitchLight",
                     "Fans Switch":"switch_fans.SwitchFans"}
+                for i in custom_packages:
+                    _name=str(i.__name__).split('.')[-1]
+                    self.device_types[_name]=os.path.splitext(os.path.basename(i.__file__))[0]
         current_device=InfoShelf(device)
 
         overlay_menu=self.widgets['overlay_menu']
@@ -2993,7 +3042,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         get_device_type=Spinner(
                         disabled=True,
                         text=current_device.type,
-                        values=("Exfan","MAU","Heat","Light","Dry","Micro","Light Switch","Fans Switch"),
+                        values=(str(i) for i in all_devices),
                         size_hint =(.5, .05),
                         pos_hint = {'x':.40, 'y':.8})
         get_device_type.bind(text=partial(self.edit_device_type_func,current_device))
@@ -3023,39 +3072,69 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         self.info_overlay(device,open=False)
 
     def edit_device_save(self,current_device,device,button):
+        standard_devices=["Exfan","MAU","Heat","Light","Dry","GV","Micro","Light Switch","Fans Switch"]
         if current_device.name=="default":
             print("main.edit_device_save(): can not save device without name")
             return
         if current_device.pin==0:
             print("main.edit_device_save(): can not save device without pin designation")
             return
-        data={
-            "device_name":current_device.name,
-            "gpio_pin":current_device.pin,
-            "run_time":current_device.run_time,
-            "color":current_device.color}
-        if device.name!=current_device.name:
-            os.rename(rf"logs/devices/{device.name}.json",rf"logs/devices/{current_device.name}.json")
-        with open(rf"logs/devices/{current_device.name}.json","w") as write_file:
-            json.dump(data, write_file,indent=0)
-        with open(rf"logs/devices/device_list.json","r+") as read_file:
-            d_list=json.load(read_file)
+        if current_device.type in standard_devices:
+            data={
+                "device_name":current_device.name,
+                "gpio_pin":current_device.pin,
+                "run_time":current_device.run_time,
+                "color":current_device.color}
             if device.name!=current_device.name:
-                d_list[current_device.name]=d_list.pop(device.name)
-            else:
-                d_list[current_device.name]=current_device.device_types[current_device.type]
-            read_file.seek(0)
-            json.dump(d_list,read_file,indent=0)
-            read_file.truncate()
-        device.name=current_device.name
-        if device.pin != current_device.pin:
-            logic.available_pins.append(device.pin)
-            logic.available_pins.remove(current_device.pin)
-            logic.available_pins.sort()
-            logic.pin_off(device.pin)
-            device.pin=current_device.pin
-        self.aggregate_devices()
-        self.info_overlay(device,open=False)
+                os.rename(rf"logs/devices/{device.name}.json",rf"logs/devices/{current_device.name}.json")
+            with open(rf"logs/devices/{current_device.name}.json","w") as write_file:
+                json.dump(data, write_file,indent=0)
+            with open(rf"logs/devices/device_list.json","r+") as read_file:
+                d_list=json.load(read_file)
+                if device.name!=current_device.name:
+                    d_list[current_device.name]=d_list.pop(device.name)
+                else:
+                    d_list[current_device.name]=current_device.device_types[current_device.type]
+                read_file.seek(0)
+                json.dump(d_list,read_file,indent=0)
+                read_file.truncate()
+            device.name=current_device.name
+            if device.pin != current_device.pin:
+                logic.available_pins.append(device.pin)
+                logic.available_pins.remove(current_device.pin)
+                logic.available_pins.sort()
+                logic.pin_off(device.pin)
+                device.pin=current_device.pin
+            self.aggregate_devices()
+            self.info_overlay(device,open=False)
+        else: #custom devices
+            data={
+                "device_name":current_device.name,
+                "gpio_pin":current_device.pin,
+                "run_time":current_device.run_time,
+                "color":current_device.color}
+            if device.name!=current_device.name:
+                os.rename(rf"logs/custom/devices/{device.name}.json",rf"logs/custom/devices/{current_device.name}.json")
+            with open(rf"logs/custom/devices/{current_device.name}.json","w") as write_file:
+                json.dump(data, write_file,indent=0)
+            with open(rf"logs/custom/devices/device_list.json","r+") as read_file:
+                d_list=json.load(read_file)
+                if device.name!=current_device.name:
+                    d_list[current_device.name]=d_list.pop(device.name)
+                else:
+                    d_list[current_device.name]=f'{current_device.type}.{current_device.type}'
+                read_file.seek(0)
+                json.dump(d_list,read_file,indent=0)
+                read_file.truncate()
+            device.name=current_device.name
+            if device.pin != current_device.pin:
+                logic.available_pins.append(device.pin)
+                logic.available_pins.remove(current_device.pin)
+                logic.available_pins.sort()
+                logic.pin_off(device.pin)
+                device.pin=current_device.pin
+            self.aggregate_devices()
+            self.info_overlay(device,open=False)
 
     def edit_name_func(self,current_device,button,*args):
         current_device.name=button.text
@@ -3079,6 +3158,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             current_device.color=(0/255, 0/255, 0/255,.85)
         elif value=="Fans Switch":
             current_device.color=(0/255, 0/255, 0/255,.85)
+        else:
+            current_device.color=(245/250, 200/250, 20/250,.85)
     def edit_device_pin_func(self,current_device,button,value):
         #value is get_device_pin.text
         #string is split to pull out BOARD int
@@ -3105,9 +3186,18 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                 self.widgets['device_layout'].add_widget(device)
                 device.bind(on_release=partial(self.info_func,i))
         else:
-            print("main.py aggregate_devices(): no devices")
+            print("main.py aggregate_devices(): no standard devices")
             self.widgets['device_layout'].clear_widgets()
             self.widgets['device_layout'].add_widget(self.widgets['device_details'])
+        
+        CLogic.get_devices()
+        if CLogic.devices:
+            # self.widgets['device_layout'].clear_widgets()
+            for i in CLogic.devices:
+                device=RoundedScrollItemTemplate(i.name,color=i.color)
+                self.widgets['device_layout'].add_widget(device)
+                device.bind(on_release=partial(self.info_func,i))
+
         new_device=RoundedScrollItemTemplate(
                         '[/color][color=#000000]Add Device +',
                         color=(200/250, 200/250, 200/250,.85))
