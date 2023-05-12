@@ -1,11 +1,11 @@
 import os,time,json
 import os.path
 
-class PowderFan():
+class powder_fan():
     color=(0/255, 0/255, 0/255,.85)
     def __init__(self,name="default",pin=0,color=(170/255, 0/255, 0/255,.85)) -> None:
         self.name=name
-        self.type='Powder Fan'
+        self.type='powder_fan'
         self.pin=pin
         self.mode="out"
         self.color=color
