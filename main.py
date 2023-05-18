@@ -2702,7 +2702,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         self.info_overlay(device,False)
 
     def delete_device_confirm(self,device,*args):
-        standard_devices=["Exfan","MAU","Heat","Light","Dry","GV","Micro","Light Switch","Fans Switch"]
+        standard_devices=["Exhaust Fan","akeup Air Fan","heat","Lights","Dry Contact","Gas Valve","Micro","Light Switch","Fans Switch"]
+        print(device)
+        print(device.type)
         if device.type in standard_devices:
             logic.devices.remove(device)
             logic.pin_off(device.pin)
@@ -2718,10 +2720,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             self.aggregate_devices()
             self.widgets['overlay_menu'].dismiss()
         else: #custom device
-            CLogic.devices.remove(device)
-            CLogic.pin_off(device.pin)
-            CLogic.available_pins.append(device.pin)
-            CLogic.available_pins.sort()
+            CLogic.delete_device(device)
             os.remove(rf"logs/custom/devices/{device.name}.json")
             with open(rf"logs/custom/devices/device_list.json","r+") as read_file:
                 d_list=json.load(read_file)

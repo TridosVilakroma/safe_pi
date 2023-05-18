@@ -229,7 +229,11 @@ class Logic():
             'micro_switch':off,
             'troubles':self.troubles
         }
-        self.coli={}#device:state(0,1)
+        self.coli={
+            'states':{},#device:state(0,1)
+            'set_mode':{},
+            'available':{}
+        }
         self.cilo={8:0,10:0,11:0,12:0,13:0,15:0,16:0,18:0,19:0,
                 21:0,22:0,23:0,32:0,33:0,35:0,36:0,37:0,38:0,40:0}
 
@@ -334,11 +338,23 @@ class Logic():
 
     def custom(self):
         try:
-            for device,state in self.coli.values():
+            for device,state in self.coli['states'].items():
                 if state:
                     pin_on(device.pin)
                 elif not state:
                     pin_off(device.pin)
+            for device,state in self.coli['set_mode'].items():
+                if state:
+                    set_pin_mode(device.pin)
+                elif not state:
+                    pass
+            for device,state in self.coli['available'].items():
+                if state:
+                    if device.pin in available_pins:
+                        available_pins.remove(device.pin)
+                elif not state:
+                    if device.pin not in available_pins:
+                        available_pins.append(device.pin)
             for pin,state in self.cilo.items():
                 state=GPIO.input(pin)
         except Exception as e:
