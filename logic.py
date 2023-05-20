@@ -59,59 +59,59 @@ def set_pin_mode(device):
     else:
         print(f"logic.set_pin_mode(): {device}.mode is not \"in\" or \"out\"")
 
-def exfans_on():
+def exfans_on(Logic_instance):
     for i in (i for i in devices if isinstance(i,exhaust.Exhaust)):
         if i.pin!=0:
-            GPIO.output(i.pin,on)
+            Logic_instance.pin_states[i.pin]=1
             i.on()
 
-def exfans_off():
+def exfans_off(Logic_instance):
     for i in (i for i in devices if isinstance(i,exhaust.Exhaust)):
-        GPIO.output(i.pin,off)
+        Logic_instance.pin_states[i.pin]=0
         i.off()
 
-def maufans_on():
+def maufans_on(Logic_instance):
     for i in (i for i in devices if isinstance(i,mau.Mau)):
         if i.pin!=0:
-            GPIO.output(i.pin,on)
+            Logic_instance.pin_states[i.pin]=1
             i.on()
 
-def maufans_off():
+def maufans_off(Logic_instance):
     for i in (i for i in devices if isinstance(i,mau.Mau)):
-        GPIO.output(i.pin,off)
+        Logic_instance.pin_states[i.pin]=0
         i.off()
 
-def lights_on():
+def lights_on(Logic_instance):
     for i in (i for i in devices if isinstance(i,light.Light)):
         if i.pin!=0:
-            GPIO.output(i.pin,on)
+            Logic_instance.pin_states[i.pin]=1
             i.on()
 
-def lights_off():
+def lights_off(Logic_instance):
     for i in (i for i in devices if isinstance(i,light.Light)):
-        GPIO.output(i.pin,off)
+        Logic_instance.pin_states[i.pin]=0
         i.off()
 
-def dry_on():
+def dry_on(Logic_instance):
     for i in (i for i in devices if isinstance(i,drycontact.DryContact)):
         if i.pin!=0:
-            GPIO.output(i.pin,on)
+            Logic_instance.pin_states[i.pin]=1
             i.on()
 
-def dry_off():
+def dry_off(Logic_instance):
     for i in (i for i in devices if isinstance(i,drycontact.DryContact)):
-        GPIO.output(i.pin,off)
+        Logic_instance.pin_states[i.pin]=0
         i.off()
 
-def gv_on():
+def gv_on(Logic_instance):
     for i in (i for i in devices if isinstance(i,gas_valve.GasValve)):
         if i.pin!=0 and i.latched:
-            GPIO.output(i.pin,on)
+            Logic_instance.pin_states[i.pin]=1
             i.on()
 
-def gv_off():
+def gv_off(Logic_instance):
     for i in (i for i in devices if isinstance(i,gas_valve.GasValve)):
-        GPIO.output(i.pin,off)
+        Logic_instance.pin_states[i.pin]=0
         i.off()
 
 def gv_reset_all(*args):
@@ -189,6 +189,7 @@ def clean_list(list,element):
 
 class Logic():
     def __init__(self) -> None:
+        self.pin_states={}
         self.aux_state=[]
         self.state='Normal'
         self.running=False
@@ -231,31 +232,31 @@ class Logic():
             self.state='Fire'
             self.milo['micro_switch']=on
         elif self.moli['maint_override']==1:
-            dry_on()
-            gv_on()
-            exfans_off()
-            maufans_off()
+            dry_on(self)
+            gv_on(self)
+            exfans_off(self)
+            maufans_off(self)
             if self.moli['maint_override_light']==1:
-                lights_on()
+                lights_on(self)
             elif self.moli['maint_override_light']==0:
-                lights_off()
+                lights_off(self)
         else:
 
-            dry_on()
-            gv_on()
+            dry_on(self)
+            gv_on(self)
 
             if self.moli['exhaust']==on or fan_switch_on():
-                exfans_on()
+                exfans_on(self)
                 self.milo['exhaust']=on
             elif self.moli['exhaust']==off or not fan_switch_on():
                 if 'heat_sensor' not in self.aux_state:
-                    exfans_off()
+                    exfans_off(self)
                     self.milo['exhaust']=off
             if self.moli['mau']==on or fan_switch_on():
-                maufans_on()
+                maufans_on(self)
                 self.milo['mau']=on
             elif self.moli['mau']==off or not fan_switch_on():
-                maufans_off()
+                maufans_off(self)
                 self.milo['mau']=off
             if heat_sensor_active():
                 self.milo['heat_sensor']=on
@@ -263,11 +264,25 @@ class Logic():
             else:
                 self.milo['heat_sensor']=off
             if self.moli['lights']==on or light_switch_on():
-                lights_on()
+                lights_on(self)
                 self.milo['lights']=on
             elif self.moli['lights']==off or not light_switch_on():
-                lights_off()
+                lights_off(self)
                 self.milo['lights']=off
+
+    def fire(self):
+        if not self.fired:
+            exfans_on(self)
+            maufans_off(self)
+            lights_off(self)
+            dry_off(self)
+            gv_off(self)
+            self.fired = True
+        if not micro_switch_active():
+            self.fired = False
+            self.state='Normal'
+            self.milo['micro_switch']=off
+
     def heat_trip(self):
         self.sensor_target=time.time()+heat_sensor_timer
         self.aux_state.append('heat_sensor')
@@ -275,19 +290,18 @@ class Logic():
 
     def heat_sensor(self):
             if self.sensor_target>=time.time():
-                exfans_on()
-                maufans_on()
+                exfans_on(self)
+                maufans_on(self)
                 self.milo['exhaust']=on
                 self.milo['mau']=on
                 print('heat timer active')
             else:
                 if self.moli['exhaust']==off and self.moli['mau']==off:
-                    exfans_off()
-                    maufans_off()
+                    exfans_off(self)
+                    maufans_off(self)
                     self.milo['exhaust']=off
                     self.milo['mau']=off
                 clean_list(self.aux_state,'heat_sensor')
-
 
     def trouble(self):
     #heat sensor active
@@ -311,25 +325,6 @@ class Logic():
         else:
             self.milo['troubles']['actuation']=0
 
-    def fire(self):
-        if not self.fired:
-            exfans_on()
-            maufans_off()
-            lights_off()
-            dry_off()
-            gv_off()
-            self.fired = True
-        if not micro_switch_active():
-            self.fired = False
-            self.state='Normal'
-            self.milo['micro_switch']=off
-
-    def auxillary(self):
-        self.trouble()
-        if 'heat_sensor' in self.aux_state and not self.fired:
-            if not self.moli['maint_override']==1:
-                self.heat_sensor()
-
     def state_manager(self):
         if self.state=='Fire':
             self.fire()
@@ -338,9 +333,29 @@ class Logic():
             self.normal()
             print("normal state")
 
+    def auxillary(self):
+        self.trouble()
+        if 'heat_sensor' in self.aux_state and not self.fired:
+            if not self.moli['maint_override']==1:
+                self.heat_sensor()
+
+    def set_pins(self):
+        for i in available_pins:
+            GPIO.setup(i,GPIO.IN,pull_up_down = GPIO.PUD_DOWN)
+        for pin,state in self.pin_states.items():
+            if GPIO.gpio_function(pin)=='in':
+                continue
+            if GPIO.gpio_function(pin)=='out':
+                print(pin,state)
+                GPIO.output(pin,state)
+        self.pin_states={}
+
+
     def update(self):
         self.state_manager()
         self.auxillary()
+        self.set_pins()
+
 get_devices()
 fs=Logic()
 def logic():
