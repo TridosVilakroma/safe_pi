@@ -343,10 +343,9 @@ class Logic():
         for i in available_pins:
             GPIO.setup(i,GPIO.IN,pull_up_down = GPIO.PUD_DOWN)
         for pin,state in self.pin_states.items():
-            if GPIO.gpio_function(pin)=='in':
+            if GPIO.gpio_function(pin)==GPIO.IN:
                 continue
-            if GPIO.gpio_function(pin)=='out':
-                print(pin,state)
+            if GPIO.gpio_function(pin)==GPIO.OUT:
                 GPIO.output(pin,state)
         self.pin_states={}
 
