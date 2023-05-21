@@ -194,7 +194,6 @@ class Logic():
         self.state='Normal'
         self.running=False
         self.shut_off=False
-        self.fired=False
         self.sensor_target=time.time()
 
         '''two dictionaries are used to share data between two threads.
@@ -271,15 +270,12 @@ class Logic():
                 self.milo['lights']=off
 
     def fire(self):
-        if not self.fired:
-            exfans_on(self)
-            maufans_off(self)
-            lights_off(self)
-            dry_off(self)
-            gv_off(self)
-            self.fired = True
+        exfans_on(self)
+        maufans_off(self)
+        lights_off(self)
+        dry_off(self)
+        gv_off(self)
         if not micro_switch_active():
-            self.fired = False
             self.state='Normal'
             self.milo['micro_switch']=off
 
@@ -335,7 +331,7 @@ class Logic():
 
     def auxillary(self):
         self.trouble()
-        if 'heat_sensor' in self.aux_state and not self.fired:
+        if 'heat_sensor' in self.aux_state and self.state=='Normal':
             if not self.moli['maint_override']==1:
                 self.heat_sensor()
 
