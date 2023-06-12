@@ -7,6 +7,7 @@ supervisee_path = "/home/pi/Pi-ro-safe/main.py"
 
 while True:
     try:
+        os.chdir('/home/pi/Pi-ro-safe')
         run("python "+supervisee_path,shell=True, check=True,cwd=os.getcwd())
         break #if graceful exit we stop supervising
     except:
