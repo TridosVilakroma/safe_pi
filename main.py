@@ -16,6 +16,9 @@ from device_classes.heat_sensor import HeatSensor
 from messages import messages
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
+Config.set('graphics', 'width', '1200')
+Config.set('graphics', 'height', '800')
+
 import kivy
 import logic,lang_dict,pindex,general
 if os.name == 'nt':
@@ -72,14 +75,10 @@ from kivy.uix.accordion import Accordion, AccordionItem
 kivy.require('2.0.0')
 current_language=lang_dict.english
 
-Config.set('graphics', 'width', '1200')
-Config.set('graphics', 'height', '800')
-
 if os.name == 'nt':
     preferences_path='logs/configurations/hood_control.ini'
 if os.name == 'posix':
     preferences_path='/home/pi/Pi-ro-safe/logs/configurations/hood_control.ini'
-    # Window.fullscreen = 'auto'
 
 background_image=r'media/patrick-tomasso-GXXYkSwndP4-unsplash.jpg'
 msg_icon_image=r'media/msg_icon.png'
