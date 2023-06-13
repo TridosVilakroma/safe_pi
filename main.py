@@ -5734,6 +5734,7 @@ class NetworkScreen(Screen):
 
 
 def listen(app_object,*args):
+    print(Window.size)
     event_log=logic.fs.milo
     pass_flag=False
     if len(app_object.children)== 2:
