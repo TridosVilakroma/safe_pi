@@ -16,8 +16,9 @@ from device_classes.heat_sensor import HeatSensor
 from messages import messages
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
-Config.set('graphics', 'width', '1200')
+Config.set('graphics', 'width', '1280')
 Config.set('graphics', 'height', '800')
+Config.set('graphics', 'borderless', '1')
 
 import kivy
 import logic,lang_dict,pindex,general
