@@ -16,9 +16,7 @@ from device_classes.heat_sensor import HeatSensor
 from messages import messages
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
-Config.set('graphics', 'width', '1280')
-Config.set('graphics', 'height', '800')
-Config.set('graphics', 'borderless', '1')
+Config.set('graphics', 'fullscreen', 'auto')
 
 import kivy
 import logic,lang_dict,pindex,general
@@ -5735,7 +5733,6 @@ class NetworkScreen(Screen):
 
 
 def listen(app_object,*args):
-    print(Window.size)
     event_log=logic.fs.milo
     pass_flag=False
     if len(app_object.children)== 2:
