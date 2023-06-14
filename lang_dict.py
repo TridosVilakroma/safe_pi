@@ -4,9 +4,9 @@ english={
     'ramp_text' : "[size=20][b][i][color=#000000]Ramp In Progress",
     'lights' : "[size=32][b][color=#000000] Lights [/color][/b][/size]",
     'version_info' : '''[size=16][color=#000000]      Hood Control[/size]
-[size=22][i]-Version 1.0.0-[/i][/color][/size]''',
+[size=22][i]-Version 2.0.0-[/i][/color][/size]''',
     'version_info_white' : '''[size=16][color=#ffffff]      Hood Control[/size]
-[size=22][i]-Version 1.0.0-[/i][/color][/size]''',
+[size=22][i]-Version 2.0.0-[/i][/color][/size]''',
     'alert' : "[size=75][b][color=#000000]  System Activated [/color][/b][/size]",
     'alert_acknowledged' : "[size=32][b][color=#000000]System Activated\n       -Fire Safe-\n   270-761-0637 [/color][/b][/size]",
     'acknowledge' : "[size=28][color=#ffffff]Acknowledge",
