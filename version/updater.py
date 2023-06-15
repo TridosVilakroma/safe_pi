@@ -1,5 +1,6 @@
 from os import getcwd,walk
 from os.path import join, normpath, relpath
+from io import StringIO
 import hashlib
 import re
 
@@ -33,25 +34,27 @@ def get_files():
             if file[0] == '.':
                 #skip hidden files
                 continue
-            file_list.append(relpath(join(dir_path, file)))
-    print(file_list)
+            file_list.append(join(dir_path, file))
     return file_list
 
 def get_hashes():
+    #do not use on files >1 gb
     files = get_files()
     list_of_hashes = []
     for each_file in files:
         hash_md5 = hashlib.md5()
-        with open(each_file, "rb") as f:
-            for chunk in iter(lambda: f.read(4096), b""):
-                hash_md5.update(chunk)
+        with open(each_file, "r") as f:
+            for line in f.readlines():
+                line.replace('\n','')
+                line.replace('\r','')
+                hash_md5.update(line.encode())
         list_of_hashes.append(hash_md5.hexdigest())
     return alpha_num_sort(list_of_hashes)
 
 def generate_checksum():
     file_hashes=get_hashes()
     for i in file_hashes:
-        print(i)
+        print('file hash: ',i)
     hash_md5 = hashlib.md5()
     for file_hash in file_hashes:
         hash_md5.update(file_hash.encode('utf-8'))
