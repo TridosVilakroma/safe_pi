@@ -11,6 +11,9 @@ The real time data base can store a version tag/integrity checksum'''
 
 #download updates
 
+def get_update():
+    run(f"git clone https://github.com/TridosVilakroma/Pi-ro-safe.git version\update")
+
 #check download integrity
 
 def alpha_num_sort(iterable):
