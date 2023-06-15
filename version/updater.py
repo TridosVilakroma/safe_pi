@@ -20,7 +20,7 @@ def alpha_num_sort(iterable):
 
 def get_files():
     file_list=[]
-    for dir_path,dir_names,file_names in walk(normpath(getcwd())):
+    for dir_path,dir_names,file_names in walk("version/update"):
         if not file_names:
             #skip empty directories
             continue
@@ -43,26 +43,20 @@ def get_hashes():
     list_of_hashes = []
     for each_file in files:
         hash_md5 = hashlib.md5()
-        with open(each_file, "r") as f:
+        with open(each_file, "rb") as f:
             for line in f.readlines():
-                line.replace('\n','')
-                line.replace('\r','')
-                hash_md5.update(line.encode())
+                line.replace(b'\n',b'')
+                line.replace(b'\r',b'')
+                hash_md5.update(line)
         list_of_hashes.append(hash_md5.hexdigest())
     return alpha_num_sort(list_of_hashes)
 
 def generate_checksum():
     file_hashes=get_hashes()
-    for i in file_hashes:
-        print('file hash: ',i)
     hash_md5 = hashlib.md5()
     for file_hash in file_hashes:
         hash_md5.update(file_hash.encode('utf-8'))
     return hash_md5.hexdigest()
-
-
-if __name__ == '__main__':
-    print(generate_checksum())
 
 #prompt user to update
 
