@@ -1,5 +1,5 @@
 from os import getcwd,walk
-from os.path import join, normpath
+from os.path import join, normpath, relpath
 import hashlib
 import re
 
@@ -33,7 +33,8 @@ def get_files():
             if file[0] == '.':
                 #skip hidden files
                 continue
-            file_list.append(join(dir_path, file))
+            file_list.append(relpath(join(dir_path, file)))
+    print(file_list)
     return file_list
 
 def get_hashes():
