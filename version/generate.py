@@ -1,3 +1,6 @@
+"""to generate a checksum of all files within a directories tree structure
+cd into the toplevel directory of the tree  and call this script"""
+
 from os import getcwd,walk
 from os.path import join, normpath, relpath
 from io import StringIO
