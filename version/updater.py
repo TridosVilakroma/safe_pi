@@ -49,6 +49,8 @@ def get_hashes():
 
 def generate_checksum():
     file_hashes=get_hashes()
+    for i in file_hashes:
+        print(i)
     hash_md5 = hashlib.md5()
     for file_hash in file_hashes:
         hash_md5.update(file_hash.encode('utf-8'))
