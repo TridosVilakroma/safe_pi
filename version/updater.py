@@ -44,10 +44,10 @@ def get_hashes():
     for each_file in files:
         hash_md5 = hashlib.md5()
         with open(each_file, "rb") as f:
-            for line in f.readlines():
-                line.replace(b'\n',b'')
-                line.replace(b'\r',b'')
-                hash_md5.update(line)
+            file=f.read()
+            file=file.replace(b'\n',b'')
+            file=file.replace(b'\r',b'')
+            hash_md5.update(file)
         list_of_hashes.append(hash_md5.hexdigest())
     return alpha_num_sort(list_of_hashes)
 
