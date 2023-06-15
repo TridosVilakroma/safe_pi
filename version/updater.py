@@ -1,3 +1,8 @@
+from os import getcwd,walk
+from os.path import join, normpath
+import hashlib
+import re
+
 #check for remote version
 '''server.py should handle this
 The real time data base can store a version tag/integrity checksum'''
@@ -5,11 +10,6 @@ The real time data base can store a version tag/integrity checksum'''
 #download updates
 
 #check download integrity
-from os import listdir, getcwd
-from os.path import isfile, join, normpath, basename
-import hashlib
-
-import re
 
 def alpha_num_sort(iterable):
     """ Sort the given iterable in the way that humans expect."""
@@ -18,14 +18,23 @@ def alpha_num_sort(iterable):
     return sorted(iterable, key = alphanum_key)
 
 def get_files():
-    import glob
-    for f in glob.glob('logs/**', recursive=True):
-        print(f)
-
-    return
-    #need to return all files in given directory
-    current_path = normpath(getcwd())
-    return [join(current_path, f) for f in listdir(current_path) if isfile(join(current_path, f))]
+    file_list=[]
+    for dir_path,dir_names,file_names in walk(normpath(getcwd())):
+        if not file_names:
+            #skip empty directories
+            continue
+        if '.' in dir_path:
+            #skip hidden folders
+            continue
+        if '__pycache__' in dir_path:
+            #skip python cache generated folders
+            continue
+        for file in file_names:
+            if file[0] == '.':
+                #skip hidden files
+                continue
+            file_list.append(join(dir_path, file))
+    return file_list
 
 def get_hashes():
     files = get_files()
@@ -47,8 +56,7 @@ def generate_checksum():
 
 
 if __name__ == '__main__':
-    get_files()
-    # print(generate_checksum())
+    print(generate_checksum())
 
 #prompt user to update
 
