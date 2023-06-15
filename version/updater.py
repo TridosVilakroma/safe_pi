@@ -1,5 +1,6 @@
 from os import getcwd,walk
 from os.path import join, normpath, relpath
+from subprocess import run
 from io import StringIO
 import hashlib
 import re
@@ -61,6 +62,9 @@ def generate_checksum():
 #prompt user to update
 
 #update
+
+def update():
+    run(f"git pull version/update/Pi-ro-safe main --allow-unrelated-histories")
 
 #prompt user to restart
 
