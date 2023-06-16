@@ -14,6 +14,7 @@ from device_classes.switch_fans import SwitchFans
 from device_classes.heat_sensor import HeatSensor
 
 from messages import messages
+from server import server
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
 import kivy
@@ -3294,7 +3295,6 @@ class PreferenceScreen(Screen):
         self.widgets['account']=account
         account.ref='account'
         account.bind(on_release=self.account_func)
-        account.disabled=True
 
         network=RoundedButton(text=current_language['network'],
                         size_hint =(1, 1),
@@ -3305,7 +3305,7 @@ class PreferenceScreen(Screen):
         self.widgets['network']=network
         network.ref='network'
         network.bind(on_release=self.network_func)
-        network.disabled=True
+        # network.disabled=True
 
         clean_mode=RoundedButton(text=current_language['clean_mode'],
                         size_hint =(1, 1),
@@ -5204,6 +5204,7 @@ class AccountScreen(Screen):
         super(AccountScreen,self).__init__(**kwargs)
         self.cols = 2
         self.widgets={}
+        self.scheduled_funcs=[]
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
 
         back=RoundedButton(
@@ -5257,8 +5258,24 @@ class AccountScreen(Screen):
             size_hint =(.9, .005),
             pos_hint = {'x':.05, 'y':.85})
 
+        information_email=TextInput(
+            disabled=True,
+            multiline=False,
+            hint_text='Enter account email',
+            size_hint =(.9, .2),
+            pos_hint = {'x':.05, 'y':.5})
+        information_email.bind(on_text_validate=self.email_validate)
+        self.widgets['information_email']=information_email
 
-
+        information_password=TextInput(
+            disabled=True,
+            multiline=False,
+            password=True,
+            hint_text='Enter password',
+            size_hint =(.9, .2),
+            pos_hint = {'x':.05, 'y':.20})
+        information_password.bind(on_text_validate=self.password_validate)
+        self.widgets['information_password']=information_password
 
         details_box=RoundedColorLayout(
             bg_color=(0,0,0,.85),
@@ -5281,7 +5298,13 @@ class AccountScreen(Screen):
             size_hint =(.9, .005),
             pos_hint = {'x':.05, 'y':.85})
 
-
+        details_body=Label(
+            text=current_language['details_body'],
+            markup=True,
+            size_hint =(.9, .75),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['details_body']=details_body
+        details_body.ref='details_body'
 
         status_box=RoundedColorLayout(
             bg_color=(0,0,0,.85),
@@ -5340,16 +5363,16 @@ class AccountScreen(Screen):
             pos_hint = {'center_x':.9, 'center_y':.5375},)
         self.widgets['status_box']=status_box
 
-        side_bar_reconnect=RoundedButton(
-            text=current_language['side_bar_reconnect'],
+        side_bar_connect=RoundedButton(
+            text=current_language['side_bar_connect'],
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.875},
             background_normal='',
             background_color=(0,0,0,.9),
             markup=True)
-        self.widgets['side_bar_reconnect']=side_bar_reconnect
-        side_bar_reconnect.ref='side_bar_reconnect'
-        # side_bar_reconnect.bind(on_press=self.side_bar_reconnect)
+        self.widgets['side_bar_connect']=side_bar_connect
+        side_bar_connect.ref='side_bar_connect'
+        side_bar_connect.bind(on_press=self.setup_connection)
 
         side_bar_unlink=RoundedButton(
             text=current_language['side_bar_unlink'],
@@ -5360,7 +5383,7 @@ class AccountScreen(Screen):
             markup=True)
         self.widgets['side_bar_unlink']=side_bar_unlink
         side_bar_unlink.ref='side_bar_unlink'
-        # side_bar_unlink.bind(on_press=self.side_bar_unlink)
+        side_bar_unlink.bind(on_press=self.remove_connection)
 
         side_bar_add=RoundedButton(
             text=current_language['side_bar_add'],
@@ -5414,16 +5437,19 @@ class AccountScreen(Screen):
 
         information_box.add_widget(information_title)
         information_box.add_widget(information_seperator)
+        information_box.add_widget(information_email)
+        information_box.add_widget(information_password)
 
         details_box.add_widget(details_title)
         details_box.add_widget(details_seperator)
+        details_box.add_widget(details_body)
 
         status_box.add_widget(status_title)
         status_box.add_widget(status_seperator)
         status_box.add_widget(status_scroll)
         status_scroll.add_widget(status_scroll_layout)
 
-        side_bar_box.add_widget(side_bar_reconnect)
+        side_bar_box.add_widget(side_bar_connect)
         side_bar_box.add_widget(side_bar_unlink)
         side_bar_box.add_widget(side_bar_add)
         side_bar_box.add_widget(side_bar_remove)
@@ -5434,7 +5460,6 @@ class AccountScreen(Screen):
         self.add_widget(back)
         self.add_widget(back_main)
         self.add_widget(seperator_line)
-        self.add_widget(account_admin_hint)
         self.add_widget(information_box)
         self.add_widget(details_box)
         self.add_widget(status_box)
@@ -5446,15 +5471,99 @@ class AccountScreen(Screen):
     def account_back_main (self,button):
         self.parent.transition = SlideTransition(direction='down')
         self.manager.current='main'
+    def setup_connection(self,*args):
+        self.auth_server()
+    def remove_connection(self,*args):
+        self.unlink_server()
+    def email_validate(self,button,*args):
+        print(button)
+        config=App.get_running_app().config_
+        config.set('account','email',f'{button.text}')
+        with open(preferences_path,'w') as configfile:
+            config.write(configfile)
+    def password_validate(self,button,*args):
+        config=App.get_running_app().config_
+        config.set('account','password',f'{button.text}')
+        with open(preferences_path,'w') as configfile:
+            config.write(configfile)
 
     def check_admin_mode(self,*args):
         if App.get_running_app().admin_mode_start>time.time():
-            pass
+            if self.widgets['account_admin_hint'].parent:
+                self.remove_widget(self.widgets['account_admin_hint'])
+            self.widgets['information_email'].disabled=False
+            self.widgets['information_password'].disabled=False
+            self.widgets['side_bar_connect'].disabled=False
+            self.widgets['side_bar_connect'].shape_color.rgba=(0,0,0,.9)
+            self.widgets['side_bar_unlink'].disabled=False
+            self.widgets['side_bar_unlink'].shape_color.rgba=(0,0,0,.9)
+            self.widgets['side_bar_add'].disabled=False
+            self.widgets['side_bar_add'].shape_color.rgba=(0,0,0,.9)
+            self.widgets['side_bar_remove'].disabled=False
+            self.widgets['side_bar_remove'].shape_color.rgba=(0,0,0,.9)
+            self.widgets['side_bar_refresh'].disabled=False
+            self.widgets['side_bar_refresh'].shape_color.rgba=(0,0,0,.9)
+        else:
+            if not self.widgets['account_admin_hint'].parent:
+                self.add_widget(self.widgets['account_admin_hint'])
+            self.widgets['information_email'].disabled=True
+            self.widgets['information_password'].disabled=True
+            self.widgets['side_bar_connect'].disabled=True
+            self.widgets['side_bar_connect'].shape_color.rgba=(.1,.1,.1,.8)
+            self.widgets['side_bar_unlink'].disabled=True
+            self.widgets['side_bar_unlink'].shape_color.rgba=(.1,.1,.1,.8)
+            self.widgets['side_bar_add'].disabled=True
+            self.widgets['side_bar_add'].shape_color.rgba=(.1,.1,.1,.8)
+            self.widgets['side_bar_remove'].disabled=True
+            self.widgets['side_bar_remove'].shape_color.rgba=(.1,.1,.1,.8)
+            self.widgets['side_bar_refresh'].disabled=True
+            self.widgets['side_bar_refresh'].shape_color.rgba=(.1,.1,.1,.8)
 
 
     def on_pre_enter(self, *args):
         self.check_admin_mode()
+        if App.get_running_app().config_['account']['email']:
+            self.widgets['information_email'].text=App.get_running_app().config_['account']['email']
+            self.widgets['information_password'].text=App.get_running_app().config_['account']['password']
         return super().on_pre_enter(*args)
+
+    def auth_server(self,*args):
+        config=App.get_running_app().config_
+        account_email=config['account']['email']
+        account_password=config['account']['password']
+        if not (account_email and account_password):
+            return
+        if hasattr(server,'user'):
+            return
+        server.device_requests=server._device_requests.copy()
+        server.authUser(f'{account_email}', f'{account_password}')
+        self._keep_ref(self.listen_to_server,.75)
+        self._keep_ref(server.refresh_token,45*60)#45 minutes; token expires every hour.
+
+    def listen_to_server(*args):
+        if 1 not in server.device_requests.values():
+            return
+
+        main_screen=App.get_running_app().context_screen.get_screen('main')
+        for i in server.device_requests.items():
+            if not i[1]:
+                continue
+            if i[0] in main_screen.widgets:
+                main_screen.widgets[i[0]].trigger_action()
+
+        server.reset_reqs()
+
+    def _keep_ref(self,func_to_sched,interval,*args):
+        log=self.scheduled_funcs
+        log.append(Clock.schedule_interval(func_to_sched,interval))
+
+    def unlink_server(self,*args):
+        if not hasattr(server,'user'):
+            return
+        for i in self.scheduled_funcs:
+            i.cancel()
+        self.scheduled_funcs=[]
+        delattr(server,'user')
 
 class NetworkScreen(Screen):
     def __init__(self, **kwargs):
@@ -5905,7 +6014,7 @@ class Hood_Control(App):
         settings_setter(self.config_)
         Clock.schedule_once(partial(language_setter,config=self.config_))
         self.context_screen=ScreenManager()
-        # self.context_screen.add_widget(AccountScreen(name='account'))
+        self.context_screen.add_widget(NetworkScreen(name='network'))
         self.context_screen.add_widget(ControlGrid(name='main'))
         self.context_screen.add_widget(ActuationScreen(name='alert'))
         self.context_screen.add_widget(SettingsScreen(name='settings'))
@@ -5918,13 +6027,14 @@ class Hood_Control(App):
         self.context_screen.add_widget(TroubleScreen(name='trouble'))
         self.context_screen.add_widget(MountScreen(name='mount'))
         self.context_screen.add_widget(AccountScreen(name='account'))
-        self.context_screen.add_widget(NetworkScreen(name='network'))
+        # self.context_screen.add_widget(NetworkScreen(name='network'))
         listener_event=Clock.schedule_interval(partial(listen, self.context_screen),.75)
         device_update_event=Clock.schedule_interval(partial(logic.update_devices),.75)
         device_save_event=Clock.schedule_interval(partial(logic.save_devices),600)
         Clock.schedule_interval(self.context_screen.get_screen('main').widgets['clock_label'].update, 1)
         Clock.schedule_once(messages.refresh_active_messages)
         Clock.schedule_interval(messages.refresh_active_messages,10)
+        Clock.schedule_once(self.context_screen.get_screen('account').auth_server)
         Window.bind(on_request_close=self.exit_check)
         return self.context_screen
 
@@ -5941,6 +6051,7 @@ def settings_setter(config):
         logic.heat_sensor_timer=900
     elif heat_duration == '1800':
         logic.heat_sensor_timer=1800
+
     report_status=config.getboolean('config','report_pending')
     App.get_running_app().report_pending=report_status
 
@@ -5979,4 +6090,6 @@ finally:
     print("devices saved")
     logic.clean_exit()
     print("pins set as inputs")
+    server.clean_exit()
+    print("streams closed")
     quit()
