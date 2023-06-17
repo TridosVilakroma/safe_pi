@@ -102,4 +102,4 @@ def onerror(func, path, exc_info):
         raise
 
 def remove_update_data():
-    rmtree('version/update/Pi-ro-safe',ignore_errors=False,onerror=onerror)
+    rmtree('version/update/Pi-ro-safe',ignore_errors=True,onerror=onerror)
