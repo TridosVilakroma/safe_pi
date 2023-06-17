@@ -95,6 +95,7 @@ delete_down=r'media/delete_down.png'
 reset_valve=r'media/redo.png'
 gray_seperator_line=r'media/line_gray.png'
 settings_icon=r'media/menu_lines.png'
+red_dot=r'media/red_dot.png'
 
 class PinPop(Popup):
     def __init__(self,name, **kwargs):
@@ -1333,6 +1334,43 @@ class AnimatedCarousel(Carousel):
                 p -= (2.625 / 2.75)
                 return 7.5625 * p * p + .984375
         return 1.0-out(progress)
+
+class NotificationBadge(ButtonBehavior,Image):
+    def __init__(self, **kwargs):
+        source=red_dot
+        super(NotificationBadge,self).__init__(
+            source=source,
+            allow_stretch=False,
+            keep_ratio=True,
+            **kwargs)
+        self.opacity=.9
+
+    def align(self,*args):
+        parent=self.parent
+        self.width=parent.width*.3
+        self.height=parent.height*.3
+        self.top=parent.top-parent.height*.025
+        self.right=parent.right-parent.width*.15
+
+    def on_parent(self,*args):
+        if not self.parent:
+            return
+        parent=self.parent
+        self.width=parent.width*.3
+        self.height=parent.height*.3
+        self.top=parent.top-parent.height*.025
+        self.right=parent.right-parent.width*.15
+        parent.bind(size=self.align)
+        parent.bind(pos=self.align)
+        if hasattr(parent,'widgets'):
+            parent.widgets['notification_badge']=self
+
+    def clear(self,*args):
+        self.parent.unbind(size=self.align,pos=self.align)
+        if hasattr(self.parent,'widgets'):
+            if 'notification_badge' in self.parent.widgets:
+                del self.parent.widgets['notification_badge']
+        self.parent.remove_widget(self)
 
 #<<<<<<<<<<>>>>>>>>>>#
 
@@ -6014,7 +6052,7 @@ class Hood_Control(App):
         settings_setter(self.config_)
         Clock.schedule_once(partial(language_setter,config=self.config_))
         self.context_screen=ScreenManager()
-        self.context_screen.add_widget(NetworkScreen(name='network'))
+        # self.context_screen.add_widget(NetworkScreen(name='network'))
         self.context_screen.add_widget(ControlGrid(name='main'))
         self.context_screen.add_widget(ActuationScreen(name='alert'))
         self.context_screen.add_widget(SettingsScreen(name='settings'))
@@ -6027,7 +6065,7 @@ class Hood_Control(App):
         self.context_screen.add_widget(TroubleScreen(name='trouble'))
         self.context_screen.add_widget(MountScreen(name='mount'))
         self.context_screen.add_widget(AccountScreen(name='account'))
-        # self.context_screen.add_widget(NetworkScreen(name='network'))
+        self.context_screen.add_widget(NetworkScreen(name='network'))
         listener_event=Clock.schedule_interval(partial(listen, self.context_screen),.75)
         device_update_event=Clock.schedule_interval(partial(logic.update_devices),.75)
         device_save_event=Clock.schedule_interval(partial(logic.save_devices),600)
