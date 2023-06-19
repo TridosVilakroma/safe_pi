@@ -15,6 +15,9 @@ from device_classes.heat_sensor import HeatSensor
 
 from messages import messages
 from server import server
+import version.updater as UpdateService
+from version.version import version as VERSION
+UpdateService.current_version=VERSION
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
 import kivy
@@ -633,11 +636,14 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
             cgw=cg.widgets
             cl=cgw['clock_label']
             msg=cgw['messenger_button']
+            if hasattr(self,'pop_wid_event'):
+                self.pop_wid_event.cancel()
             self.contract()
             self.align_bottom()
             self.unopaque()
             self.lighten()
             msg.clear_widgets()
+            cgw['message_label'].text=f'[size=50][color=#ffffff][b]{messages.active_messages[0].card}'
             if cl.opacity==1:
                 cl._create_clock()
             else:
@@ -706,6 +712,7 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
         anim.start(self)
 
     def populate_widgets(self,*args):
+        self.clear_widgets()
         scroll_color=(.4,.4,.4,.85)
         yellow=(245/250, 216/250, 41/250,.9)
 
@@ -755,6 +762,8 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
             padding=5)
         # Make sure the height is such that there is something to scroll.
         scroll_layout.bind(minimum_height=scroll_layout.setter('height'))
+        self.widgets['scroll_layout']=scroll_layout
+        scroll_layout.widgets=[]
         for i in messages.active_messages:
             btn = RoundedButton(
                 background_normal='',
@@ -764,6 +773,11 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
                 height=40)
             btn.bind(on_release=partial(self.load_selected_msg,i))
             scroll_layout.add_widget(btn)
+            scroll_layout.widgets.append(btn)
+            btn.message=i
+            btn.widgets={}
+            if not i.seen:
+                btn.add_widget(NotificationBadge())
 
         msg_scroll_title=LabelColor(
             bg_color=scroll_color,
@@ -785,9 +799,12 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
         self.add_widget(msg_scroll_title)
 
     def load_selected_msg(self,message,*args):
+        self.filter_badges()
+        message.seen=True
         try:
             self.remove_widget(self.widgets['selected_msg_title'])
             self.remove_widget(self.widgets['selected_msg_body'])
+            self.remove_widget(self.widgets['selected_msg_button'])
         except KeyError:
             pass
         selected_msg_title=Label(
@@ -810,6 +827,25 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
         selected_msg_body.ref='selected_msg_body'
         self.add_widget(selected_msg_body)
 
+        if hasattr(message,'callbacks'):
+            selected_msg_button=RoundedButton(
+                text=f'[size=30][color=#000000][b]{message.name}',
+                size_hint =(.4, .1),
+                pos_hint = {'x':.06, 'y':.215},
+                background_normal='',
+                background_color=(.4,.4,.4,.85),
+                markup=True)
+            self.widgets['selected_msg_button']=selected_msg_button
+            for i in message.callbacks:
+                selected_msg_button.bind(on_release=i)
+            self.add_widget(selected_msg_button)
+
+    def filter_badges(self,*args):
+        for btn in self.widgets['scroll_layout'].widgets:
+            if btn.message.seen:
+                if 'notification_badge' in btn.widgets:
+                    btn.widgets['notification_badge'].clear()
+
     def evoke(self,*args):
         cg=App.get_running_app().context_screen.get_screen('main')
         wc=cg.widgets['widget_carousel']
@@ -831,6 +867,9 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
                 self.clock_stack['fade']=cl.fade
                 if wc.opacity==0:
                     cg.widgets['widget_carousel'].index=1
+
+    def schedule_refresh(self,*args):
+        self.pop_wid_event=Clock.schedule_once(self.populate_widgets,1)
 
     def _delete_clock(self,*args):
         if 'widget_fade' in self.clock_stack:
@@ -1563,6 +1602,8 @@ class ControlGrid(Screen):
         self.widgets['msg_icon']=msg_icon
         msg_icon.bind(on_press=self.msg_icon_func)
         msg_icon.color=(1,1,1,.65)
+        msg_icon.widgets={}
+        Clock.schedule_once(self.start_nb_clock,5)
 
         fs_logo=IconButton(source=logo,
                 size_hint_x=.1,
@@ -1716,6 +1757,25 @@ class ControlGrid(Screen):
         self.widgets['clock_label'].animate()
     def on_pre_leave(self, *args):
         self.widgets['messenger_button'].redock()
+    def msg_icon_notifications(self,*args):
+        unseen_messages=[i for i in messages.active_messages if i.seen==False]
+        messenger=self.widgets['messenger_button']
+        if any(unseen_messages):
+            if 'notification_badge' not in self.widgets['msg_icon'].widgets:
+                self.widgets['msg_icon'].add_widget(NotificationBadge())
+            if messenger.pos_hint=={'center_x':.5,'center_y':.55}:#undocked
+                if 'scroll_layout' in messenger.widgets:
+                    listed_messages=[i.message for i in messenger.widgets['scroll_layout'].widgets]
+                    if any([i for i in unseen_messages if i not in listed_messages]):
+                        messenger.populate_widgets()
+            if messenger.size_hint==[1,1]:#docked
+                self.widgets['message_label'].text=f'[size=50][color=#ffffff][b]{messages.active_messages[0].card}'
+        else:
+            if 'notification_badge' in self.widgets['msg_icon'].widgets:
+                self.widgets['msg_icon'].widgets['notification_badge'].clear()
+    def start_nb_clock(self,*args):
+        Clock.schedule_interval(self.msg_icon_notifications,.75)
+
 
     def language_overlay(self):
         overlay_menu=self.widgets['overlay_menu']
@@ -6041,6 +6101,23 @@ def listen(app_object,*args):
                 trouble_display.remove_widget(troubles_screen.widgets['actuation_trouble'])
                 del troubles_screen.widgets['actuation_trouble']
 
+def listen_to_UpdateService(*args):
+    screen_manager=App.get_running_app().context_screen
+    cg=screen_manager.get_screen('main')
+    msg_icon=cg.widgets['msg_icon']
+    if UpdateService.update_prompt:
+        if 'update' not in messages.active_messages:
+            messages.activate('update',(UpdateService.update_system,
+                                        partial(messages.deactivate,'update'),
+                                        cg.widgets['messenger_button'].schedule_refresh))
+            messages.refresh_active_messages()
+    if UpdateService.reboot_prompt:
+        if 'reboot' not in messages.active_messages:
+            messages.activate('reboot',(UpdateService.reboot,
+                                        partial(messages.deactivate,'reboot'),
+                                        cg.widgets['messenger_button'].schedule_refresh))
+            messages.refresh_active_messages()
+
 
 class Hood_Control(App):
     def build(self):
@@ -6067,12 +6144,14 @@ class Hood_Control(App):
         self.context_screen.add_widget(AccountScreen(name='account'))
         self.context_screen.add_widget(NetworkScreen(name='network'))
         listener_event=Clock.schedule_interval(partial(listen, self.context_screen),.75)
+        Clock.schedule_interval(listen_to_UpdateService,.75)
         device_update_event=Clock.schedule_interval(partial(logic.update_devices),.75)
         device_save_event=Clock.schedule_interval(partial(logic.save_devices),600)
         Clock.schedule_interval(self.context_screen.get_screen('main').widgets['clock_label'].update, 1)
         Clock.schedule_once(messages.refresh_active_messages)
         Clock.schedule_interval(messages.refresh_active_messages,10)
         Clock.schedule_once(self.context_screen.get_screen('account').auth_server)
+        Clock.schedule_interval(UpdateService.update,10)
         Window.bind(on_request_close=self.exit_check)
         return self.context_screen
 
