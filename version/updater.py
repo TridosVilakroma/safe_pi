@@ -36,7 +36,7 @@ def get_update():
         now=time.time()
         if now>last_download+86400: #attempt once a day to perserve bandwidth
             last_download=now
-            completed_download=run(f"git clone https://github.com/TridosVilakroma/Pi-ro-safe.git version/update/Pi-ro-safe")
+            completed_download=run(f"git clone https://github.com/TridosVilakroma/Pi-ro-safe.git version/update/Pi-ro-safe",shell=True)
             if completed_download.returncode:
                 #non-zero return code indicates downloaod error
                 remove_update_data()
@@ -109,7 +109,7 @@ def update_system(*args):
         reboot_prompt=1
         update_prompt=0
         return
-    completed_update=run(f"git pull version/update/Pi-ro-safe main --allow-unrelated-histories")
+    completed_update=run(f"git pull version/update/Pi-ro-safe main --allow-unrelated-histories",shell=True)
     if completed_update.returncode:
         #non-zero return code indicates update error
         reboot_prompt=0
@@ -132,7 +132,7 @@ def  reboot(*args):
     if os.name == 'nt':
         print('version/updater.py reboot(): System reboot called')
     if os.name == 'posix':
-        run('sudo reboot now)')
+        run('sudo reboot now',shell=True)
 
 ##########delete update download##########
 
