@@ -6,13 +6,13 @@ from os.path import join, normpath, relpath
 from subprocess import run
 from io import StringIO
 
+update_available=1
+download_integity='10559fe4f9cc9654d11bf1b15319069e'
 last_download=0
-update_available=0
 current_version=0
 available_version=0
 download_complete=0
 checksum=0
-download_integity=0
 update_prompt=0
 reboot_prompt=0
 
@@ -41,8 +41,8 @@ def get_update():
                 #non-zero return code indicates downloaod error
                 remove_update_data()
                 download_complete=0
-            else:
-                download_complete=1
+    else:
+        download_complete=1
 
 
 ##########check download integrity##########
@@ -95,31 +95,40 @@ def generate_checksum():
 
 ##########prompt user to update##########
 
-'''handled by main.py listen()
+'''handled by main.py listen_to_UpdateService()
 it is observing update_prompt
 once update_prompt is set to 1 it pushes a message and
 activates a NotificationBadge on the msg_icon'''
 
 ##########update##########
 
-def update():
+def update_system(*args):
+    global reboot_prompt,update_prompt
+    if  os.name=='nt':
+        print('version/updater.py update_system(): update called')
+        reboot_prompt=1
+        update_prompt=0
+        return
     completed_update=run(f"git pull version/update/Pi-ro-safe main --allow-unrelated-histories")
     if completed_update.returncode:
         #non-zero return code indicates update error
         reboot_prompt=0
     else:
         reboot_prompt=1
+        update_prompt=0
 
 ##########prompt user to restart##########
 
-'''handled by main.py listen()
+'''handled by main.py listen_to_UpdateService()
 it is observing reboot_prompt
 once reboot_prompt is set to 1 it pushes a message and
 activates a NotificationBadge on the msg_icon'''
 
 ##########restart##########
 
-def  reboot():
+def  reboot(*args):
+    global reboot_prompt
+    reboot_prompt=0
     if os.name == 'nt':
         print('version/updater.py reboot(): System reboot called')
     if os.name == 'posix':
@@ -176,7 +185,8 @@ def update(*args):
     if not all((checksum, download_integity, download_complete)):
         return
     if checksum == download_integity:
-        update_prompt=1
+        if not reboot_prompt:
+            update_prompt=1
     else:
         update_prompt=0
         checksum=0
