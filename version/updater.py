@@ -1,5 +1,4 @@
-import hashlib, time
-import re, os
+import hashlib,time,importlib,re,os
 from shutil import rmtree
 from os import getcwd,walk
 from os.path import join, normpath, relpath
@@ -172,7 +171,8 @@ def update(*args):
     else:
         if available_version:
             try:
-                from version.version import version as UPDATE_VERSION
+                update_version=importlib.import_module('version/update/Pi-ro-safe/version/version.py')
+                UPDATE_VERSION=update_version.version
                 if available_version != UPDATE_VERSION:
                     print('version/updater.py update(): downloaded update version does not match hosted version; removing update data')
                     remove_update_data()
