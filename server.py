@@ -121,6 +121,8 @@ class Db_service():
         data=self.db.child('version').get().val()
         UpdateService.available_version=data['version']
         UpdateService.download_integity=data['checksum']
+        if UpdateService.available_version!=UpdateService.current_version:
+                UpdateService.update_available=1
 
     def version_stream_handler(self, response):
         if 'version' in response['path']:
