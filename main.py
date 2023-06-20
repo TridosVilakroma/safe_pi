@@ -1375,7 +1375,12 @@ class AnimatedCarousel(Carousel):
         return 1.0-out(progress)
 
 class NotificationBadge(ButtonBehavior,Image):
-    def __init__(self, **kwargs):
+    '''`NotificationBadge` to add to widgets that need interaction.
+    
+    References to `self` are automatically added to `parent.widgets` under `key` 'notification_badge',
+    and cleared when `self.clear()` is called'''
+
+    def __init__(self,rel_pos=(.15,.025),rel_size=(.3,.3),**kwargs):
         source=red_dot
         super(NotificationBadge,self).__init__(
             source=source,
@@ -1383,22 +1388,26 @@ class NotificationBadge(ButtonBehavior,Image):
             keep_ratio=True,
             **kwargs)
         self.opacity=.9
+        self.rel_x=rel_pos[0]
+        self.rel_y=rel_pos[1]
+        self.rel_width=rel_size[0]
+        self.rel_height=rel_size[1]
 
     def align(self,*args):
         parent=self.parent
-        self.width=parent.width*.3
-        self.height=parent.height*.3
-        self.top=parent.top-parent.height*.025
-        self.right=parent.right-parent.width*.15
+        self.width=parent.width*self.rel_width
+        self.height=parent.height*self.rel_height
+        self.top=parent.top-parent.height*self.rel_y
+        self.right=parent.right-parent.width*self.rel_x
 
     def on_parent(self,*args):
         if not self.parent:
             return
         parent=self.parent
-        self.width=parent.width*.3
-        self.height=parent.height*.3
-        self.top=parent.top-parent.height*.025
-        self.right=parent.right-parent.width*.15
+        self.width=parent.width*self.rel_width
+        self.height=parent.height*self.rel_height
+        self.top=parent.top-parent.height*self.rel_y
+        self.right=parent.right-parent.width*self.rel_x
         parent.bind(size=self.align)
         parent.bind(pos=self.align)
         if hasattr(parent,'widgets'):
