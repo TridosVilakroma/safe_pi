@@ -777,7 +777,7 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
             btn.message=i
             btn.widgets={}
             if not i.seen:
-                btn.add_widget(NotificationBadge())
+                btn.add_widget(NotificationBadge(rel_pos=(-.1,.8)))
 
         msg_scroll_title=LabelColor(
             bg_color=scroll_color,
@@ -1380,7 +1380,7 @@ class NotificationBadge(ButtonBehavior,Image):
     References to `self` are automatically added to `parent.widgets` under `key` 'notification_badge',
     and cleared when `self.clear()` is called'''
 
-    def __init__(self,rel_pos=(.15,.025),rel_size=(.3,.3),**kwargs):
+    def __init__(self,rel_pos=(.55,.675),rel_size=(.3,.3),**kwargs):
         source=red_dot
         super(NotificationBadge,self).__init__(
             source=source,
@@ -1397,8 +1397,8 @@ class NotificationBadge(ButtonBehavior,Image):
         parent=self.parent
         self.width=parent.width*self.rel_width
         self.height=parent.height*self.rel_height
-        self.top=parent.top-parent.height*self.rel_y
-        self.right=parent.right-parent.width*self.rel_x
+        self.y=parent.y+parent.height*self.rel_y
+        self.x=parent.x+parent.width*self.rel_x
 
     def on_parent(self,*args):
         if not self.parent:
@@ -1406,8 +1406,8 @@ class NotificationBadge(ButtonBehavior,Image):
         parent=self.parent
         self.width=parent.width*self.rel_width
         self.height=parent.height*self.rel_height
-        self.top=parent.top-parent.height*self.rel_y
-        self.right=parent.right-parent.width*self.rel_x
+        self.y=parent.y+parent.height*self.rel_y
+        self.x=parent.x+parent.width*self.rel_x
         parent.bind(size=self.align)
         parent.bind(pos=self.align)
         if hasattr(parent,'widgets'):
