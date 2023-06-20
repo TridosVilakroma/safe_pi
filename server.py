@@ -2,6 +2,7 @@ import pyrebase as Firebase
 import kivy.uix.filechooser as FileChooser
 import threading as th
 import os,random
+import version.updater as UpdateService
 
 
 
@@ -97,13 +98,15 @@ class Db_service():
             self.path = "users/" + self.user["localId"]
             self.token = self.user["idToken"]
             self.uid = self.user["localId"]
+            self.db_version_stream = self.db.child('version').stream(self.version_stream_handler,self.token)
             self.db_req_fans_stream = self.db.child(self.path).child(self.devices.req_fans).stream(self.req_fans_stream_handler,self.token)
             self.db_req_lights_stream = self.db.child(self.path).child(self.devices.req_lights).stream(self.req_lights_stream_handler,self.token)
             self.toggleDevice(self.devices.req_lights,0)
             #add streams to a list for easy closing
-            self.active_streams.extend((self.db_req_fans_stream,self.db_req_lights_stream))
+            self.active_streams.extend((self.db_version_stream,self.db_req_fans_stream,self.db_req_lights_stream))
             # self.toggleDevice(self.db_exhaust_stream,0)
             self.db.child(self.path).update({"email": self.email}, self.token)
+            self.set_version_info()
 
             ''' TODO Token expires after 1 hour.
             Add recurring timer or interval to refresh token every 45-55 min.
@@ -113,6 +116,19 @@ class Db_service():
             
     def refresh_token(self,*args):
         self.user=self.auth.refresh(self.user['refreshToken'])
+
+    def set_version_info(self,*args):
+        data=self.db.child('version').get().val()
+        UpdateService.available_version=data['version']
+        UpdateService.download_integity=data['checksum']
+
+    def version_stream_handler(self, response):
+        if 'version' in response['path']:
+            UpdateService.available_version=response['data']
+            if UpdateService.available_version!=UpdateService.current_version:
+                UpdateService.update_available=1
+        if 'checksum' in response['path']:
+            UpdateService.download_integity=response['data']
 
     def req_fans_stream_handler(self, response):
         if response["data"]==0:
