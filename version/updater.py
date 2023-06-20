@@ -6,8 +6,8 @@ from os.path import join, normpath, relpath
 from subprocess import run
 from io import StringIO
 
-update_available=1
-download_integity='10559fe4f9cc9654d11bf1b15319069e'
+update_available=0
+download_integity=0
 last_download=0
 current_version=0
 available_version=0
