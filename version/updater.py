@@ -35,14 +35,15 @@ def get_update():
         now=time.time()
         if now>last_download+86400: #attempt once a day to perserve bandwidth
             last_download=now
-            completed_download=run(f"git clone https://github.com/TridosVilakroma/Pi-ro-safe.git version/update/Pi-ro-safe",shell=True)
+            completed_download=run(f"git clone https://github.com/TridosVilakroma/Pi-ro-safe.git version/update/Pi_ro_safe",shell=True)
             if completed_download.returncode:
                 #non-zero return code indicates downloaod error
                 remove_update_data()
                 download_complete=0
+            else:
+                download_complete=1
     else:
         download_complete=1
-
 
 ##########check download integrity##########
 
@@ -108,7 +109,7 @@ def update_system(*args):
         reboot_prompt=1
         update_prompt=0
         return
-    completed_update=run(f"git pull version/update/Pi-ro-safe main --allow-unrelated-histories",shell=True)
+    completed_update=run(f"git pull version/update/Pi_ro_safe main --allow-unrelated-histories",shell=True)
     if completed_update.returncode:
         #non-zero return code indicates update error
         reboot_prompt=0
@@ -136,14 +137,13 @@ def  reboot(*args):
 ##########delete update download##########
 
 def onerror(func, path, exc_info):
-    """
-    Error handler for ``shutil.rmtree``.
+    """Error handler for ``shutil.rmtree``.
 
     If the error is due to an access error (read only file)
     it attempts to add write permission and then retries.
 
     If the error is for another reason it re-raises the error.
-    
+
     Usage : ``shutil.rmtree(path, onerror=onerror)``
     """
     import stat
@@ -156,7 +156,8 @@ def onerror(func, path, exc_info):
 
 def remove_update_data():
     try:
-        rmtree('version/update/Pi-ro-safe',ignore_errors=False,onerror=onerror)
+        rmtree('version/update/Pi_ro_safe',ignore_errors=False,onerror=onerror)
+        download_complete=0
     except:
         print('version/updater.py remove_update_data(): failed to remove all update data')
 
@@ -166,13 +167,12 @@ def update(*args):
     global  update_prompt,checksum
     if update_available:
         get_update()
-    if update_folder_empty():
+    if update_folder_empty() or not download_complete:
         return
     else:
         if available_version:
             try:
-                update_version=importlib.import_module('version/update/Pi-ro-safe/version/version.py')
-                UPDATE_VERSION=update_version.version
+                from version.update.Pi_ro_safe.version.version import version as UPDATE_VERSION
                 if available_version != UPDATE_VERSION:
                     print('version/updater.py update(): downloaded update version does not match hosted version; removing update data')
                     remove_update_data()
