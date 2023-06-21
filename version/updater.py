@@ -35,13 +35,13 @@ def get_update():
         now=time.time()
         if now>last_download+86400: #attempt once a day to perserve bandwidth
             last_download=now
-            # completed_download=run(f"git clone https://github.com/TridosVilakroma/Pi-ro-safe.git version/update/Pi_ro_safe",shell=True)
-            # if completed_download.returncode:
-            #     #non-zero return code indicates downloaod error
-            #     remove_update_data()
-            #     download_complete=0
-            # else:
-            #     download_complete=1
+            completed_download=run(f"git clone https://github.com/TridosVilakroma/Pi-ro-safe.git version/update/Pi_ro_safe",shell=True)
+            if completed_download.returncode:
+                #non-zero return code indicates downloaod error
+                remove_update_data()
+                download_complete=0
+            else:
+                download_complete=1
     else:
         download_complete=1
 
@@ -155,8 +155,6 @@ def onerror(func, path, exc_info):
         raise
 
 def remove_update_data():
-    print('version/updater.py remove_update_data(): skipped')
-    return
     try:
         download_complete=0
         rmtree('version/update/Pi_ro_safe',ignore_errors=False,onerror=onerror)
