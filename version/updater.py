@@ -166,11 +166,16 @@ def remove_update_data():
 def update(*args):
     global  update_prompt,checksum
     if update_available:
+        print('version/updater.py update(): calling get_update()')
         get_update()
+    else:
+        print('version/updater.py update(): no update available')
     if update_folder_empty() or not download_complete:
+        print('version/updater.py update(): download empty or not complete')
         return
     else:
         if available_version:
+            print('version/updater.py update(): comparing version tags')
             try:
                 from version.update.Pi_ro_safe.version.version import version as UPDATE_VERSION
                 if available_version != UPDATE_VERSION:
@@ -181,11 +186,14 @@ def update(*args):
                 remove_update_data()
     if not checksum:
         if download_complete:
+            print('version/updater.py update(): generating checksum')
             checksum=generate_checksum()
     if not all((checksum, download_integity, download_complete)):
+        print('version/updater.py update(): missing one of (checksum, download_integity, download_complete)')
         return
     if checksum == download_integity:
         if not reboot_prompt:
+            print('version/updater.py update(): checksum == download_integity')
             update_prompt=1
     else:
         update_prompt=0
