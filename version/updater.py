@@ -156,8 +156,8 @@ def onerror(func, path, exc_info):
 
 def remove_update_data():
     try:
-        rmtree('version/update/Pi_ro_safe',ignore_errors=False,onerror=onerror)
         download_complete=0
+        rmtree('version/update/Pi_ro_safe',ignore_errors=False,onerror=onerror)
     except:
         print('version/updater.py remove_update_data(): failed to remove all update data')
 
