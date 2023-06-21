@@ -84,14 +84,24 @@ class Message:
         self.card=card
         self.gravity=gravity
         self.recurrence=recurrence
+        self.seen=False
 
-
+class InteractiveMessage:
+    def __init__(self,name,title,body,card,gravity,callbacks) -> 'InteractiveMessage':
+        self.name=name
+        self.title=title
+        self.body=body
+        self.card=card
+        self.gravity=gravity
+        self.callbacks=callbacks
+        self.seen=False
 
 class MessageHandler:
     def __init__(self) -> None:
         self.config = configparser.ConfigParser()
         self.config.read(preferences_path)
         self._active_messages=[]
+        self._interactive_active_messages=[]
         self.index={
             'guide':Message('Guide',
                             'Welcome to the Message Center',
@@ -136,6 +146,29 @@ schedule a visit to service and inspect your system.''',
                             'System Inspection Due',
                             7,
                             Interval(month=7))}
+        self.interactive_index={
+            'update':[InteractiveMessage('Update',
+                            'System Update Ready',
+'''A new update is ready to be installed.
+Once your system is updated you will be
+prompted to restart to complete the update.
+
+Press the update button to continue.''',
+                            'Update Ready',
+                            10,
+                            0),0],
+            'reboot':[InteractiveMessage('Restart',
+                            'Restart to Complete Update',
+'''System restart required to complete
+update. All devices will be powered down
+during this process. (E.G. fans and lights)
+
+Please be sure before continuing.
+
+Press the restart button to continue.''',
+                            'Restart Required',
+                            10,
+                            0),0]}
 
     def refresh_active_messages(self,*args):
         '''attempts to load in every message thats beyond its Interval
@@ -191,6 +224,20 @@ schedule a visit to service and inspect your system.''',
                 self._active_messages.append(message)
         for message in self.retrieve():
             self._active_messages.append(message)
+        for message in self.active_interactive_messages():
+            self._active_messages.append(message)
+
+    def active_interactive_messages(self,*args):
+        i_index=self.interactive_index
+        return [i_index[i][0] for i in i_index if i_index[i][1]]
+
+    def activate(self,message_name,callback_funcs,*args):
+        self.interactive_index[message_name][1]=1
+        self.interactive_index[message_name][0].callbacks=callback_funcs
+
+    def deactivate(self,message_name,*args):
+        self.interactive_index[message_name][1]=0
+        self.interactive_index[message_name][0].callback=0
 
     def retrieve(self,*args):
         '''Retrieve stored `Messages` from pushed_messages.json file.
@@ -290,7 +337,6 @@ schedule a visit to service and inspect your system.''',
         return self._active_messages
 
 messages=MessageHandler()
-
 # example to push message:
 # 
 # test_data={

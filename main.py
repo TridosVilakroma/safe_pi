@@ -14,6 +14,10 @@ from device_classes.switch_fans import SwitchFans
 from device_classes.heat_sensor import HeatSensor
 
 from messages import messages
+from server import server
+import version.updater as UpdateService
+from version.version import version as VERSION
+UpdateService.current_version=VERSION
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
 Config.set('graphics', 'fullscreen', 'auto')
@@ -95,6 +99,7 @@ delete_down=r'media/delete_down.png'
 reset_valve=r'media/redo.png'
 gray_seperator_line=r'media/line_gray.png'
 settings_icon=r'media/menu_lines.png'
+red_dot=r'media/red_dot.png'
 
 class PinPop(Popup):
     def __init__(self,name, **kwargs):
@@ -632,11 +637,14 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
             cgw=cg.widgets
             cl=cgw['clock_label']
             msg=cgw['messenger_button']
+            if hasattr(self,'pop_wid_event'):
+                self.pop_wid_event.cancel()
             self.contract()
             self.align_bottom()
             self.unopaque()
             self.lighten()
             msg.clear_widgets()
+            cgw['message_label'].text=f'[size=50][color=#ffffff][b]{messages.active_messages[0].card}'
             if cl.opacity==1:
                 cl._create_clock()
             else:
@@ -705,6 +713,7 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
         anim.start(self)
 
     def populate_widgets(self,*args):
+        self.clear_widgets()
         scroll_color=(.4,.4,.4,.85)
         yellow=(245/250, 216/250, 41/250,.9)
 
@@ -754,6 +763,8 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
             padding=5)
         # Make sure the height is such that there is something to scroll.
         scroll_layout.bind(minimum_height=scroll_layout.setter('height'))
+        self.widgets['scroll_layout']=scroll_layout
+        scroll_layout.widgets=[]
         for i in messages.active_messages:
             btn = RoundedButton(
                 background_normal='',
@@ -763,6 +774,11 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
                 height=40)
             btn.bind(on_release=partial(self.load_selected_msg,i))
             scroll_layout.add_widget(btn)
+            scroll_layout.widgets.append(btn)
+            btn.message=i
+            btn.widgets={}
+            if not i.seen:
+                btn.add_widget(NotificationBadge(rel_pos=(-.1,.8)))
 
         msg_scroll_title=LabelColor(
             bg_color=scroll_color,
@@ -784,9 +800,12 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
         self.add_widget(msg_scroll_title)
 
     def load_selected_msg(self,message,*args):
+        self.filter_badges()
+        message.seen=True
         try:
             self.remove_widget(self.widgets['selected_msg_title'])
             self.remove_widget(self.widgets['selected_msg_body'])
+            self.remove_widget(self.widgets['selected_msg_button'])
         except KeyError:
             pass
         selected_msg_title=Label(
@@ -809,6 +828,25 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
         selected_msg_body.ref='selected_msg_body'
         self.add_widget(selected_msg_body)
 
+        if hasattr(message,'callbacks'):
+            selected_msg_button=RoundedButton(
+                text=f'[size=30][color=#000000][b]{message.name}',
+                size_hint =(.4, .1),
+                pos_hint = {'x':.06, 'y':.215},
+                background_normal='',
+                background_color=(.4,.4,.4,.85),
+                markup=True)
+            self.widgets['selected_msg_button']=selected_msg_button
+            for i in message.callbacks:
+                selected_msg_button.bind(on_release=i)
+            self.add_widget(selected_msg_button)
+
+    def filter_badges(self,*args):
+        for btn in self.widgets['scroll_layout'].widgets:
+            if btn.message.seen:
+                if 'notification_badge' in btn.widgets:
+                    btn.widgets['notification_badge'].clear()
+
     def evoke(self,*args):
         cg=App.get_running_app().context_screen.get_screen('main')
         wc=cg.widgets['widget_carousel']
@@ -830,6 +868,9 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
                 self.clock_stack['fade']=cl.fade
                 if wc.opacity==0:
                     cg.widgets['widget_carousel'].index=1
+
+    def schedule_refresh(self,*args):
+        self.pop_wid_event=Clock.schedule_once(self.populate_widgets,1)
 
     def _delete_clock(self,*args):
         if 'widget_fade' in self.clock_stack:
@@ -1334,6 +1375,52 @@ class AnimatedCarousel(Carousel):
                 return 7.5625 * p * p + .984375
         return 1.0-out(progress)
 
+class NotificationBadge(ButtonBehavior,Image):
+    '''`NotificationBadge` to add to widgets that need interaction.
+    
+    References to `self` are automatically added to `parent.widgets` under `key` 'notification_badge',
+    and cleared when `self.clear()` is called'''
+
+    def __init__(self,rel_pos=(.55,.675),rel_size=(.3,.3),**kwargs):
+        source=red_dot
+        super(NotificationBadge,self).__init__(
+            source=source,
+            allow_stretch=False,
+            keep_ratio=True,
+            **kwargs)
+        self.opacity=.9
+        self.rel_x=rel_pos[0]
+        self.rel_y=rel_pos[1]
+        self.rel_width=rel_size[0]
+        self.rel_height=rel_size[1]
+
+    def align(self,*args):
+        parent=self.parent
+        self.width=parent.width*self.rel_width
+        self.height=parent.height*self.rel_height
+        self.y=parent.y+parent.height*self.rel_y
+        self.x=parent.x+parent.width*self.rel_x
+
+    def on_parent(self,*args):
+        if not self.parent:
+            return
+        parent=self.parent
+        self.width=parent.width*self.rel_width
+        self.height=parent.height*self.rel_height
+        self.y=parent.y+parent.height*self.rel_y
+        self.x=parent.x+parent.width*self.rel_x
+        parent.bind(size=self.align)
+        parent.bind(pos=self.align)
+        if hasattr(parent,'widgets'):
+            parent.widgets['notification_badge']=self
+
+    def clear(self,*args):
+        self.parent.unbind(size=self.align,pos=self.align)
+        if hasattr(self.parent,'widgets'):
+            if 'notification_badge' in self.parent.widgets:
+                del self.parent.widgets['notification_badge']
+        self.parent.remove_widget(self)
+
 #<<<<<<<<<<>>>>>>>>>>#
 
 class ControlGrid(Screen):
@@ -1525,6 +1612,8 @@ class ControlGrid(Screen):
         self.widgets['msg_icon']=msg_icon
         msg_icon.bind(on_press=self.msg_icon_func)
         msg_icon.color=(1,1,1,.65)
+        msg_icon.widgets={}
+        Clock.schedule_once(self.start_nb_clock,5)
 
         fs_logo=IconButton(source=logo,
                 size_hint_x=.1,
@@ -1678,6 +1767,25 @@ class ControlGrid(Screen):
         self.widgets['clock_label'].animate()
     def on_pre_leave(self, *args):
         self.widgets['messenger_button'].redock()
+    def msg_icon_notifications(self,*args):
+        unseen_messages=[i for i in messages.active_messages if i.seen==False]
+        messenger=self.widgets['messenger_button']
+        if any(unseen_messages):
+            if 'notification_badge' not in self.widgets['msg_icon'].widgets:
+                self.widgets['msg_icon'].add_widget(NotificationBadge())
+            if messenger.pos_hint=={'center_x':.5,'center_y':.55}:#undocked
+                if 'scroll_layout' in messenger.widgets:
+                    listed_messages=[i.message for i in messenger.widgets['scroll_layout'].widgets]
+                    if any([i for i in unseen_messages if i not in listed_messages]):
+                        messenger.populate_widgets()
+            if messenger.size_hint==[1,1]:#docked
+                self.widgets['message_label'].text=f'[size=50][color=#ffffff][b]{messages.active_messages[0].card}'
+        else:
+            if 'notification_badge' in self.widgets['msg_icon'].widgets:
+                self.widgets['msg_icon'].widgets['notification_badge'].clear()
+    def start_nb_clock(self,*args):
+        Clock.schedule_interval(self.msg_icon_notifications,.75)
+
 
     def language_overlay(self):
         overlay_menu=self.widgets['overlay_menu']
@@ -3295,7 +3403,6 @@ class PreferenceScreen(Screen):
         self.widgets['account']=account
         account.ref='account'
         account.bind(on_release=self.account_func)
-        account.disabled=True
 
         network=RoundedButton(text=current_language['network'],
                         size_hint =(1, 1),
@@ -3306,7 +3413,7 @@ class PreferenceScreen(Screen):
         self.widgets['network']=network
         network.ref='network'
         network.bind(on_release=self.network_func)
-        network.disabled=True
+        # network.disabled=True
 
         clean_mode=RoundedButton(text=current_language['clean_mode'],
                         size_hint =(1, 1),
@@ -5205,6 +5312,7 @@ class AccountScreen(Screen):
         super(AccountScreen,self).__init__(**kwargs)
         self.cols = 2
         self.widgets={}
+        self.scheduled_funcs=[]
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
 
         back=RoundedButton(
@@ -5258,8 +5366,24 @@ class AccountScreen(Screen):
             size_hint =(.9, .005),
             pos_hint = {'x':.05, 'y':.85})
 
+        information_email=TextInput(
+            disabled=True,
+            multiline=False,
+            hint_text='Enter account email',
+            size_hint =(.9, .2),
+            pos_hint = {'x':.05, 'y':.5})
+        information_email.bind(on_text_validate=self.email_validate)
+        self.widgets['information_email']=information_email
 
-
+        information_password=TextInput(
+            disabled=True,
+            multiline=False,
+            password=True,
+            hint_text='Enter password',
+            size_hint =(.9, .2),
+            pos_hint = {'x':.05, 'y':.20})
+        information_password.bind(on_text_validate=self.password_validate)
+        self.widgets['information_password']=information_password
 
         details_box=RoundedColorLayout(
             bg_color=(0,0,0,.85),
@@ -5282,7 +5406,13 @@ class AccountScreen(Screen):
             size_hint =(.9, .005),
             pos_hint = {'x':.05, 'y':.85})
 
-
+        details_body=Label(
+            text=current_language['details_body'],
+            markup=True,
+            size_hint =(.9, .75),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['details_body']=details_body
+        details_body.ref='details_body'
 
         status_box=RoundedColorLayout(
             bg_color=(0,0,0,.85),
@@ -5341,16 +5471,16 @@ class AccountScreen(Screen):
             pos_hint = {'center_x':.9, 'center_y':.5375},)
         self.widgets['status_box']=status_box
 
-        side_bar_reconnect=RoundedButton(
-            text=current_language['side_bar_reconnect'],
+        side_bar_connect=RoundedButton(
+            text=current_language['side_bar_connect'],
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.875},
             background_normal='',
             background_color=(0,0,0,.9),
             markup=True)
-        self.widgets['side_bar_reconnect']=side_bar_reconnect
-        side_bar_reconnect.ref='side_bar_reconnect'
-        # side_bar_reconnect.bind(on_press=self.side_bar_reconnect)
+        self.widgets['side_bar_connect']=side_bar_connect
+        side_bar_connect.ref='side_bar_connect'
+        side_bar_connect.bind(on_press=self.setup_connection)
 
         side_bar_unlink=RoundedButton(
             text=current_language['side_bar_unlink'],
@@ -5361,7 +5491,7 @@ class AccountScreen(Screen):
             markup=True)
         self.widgets['side_bar_unlink']=side_bar_unlink
         side_bar_unlink.ref='side_bar_unlink'
-        # side_bar_unlink.bind(on_press=self.side_bar_unlink)
+        side_bar_unlink.bind(on_press=self.remove_connection)
 
         side_bar_add=RoundedButton(
             text=current_language['side_bar_add'],
@@ -5415,16 +5545,19 @@ class AccountScreen(Screen):
 
         information_box.add_widget(information_title)
         information_box.add_widget(information_seperator)
+        information_box.add_widget(information_email)
+        information_box.add_widget(information_password)
 
         details_box.add_widget(details_title)
         details_box.add_widget(details_seperator)
+        details_box.add_widget(details_body)
 
         status_box.add_widget(status_title)
         status_box.add_widget(status_seperator)
         status_box.add_widget(status_scroll)
         status_scroll.add_widget(status_scroll_layout)
 
-        side_bar_box.add_widget(side_bar_reconnect)
+        side_bar_box.add_widget(side_bar_connect)
         side_bar_box.add_widget(side_bar_unlink)
         side_bar_box.add_widget(side_bar_add)
         side_bar_box.add_widget(side_bar_remove)
@@ -5435,7 +5568,6 @@ class AccountScreen(Screen):
         self.add_widget(back)
         self.add_widget(back_main)
         self.add_widget(seperator_line)
-        self.add_widget(account_admin_hint)
         self.add_widget(information_box)
         self.add_widget(details_box)
         self.add_widget(status_box)
@@ -5447,15 +5579,99 @@ class AccountScreen(Screen):
     def account_back_main (self,button):
         self.parent.transition = SlideTransition(direction='down')
         self.manager.current='main'
+    def setup_connection(self,*args):
+        self.auth_server()
+    def remove_connection(self,*args):
+        self.unlink_server()
+    def email_validate(self,button,*args):
+        print(button)
+        config=App.get_running_app().config_
+        config.set('account','email',f'{button.text}')
+        with open(preferences_path,'w') as configfile:
+            config.write(configfile)
+    def password_validate(self,button,*args):
+        config=App.get_running_app().config_
+        config.set('account','password',f'{button.text}')
+        with open(preferences_path,'w') as configfile:
+            config.write(configfile)
 
     def check_admin_mode(self,*args):
         if App.get_running_app().admin_mode_start>time.time():
-            pass
+            if self.widgets['account_admin_hint'].parent:
+                self.remove_widget(self.widgets['account_admin_hint'])
+            self.widgets['information_email'].disabled=False
+            self.widgets['information_password'].disabled=False
+            self.widgets['side_bar_connect'].disabled=False
+            self.widgets['side_bar_connect'].shape_color.rgba=(0,0,0,.9)
+            self.widgets['side_bar_unlink'].disabled=False
+            self.widgets['side_bar_unlink'].shape_color.rgba=(0,0,0,.9)
+            self.widgets['side_bar_add'].disabled=False
+            self.widgets['side_bar_add'].shape_color.rgba=(0,0,0,.9)
+            self.widgets['side_bar_remove'].disabled=False
+            self.widgets['side_bar_remove'].shape_color.rgba=(0,0,0,.9)
+            self.widgets['side_bar_refresh'].disabled=False
+            self.widgets['side_bar_refresh'].shape_color.rgba=(0,0,0,.9)
+        else:
+            if not self.widgets['account_admin_hint'].parent:
+                self.add_widget(self.widgets['account_admin_hint'])
+            self.widgets['information_email'].disabled=True
+            self.widgets['information_password'].disabled=True
+            self.widgets['side_bar_connect'].disabled=True
+            self.widgets['side_bar_connect'].shape_color.rgba=(.1,.1,.1,.8)
+            self.widgets['side_bar_unlink'].disabled=True
+            self.widgets['side_bar_unlink'].shape_color.rgba=(.1,.1,.1,.8)
+            self.widgets['side_bar_add'].disabled=True
+            self.widgets['side_bar_add'].shape_color.rgba=(.1,.1,.1,.8)
+            self.widgets['side_bar_remove'].disabled=True
+            self.widgets['side_bar_remove'].shape_color.rgba=(.1,.1,.1,.8)
+            self.widgets['side_bar_refresh'].disabled=True
+            self.widgets['side_bar_refresh'].shape_color.rgba=(.1,.1,.1,.8)
 
 
     def on_pre_enter(self, *args):
         self.check_admin_mode()
+        if App.get_running_app().config_['account']['email']:
+            self.widgets['information_email'].text=App.get_running_app().config_['account']['email']
+            self.widgets['information_password'].text=App.get_running_app().config_['account']['password']
         return super().on_pre_enter(*args)
+
+    def auth_server(self,*args):
+        config=App.get_running_app().config_
+        account_email=config['account']['email']
+        account_password=config['account']['password']
+        if not (account_email and account_password):
+            return
+        if hasattr(server,'user'):
+            return
+        server.device_requests=server._device_requests.copy()
+        server.authUser(f'{account_email}', f'{account_password}')
+        self._keep_ref(self.listen_to_server,.75)
+        self._keep_ref(server.refresh_token,45*60)#45 minutes; token expires every hour.
+
+    def listen_to_server(*args):
+        if 1 not in server.device_requests.values():
+            return
+
+        main_screen=App.get_running_app().context_screen.get_screen('main')
+        for i in server.device_requests.items():
+            if not i[1]:
+                continue
+            if i[0] in main_screen.widgets:
+                main_screen.widgets[i[0]].trigger_action()
+
+        server.reset_reqs()
+
+    def _keep_ref(self,func_to_sched,interval,*args):
+        log=self.scheduled_funcs
+        log.append(Clock.schedule_interval(func_to_sched,interval))
+
+    def unlink_server(self,*args):
+        if not hasattr(server,'user'):
+            return
+        for i in self.scheduled_funcs:
+            i.cancel()
+        self.scheduled_funcs=[]
+        delattr(server,'user')
 
 class NetworkScreen(Screen):
     def __init__(self, **kwargs):
@@ -5895,6 +6111,23 @@ def listen(app_object,*args):
                 trouble_display.remove_widget(troubles_screen.widgets['actuation_trouble'])
                 del troubles_screen.widgets['actuation_trouble']
 
+def listen_to_UpdateService(*args):
+    screen_manager=App.get_running_app().context_screen
+    cg=screen_manager.get_screen('main')
+    msg_icon=cg.widgets['msg_icon']
+    if UpdateService.update_prompt:
+        if 'update' not in messages.active_messages:
+            messages.activate('update',(UpdateService.update_system,
+                                        partial(messages.deactivate,'update'),
+                                        cg.widgets['messenger_button'].schedule_refresh))
+            messages.refresh_active_messages()
+    if UpdateService.reboot_prompt:
+        if 'reboot' not in messages.active_messages:
+            messages.activate('reboot',(UpdateService.reboot,
+                                        partial(messages.deactivate,'reboot'),
+                                        cg.widgets['messenger_button'].schedule_refresh))
+            messages.refresh_active_messages()
+
 
 class Hood_Control(App):
     def build(self):
@@ -5906,7 +6139,7 @@ class Hood_Control(App):
         settings_setter(self.config_)
         Clock.schedule_once(partial(language_setter,config=self.config_))
         self.context_screen=ScreenManager()
-        # self.context_screen.add_widget(AccountScreen(name='account'))
+        # self.context_screen.add_widget(NetworkScreen(name='network'))
         self.context_screen.add_widget(ControlGrid(name='main'))
         self.context_screen.add_widget(ActuationScreen(name='alert'))
         self.context_screen.add_widget(SettingsScreen(name='settings'))
@@ -5921,11 +6154,14 @@ class Hood_Control(App):
         self.context_screen.add_widget(AccountScreen(name='account'))
         self.context_screen.add_widget(NetworkScreen(name='network'))
         listener_event=Clock.schedule_interval(partial(listen, self.context_screen),.75)
+        Clock.schedule_interval(listen_to_UpdateService,.75)
         device_update_event=Clock.schedule_interval(partial(logic.update_devices),.75)
         device_save_event=Clock.schedule_interval(partial(logic.save_devices),600)
         Clock.schedule_interval(self.context_screen.get_screen('main').widgets['clock_label'].update, 1)
         Clock.schedule_once(messages.refresh_active_messages)
         Clock.schedule_interval(messages.refresh_active_messages,10)
+        Clock.schedule_once(self.context_screen.get_screen('account').auth_server)
+        Clock.schedule_interval(UpdateService.update,10)
         Window.bind(on_request_close=self.exit_check)
         return self.context_screen
 
@@ -5942,6 +6178,7 @@ def settings_setter(config):
         logic.heat_sensor_timer=900
     elif heat_duration == '1800':
         logic.heat_sensor_timer=1800
+
     report_status=config.getboolean('config','report_pending')
     App.get_running_app().report_pending=report_status
 
@@ -5980,4 +6217,6 @@ finally:
     print("devices saved")
     logic.clean_exit()
     print("pins set as inputs")
+    server.clean_exit()
+    print("streams closed")
     quit()
