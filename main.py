@@ -20,7 +20,9 @@ from version.version import version as VERSION
 UpdateService.current_version=VERSION
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
-Config.set('graphics', 'fullscreen', 'auto')
+if os.name=='posix':
+    Config.set('graphics', 'fullscreen', 'auto')
+    Config.set('graphics', 'borderless', '1')
 
 import kivy
 import logic,lang_dict,pindex,general
