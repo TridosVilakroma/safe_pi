@@ -9,7 +9,11 @@ def get_available():
         return ''
 
 def is_connected():
-    pass
+    process=subprocess.run(['nmcli','-g','state','general'],stdout=subprocess.PIPE)
+    if process.returncode == 0:
+        return  True if process.stdout.decode('utf-8')=='connected' else False
+    else:
+        return False
 
 def get_ssid():
     process=subprocess.run(['nmcli','-g','name','con','show','--active'],stdout=subprocess.PIPE)
