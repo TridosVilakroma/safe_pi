@@ -5953,11 +5953,14 @@ class NetworkScreen(Screen):
 
     def refresh_ap_data(self,*args):
         if network.is_connected():
-            self.widgets['information_ssd'].text=f'  SSID: {network.get_ssid()}'
+            print('connected')
+            self.widgets['information_ssid'].text=f'  SSID: {network.get_ssid()}'
+        else:
+            print('not connected')
 
     def on_pre_enter(self, *args):
         # self.check_admin_mode()
-        Clock.schedule_interval(self.refresh_ap_data(),10)
+        Clock.schedule_interval(self.refresh_ap_data,10)
         return super().on_pre_enter(*args)
 
 
