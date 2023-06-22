@@ -5966,8 +5966,8 @@ class NetworkScreen(Screen):
             while len(signal)<entry_len:
                 signal=signal[:8]+' '+signal[8:]
 
-            self.widgets['information_ssid'].text=ssid+len(ssid)
-            self.widgets['information_status'].text=status+len()
+            self.widgets['information_ssid'].text=ssid
+            self.widgets['information_status'].text=status
             self.widgets['information_signal'].text=signal
 
     def on_pre_enter(self, *args):
