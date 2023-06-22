@@ -13,8 +13,12 @@ from device_classes.switch_light import SwitchLight
 from device_classes.switch_fans import SwitchFans
 from device_classes.heat_sensor import HeatSensor
 
+if os.name=='posix':
+    import network_L as network
+if os.name=='nt':
+    import network_L as network
 from messages import messages
-from server import server
+# from server import server
 import version.updater as UpdateService
 from version.version import version as VERSION
 UpdateService.current_version=VERSION
@@ -5638,42 +5642,45 @@ class AccountScreen(Screen):
         return super().on_pre_enter(*args)
 
     def auth_server(self,*args):
-        config=App.get_running_app().config_
-        account_email=config['account']['email']
-        account_password=config['account']['password']
-        if not (account_email and account_password):
-            return
-        if hasattr(server,'user'):
-            return
-        server.device_requests=server._device_requests.copy()
-        server.authUser(f'{account_email}', f'{account_password}')
-        self._keep_ref(self.listen_to_server,.75)
-        self._keep_ref(server.refresh_token,45*60)#45 minutes; token expires every hour.
+        return
+        # config=App.get_running_app().config_
+        # account_email=config['account']['email']
+        # account_password=config['account']['password']
+        # if not (account_email and account_password):
+        #     return
+        # if hasattr(server,'user'):
+        #     return
+        # server.device_requests=server._device_requests.copy()
+        # server.authUser(f'{account_email}', f'{account_password}')
+        # self._keep_ref(self.listen_to_server,.75)
+        # self._keep_ref(server.refresh_token,45*60)#45 minutes; token expires every hour.
 
     def listen_to_server(*args):
-        if 1 not in server.device_requests.values():
-            return
+        pass
+        # if 1 not in server.device_requests.values():
+        #     return
 
-        main_screen=App.get_running_app().context_screen.get_screen('main')
-        for i in server.device_requests.items():
-            if not i[1]:
-                continue
-            if i[0] in main_screen.widgets:
-                main_screen.widgets[i[0]].trigger_action()
+        # main_screen=App.get_running_app().context_screen.get_screen('main')
+        # for i in server.device_requests.items():
+        #     if not i[1]:
+        #         continue
+        #     if i[0] in main_screen.widgets:
+        #         main_screen.widgets[i[0]].trigger_action()
 
-        server.reset_reqs()
+        # server.reset_reqs()
 
     def _keep_ref(self,func_to_sched,interval,*args):
         log=self.scheduled_funcs
         log.append(Clock.schedule_interval(func_to_sched,interval))
 
     def unlink_server(self,*args):
-        if not hasattr(server,'user'):
-            return
-        for i in self.scheduled_funcs:
-            i.cancel()
-        self.scheduled_funcs=[]
-        delattr(server,'user')
+        pass
+        # if not hasattr(server,'user'):
+        #     return
+        # for i in self.scheduled_funcs:
+        #     i.cancel()
+        # self.scheduled_funcs=[]
+        # delattr(server,'user')
 
 class NetworkScreen(Screen):
     def __init__(self, **kwargs):
@@ -5734,21 +5741,21 @@ class NetworkScreen(Screen):
             pos_hint = {'x':.05, 'y':.85})
 
         information_ssid=Label(
-            text=f'SSID: 0',#{subprocess.check_output("netsh wlan show networks interface=Wi-Fi").split()}',
+            text='  SSID:',
             markup=True,
             size_hint =(.9, .05), 
             pos_hint = {'center_x':.5, 'center_y':.675},)
         self.widgets['information_ssid']=information_ssid
 
         information_status=Label(
-            text=f'Status: {0}',
+            text='Status:',
             markup=True,
             size_hint =(.4, .05),
             pos_hint = {'center_x':.5, 'center_y':.45},)
         self.widgets['information_status']=information_status
 
         information_signal=Label(
-            text=f'Signal: {0}',
+            text='Signal:',
             markup=True,
             size_hint =(.4, .05),
             pos_hint = {'center_x':.5, 'center_y':.225},)
@@ -5944,9 +5951,13 @@ class NetworkScreen(Screen):
         if App.get_running_app().admin_mode_start>time.time():
             pass
 
+    def refresh_ap_data(self,*args):
+        if network.is_connected():
+            self.widgets['information_ssd'].text=network.get_ssid()
 
     def on_pre_enter(self, *args):
         # self.check_admin_mode()
+        Clock.schedule_interval(self.refresh_ap_data(),10)
         return super().on_pre_enter(*args)
 
 
@@ -6141,7 +6152,7 @@ class Hood_Control(App):
         settings_setter(self.config_)
         Clock.schedule_once(partial(language_setter,config=self.config_))
         self.context_screen=ScreenManager()
-        # self.context_screen.add_widget(NetworkScreen(name='network'))
+        self.context_screen.add_widget(NetworkScreen(name='network'))
         self.context_screen.add_widget(ControlGrid(name='main'))
         self.context_screen.add_widget(ActuationScreen(name='alert'))
         self.context_screen.add_widget(SettingsScreen(name='settings'))
@@ -6154,7 +6165,7 @@ class Hood_Control(App):
         self.context_screen.add_widget(TroubleScreen(name='trouble'))
         self.context_screen.add_widget(MountScreen(name='mount'))
         self.context_screen.add_widget(AccountScreen(name='account'))
-        self.context_screen.add_widget(NetworkScreen(name='network'))
+        # self.context_screen.add_widget(NetworkScreen(name='network'))
         listener_event=Clock.schedule_interval(partial(listen, self.context_screen),.75)
         Clock.schedule_interval(listen_to_UpdateService,.75)
         device_update_event=Clock.schedule_interval(partial(logic.update_devices),.75)
@@ -6162,7 +6173,7 @@ class Hood_Control(App):
         Clock.schedule_interval(self.context_screen.get_screen('main').widgets['clock_label'].update, 1)
         Clock.schedule_once(messages.refresh_active_messages)
         Clock.schedule_interval(messages.refresh_active_messages,10)
-        Clock.schedule_once(self.context_screen.get_screen('account').auth_server)
+        # Clock.schedule_once(self.context_screen.get_screen('account').auth_server)
         Clock.schedule_interval(UpdateService.update,10)
         Window.bind(on_request_close=self.exit_check)
         return self.context_screen
@@ -6219,6 +6230,6 @@ finally:
     print("devices saved")
     logic.clean_exit()
     print("pins set as inputs")
-    server.clean_exit()
-    print("streams closed")
+    # server.clean_exit()
+    # print("streams closed")
     quit()
