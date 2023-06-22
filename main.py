@@ -5819,7 +5819,7 @@ class NetworkScreen(Screen):
             spacing=10,
             size_hint_y=None,
             padding=5)
-
+        self.widgets['status_scroll_layout']=status_scroll_layout
         # Make sure the height is such that there is something to scroll.
         status_scroll_layout.bind(minimum_height=status_scroll_layout.setter('height'))
 
