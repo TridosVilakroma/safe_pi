@@ -5955,10 +5955,10 @@ class NetworkScreen(Screen):
         if network.is_connected():
             entry_len=30
             ssid=f'  SSID: {network.get_ssid()}'
-            status=f'Status:{""*14}{network.get_status()}'
-            signal=f'Signal:{""*17}{network.get_signal()}/100'
+            status=f'Status:{" "*14}{network.get_status()}'
+            signal=f'Signal:{" "*17}{network.get_signal()}/100'
             while len(ssid)<entry_len:
-                ssid=ssid[:9]+''+ssid[8:]
+                ssid=ssid[:8]+' '+ssid[8:]
             if len(ssid)>entry_len:
                 ssid=ssid[:28]+'...'
 
