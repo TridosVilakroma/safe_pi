@@ -11,21 +11,28 @@ def get_available():
 def is_connected():
     process=subprocess.run(['nmcli','-g','state','general'],stdout=subprocess.PIPE)
     if process.returncode == 0:
-        return  True if process.stdout.decode('utf-8')=='connected' else False
+        return  True if process.stdout.decode('utf-8').strip()=='connected' else False
     else:
         return False
 
 def get_ssid():
     process=subprocess.run(['nmcli','-g','name','con','show','--active'],stdout=subprocess.PIPE)
     if process.returncode == 0:
-        return process.stdout.decode('utf-8')
+        return process.stdout.decode('utf-8').strip()
+    else:
+        return ''
+
+def get_status():
+    process=subprocess.run(['nmcli','-g','state','general'],stdout=subprocess.PIPE)
+    if process.returncode == 0:
+        return process.stdout.decode('utf-8').strip()
     else:
         return ''
 
 def get_signal():
     process=subprocess.run("nmcli -f IN-USE,SIGNAL,SSID device wifi | awk '/^\*/{if (NR!=1) {print $2}}'",shell=True,stdout=subprocess.PIPE)
     if process.returncode == 0:
-        return process.stdout.decode('utf-8')
+        return process.stdout.decode('utf-8').strip()
     else:
         return ''
 

@@ -5953,10 +5953,9 @@ class NetworkScreen(Screen):
 
     def refresh_ap_data(self,*args):
         if network.is_connected():
-            print('connected')
             self.widgets['information_ssid'].text=f'  SSID: {network.get_ssid()}'
-        else:
-            print('not connected')
+            self.widgets['information_status'].text=f'Status: {network.get_status()}'
+            self.widgets['information_signal'].text=f'Signal: {network.get_signal()}/100'
 
     def on_pre_enter(self, *args):
         # self.check_admin_mode()
