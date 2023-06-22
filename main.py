@@ -5953,7 +5953,7 @@ class NetworkScreen(Screen):
 
     def refresh_ap_data(self,*args):
         if network.is_connected():
-            self.widgets['information_ssd'].text=network.get_ssid()
+            self.widgets['information_ssd'].text=f'  SSID: {network.get_ssid()}'
 
     def on_pre_enter(self, *args):
         # self.check_admin_mode()
