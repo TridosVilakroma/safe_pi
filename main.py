@@ -5823,17 +5823,6 @@ class NetworkScreen(Screen):
         # Make sure the height is such that there is something to scroll.
         status_scroll_layout.bind(minimum_height=status_scroll_layout.setter('height'))
 
-        for i in range(20):#status_request:
-            btn = RoundedButton(
-                background_normal='',
-                background_color=(.1,.1,.1,1),
-                text=str(i),
-                size_hint_y=None,
-                height=40)
-            # btn.bind(on_release=partial(self.load_selected_msg,i))
-            status_scroll_layout.add_widget(btn)
-
-
         side_bar_box=RoundedColorLayout(
             bg_color=(.5,.5,.5,.85),
             size_hint =(.175, .675),
@@ -5849,7 +5838,7 @@ class NetworkScreen(Screen):
             markup=True)
         self.widgets['side_bar_scan']=side_bar_scan
         side_bar_scan.ref='side_bar_scan'
-        # side_bar_scan.bind(on_press=self.side_bar_scan)
+        side_bar_scan.bind(on_press=self.side_bar_scan)
 
         side_bar_info=RoundedButton(
             text=current_language['side_bar_info'],
@@ -5946,6 +5935,17 @@ class NetworkScreen(Screen):
     def network_back_main(self,button):
         self.parent.transition = SlideTransition(direction='down')
         self.manager.current='main'
+    def side_bar_scan(self,*args):
+        self.widgets['status_scroll_layout'].clear_widgets()
+        for i in network.get_available().splitlines():
+            btn = RoundedButton(
+                background_normal='',
+                background_color=(.1,.1,.1,1),
+                text=str(i),
+                size_hint_y=None,
+                height=40)
+            # btn.bind(on_release=partial(self.load_selected_msg,i))
+            self.widgets['status_scroll_layout'].add_widget(btn)
 
     def check_admin_mode(self,*args):
         if App.get_running_app().admin_mode_start>time.time():
@@ -5966,8 +5966,8 @@ class NetworkScreen(Screen):
             while len(signal)<entry_len:
                 signal=signal[:8]+' '+signal[8:]
 
-            self.widgets['information_ssid'].text=ssid
-            self.widgets['information_status'].text=status
+            self.widgets['information_ssid'].text=ssid+len(ssid)
+            self.widgets['information_status'].text=status+len()
             self.widgets['information_signal'].text=signal
 
     def on_pre_enter(self, *args):
