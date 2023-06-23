@@ -515,6 +515,7 @@ class ExpandableRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
 
     def shrink(self,*args):
         if self._expanded:
+            Animation.stop_all(self)
             self.animating=not self.animating
             self._expanded=False
             self.shrink_anim.start(self)
@@ -522,6 +523,7 @@ class ExpandableRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
 
     def expand(self,*args):
         if not self._expanded:
+            Animation.stop_all(self)
             self.animating=not self.animating
             parent=self.parent
             parent.remove_widget(self)
@@ -537,8 +539,6 @@ class ExpandableRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
 
     def set_expanded_false(self,*args):
         self.expanded=False
-
-
 
 class ClockText(ButtonBehavior,LabelColor):
     def __init__(self, **kwargs):
@@ -5799,6 +5799,23 @@ class NetworkScreen(Screen):
         information_box.bind(expanded=self.information_box_populate)
         information_box.bind(animating=partial(general.stripargs,information_box.clear_widgets))
 
+        information_expand_button=RoundedButton(
+            size_hint =(.5, .175),
+            pos_hint = {'center_x':.5, 'center_y':.15},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
+            markup=True)
+        self.widgets['information_expand_button']=information_expand_button
+        information_expand_button.bind(on_release=self.information_expand_button_func)
+
+        information_expand_lines=Image(
+            source=settings_icon,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.4, .075),
+            pos_hint = {'center_x':.5, 'center_y':.15})
+        information_expand_lines.center=information_expand_button.center
+        self.widgets['information_expand_lines']=information_expand_lines
 
         information_title=Label(
             text=current_language['network_information_title'],
@@ -5820,21 +5837,21 @@ class NetworkScreen(Screen):
             text='  SSID:',
             markup=True,
             size_hint =(.9, .05), 
-            pos_hint = {'center_x':.5, 'center_y':.675},)
+            pos_hint = {'center_x':.5, 'center_y':.725},)
         self.widgets['information_ssid']=information_ssid
 
         information_status=Label(
             text='Status:',
             markup=True,
             size_hint =(.4, .05),
-            pos_hint = {'center_x':.5, 'center_y':.45},)
+            pos_hint = {'center_x':.5, 'center_y':.55},)
         self.widgets['information_status']=information_status
 
         information_signal=Label(
             text='Signal:',
             markup=True,
             size_hint =(.4, .05),
-            pos_hint = {'center_x':.5, 'center_y':.225},)
+            pos_hint = {'center_x':.5, 'center_y':.375},)
         self.widgets['information_signal']=information_signal
 
         details_box=ExpandableRoundedColorLayout(
@@ -5846,6 +5863,24 @@ class NetworkScreen(Screen):
         self.widgets['details_box']=details_box
         details_box.bind(expanded=self.details_box_populate)
         details_box.bind(animating=partial(general.stripargs,details_box.clear_widgets))
+
+        details_expand_button=RoundedButton(
+            size_hint =(.5, .125),
+            pos_hint = {'center_x':.5, 'center_y':.15},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
+            markup=True)
+        self.widgets['details_expand_button']=details_expand_button
+        details_expand_button.bind(on_release=self.details_expand_button_func)
+
+        details_expand_lines=Image(
+            source=settings_icon,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.4, .0525),
+            pos_hint = {'center_x':.5, 'center_y':.15})
+        details_expand_lines.center=details_expand_button.center
+        self.widgets['details_expand_lines']=details_expand_lines
 
         details_title=Label(
             text=current_language['network_details_title'],
@@ -5989,9 +6024,13 @@ class NetworkScreen(Screen):
         information_box.add_widget(information_ssid)
         information_box.add_widget(information_status)
         information_box.add_widget(information_signal)
+        information_box.add_widget(information_expand_button)
+        information_box.add_widget(information_expand_lines)
 
         details_box.add_widget(details_title)
         details_box.add_widget(details_seperator)
+        details_box.add_widget(details_expand_button)
+        details_box.add_widget(details_expand_lines)
 
         status_box.add_widget(status_title)
         status_box.add_widget(status_seperator)
@@ -6047,48 +6086,86 @@ class NetworkScreen(Screen):
         pass
     def information_box_populate(self,*args):
         information_box=self.widgets['information_box']
+        information_box.clear_widgets()
         if information_box.expanded:
             w=self.widgets
             w['information_ssid'].pos_hint={'center_x':.1, 'center_y':.8}
             w['information_status'].pos_hint={'center_x':.1, 'center_y':.75}
             w['information_signal'].pos_hint={'center_x':.1, 'center_y':.7}
+            w['information_expand_button'].pos_hint={'center_x':.5, 'center_y':.075}
+            w['information_expand_lines'].pos_hint={'center_x':.5, 'center_y':.075}
+            w['information_expand_button'].size_hint=(.5, .075)
+            w['information_expand_lines'].size_hint=(.4, .035)
             all_widgets=[
                 w['information_title'],
                 w['information_seperator'],
                 w['information_ssid'],
                 w['information_status'],
-                w['information_signal']]
+                w['information_signal'],
+                w['information_expand_button'],
+                w['information_expand_lines']]
             for i in all_widgets:
                 information_box.add_widget(i)
         elif not information_box.expanded:
             w=self.widgets
-            w['information_ssid'].pos_hint={'center_x':.5, 'center_y':.675}
-            w['information_status'].pos_hint={'center_x':.5, 'center_y':.45}
-            w['information_signal'].pos_hint={'center_x':.5, 'center_y':.225}
+            w['information_ssid'].pos_hint={'center_x':.5, 'center_y':.725}
+            w['information_status'].pos_hint={'center_x':.5, 'center_y':.55}
+            w['information_signal'].pos_hint={'center_x':.5, 'center_y':.375}
+            w['information_expand_button'].pos_hint={'center_x':.5, 'center_y':.15}
+            w['information_expand_lines'].pos_hint={'center_x':.5, 'center_y':.15}
+            w['information_expand_button'].size_hint=(.5, .175)
+            w['information_expand_lines'].size_hint=(.4, .075)
             all_widgets=[
                 w['information_title'],
                 w['information_seperator'],
                 w['information_ssid'],
                 w['information_status'],
-                w['information_signal']]
+                w['information_signal'],
+                w['information_expand_button'],
+                w['information_expand_lines']]
             for i in all_widgets:
                 information_box.add_widget(i)
     def details_box_populate(self,*args):
         details_box=self.widgets['details_box']
+        details_box.clear_widgets()
         if details_box.expanded:
             w=self.widgets
+            w['details_expand_button'].pos_hint={'center_x':.5, 'center_y':.075}
+            w['details_expand_lines'].pos_hint={'center_x':.5, 'center_y':.075}
+            w['details_expand_button'].size_hint=(.5, .075)
+            w['details_expand_lines'].size_hint=(.4, .035)
             all_widgets=[
                 w['details_title'],
-                w['details_seperator']]
+                w['details_seperator'],
+                w['details_expand_button'],
+                w['details_expand_lines']]
             for i in all_widgets:
                 details_box.add_widget(i)
         elif not details_box.expanded:
             w=self.widgets
+            w['details_expand_button'].pos_hint={'center_x':.5, 'center_y':.15}
+            w['details_expand_lines'].pos_hint={'center_x':.5, 'center_y':.15}
+            w['details_expand_button'].size_hint=(.5, .125)
+            w['details_expand_lines'].size_hint=(.4, .0525)
             all_widgets=[
                 w['details_title'],
-                w['details_seperator']]
+                w['details_seperator'],
+                w['details_expand_button'],
+                w['details_expand_lines']]
             for i in all_widgets:
                 details_box.add_widget(i)
+    def information_expand_button_func(self,*args):
+        ib=self.widgets['information_box']
+        if ib.expanded:
+            ib.shrink()
+        if not ib.expanded:
+            ib.expand()
+    def details_expand_button_func(self,*args):
+        db=self.widgets['details_box']
+        if db.expanded:
+            db.shrink()
+        if not db.expanded:
+            db.expand()
 
     def check_admin_mode(self,*args):
         if App.get_running_app().admin_mode_start>time.time():
