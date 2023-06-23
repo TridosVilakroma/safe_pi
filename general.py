@@ -30,3 +30,12 @@ def pin_decode(pin_number):
            32:12,33:13,35:19,36:16,
            37:26,38:20,40:21}
     return f'Board: {int(pin_number)} <> BCM: {int(index[pin_number])}'
+
+def stripargs(func,*args,**kwargs):
+    '''Strips `*args` and `**kwargs`
+
+    For use when a function is used as a callback
+    that does not accept any arguments.
+    Wrap `stripargs` in `partial` with `func` as
+    the argument'''
+    return func()
