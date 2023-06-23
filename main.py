@@ -16,7 +16,7 @@ from device_classes.heat_sensor import HeatSensor
 if os.name=='posix':
     import network_L as network
 if os.name=='nt':
-    import network_L as network
+    import network_W as network
 from messages import messages
 # from server import server
 import version.updater as UpdateService
@@ -58,7 +58,7 @@ from functools import partial
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.scrollview import ScrollView
 from kivy.graphics import Rectangle, Color, Line, Bezier
-from kivy.properties import ListProperty,StringProperty,NumericProperty,ColorProperty
+from kivy.properties import ListProperty,StringProperty,NumericProperty,ColorProperty,OptionProperty,BooleanProperty
 import configparser
 import logs.configurations.preferences as preferences
 from kivy.uix.settings import SettingsWithNoMenu
@@ -106,6 +106,8 @@ reset_valve=r'media/redo.png'
 gray_seperator_line=r'media/line_gray.png'
 settings_icon=r'media/menu_lines.png'
 red_dot=r'media/red_dot.png'
+
+
 
 class PinPop(Popup):
     def __init__(self,name, **kwargs):
@@ -475,6 +477,68 @@ class RoundedColorLayout(FloatLayout):
     def update_shape(self, *args):
         self.shape.pos = self.pos
         self.shape.size = self.size
+
+class ExpandableRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
+
+    expanded=BooleanProperty(defaultvalue=False)
+    animating=BooleanProperty(defaultvalue=False)
+
+    def __init__(self,**kwargs):
+        self._expanded=False
+        self.original_pos=kwargs['pos_hint']
+        self.original_size=kwargs['size_hint']
+        if 'expanded_pos' in kwargs:
+            self.expanded_pos=kwargs.pop('expanded_pos')
+        if 'expanded_size' in kwargs:
+            self.expanded_size=kwargs.pop('expanded_size')
+        self.move_anim=Animation(pos_hint=self.expanded_pos,d=.15,t='in_out_quad')
+        self.move_anim.bind(on_complete=self.set_expanded_true)
+        self.return_anim=Animation(pos_hint=self.original_pos,d=.15,t='out_back')
+        self.return_anim.bind(on_complete=self.set_expanded_false)
+        self.grow_anim=Animation(size_hint=self.expanded_size,d=.15,t='in_out_quad')
+        self.grow_anim.bind(on_complete=self.set_expanded_true)
+        self.shrink_anim=Animation(size_hint=self.original_size,d=.15,t='out_back')
+        self.shrink_anim.bind(on_complete=self.set_expanded_false)
+        super(ExpandableRoundedColorLayout,self).__init__(**kwargs)
+
+    def on_touch_down(self, touch):
+        if not self._expanded:
+            pass
+        elif not self.collide_point(*touch.pos):
+            self.shrink()
+            super(ExpandableRoundedColorLayout,self).on_touch_down(touch)
+            return True
+        return super(ExpandableRoundedColorLayout,self).on_touch_down(touch)
+
+    def on_release(self,*args):
+        self.expand()
+
+    def shrink(self,*args):
+        if self._expanded:
+            self.animating=not self.animating
+            self._expanded=False
+            self.shrink_anim.start(self)
+            self.return_anim.start(self)
+
+    def expand(self,*args):
+        if not self._expanded:
+            self.animating=not self.animating
+            parent=self.parent
+            parent.remove_widget(self)
+            parent.add_widget(self)
+            self._expanded=True
+            if hasattr(self,'expanded_size'):
+                self.grow_anim.start(self)
+            if hasattr(self, 'expanded_pos'):
+                self.move_anim.start(self)
+
+    def set_expanded_true(self,*args):
+        self.expanded=True
+
+    def set_expanded_false(self,*args):
+        self.expanded=False
+
+
 
 class ClockText(ButtonBehavior,LabelColor):
     def __init__(self, **kwargs):
@@ -886,6 +950,12 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
 
     def on_touch_down(self, touch):
         self._delete_clock()
+        if not self.pos_hint=={'center_x':.5,'center_y':.55}:
+            pass
+        elif not self.collide_point(*touch.pos):
+            self.redock()
+            super().on_touch_down(touch)
+            return True
         return super().on_touch_down(touch)
 
 class BigWheel(Carousel):
@@ -3414,7 +3484,7 @@ class PreferenceScreen(Screen):
                         size_hint =(1, 1),
                         pos_hint = {'x':.01, 'y':.7},
                         background_down='',
-                        background_color=(100/250, 100/250, 100/250,.9),#(200/250, 200/250, 200/250,.9),
+                        background_color=(200/250, 200/250, 200/250,.9),#(100/250, 100/250, 100/250,.9),
                         markup=True)
         self.widgets['network']=network
         network.ref='network'
@@ -5719,11 +5789,16 @@ class NetworkScreen(Screen):
         self.widgets['screen_name']=screen_name
         screen_name.ref='network_screen_name'
 
-        information_box=RoundedColorLayout(
+        information_box=ExpandableRoundedColorLayout(
             bg_color=(0,0,0,.85),
             size_hint =(.35, .25),
-            pos_hint = {'center_x':.225, 'center_y':.75},)
+            pos_hint = {'center_x':.225, 'center_y':.75},
+            expanded_size=(.9,.8),
+            expanded_pos={'center_x':.5,'center_y':.55})
         self.widgets['information_box']=information_box
+        information_box.bind(expanded=self.information_box_populate)
+        information_box.bind(animating=partial(general.stripargs,information_box.clear_widgets))
+
 
         information_title=Label(
             text=current_language['network_information_title'],
@@ -5739,6 +5814,7 @@ class NetworkScreen(Screen):
             keep_ratio=False,
             size_hint =(.9, .005),
             pos_hint = {'x':.05, 'y':.85})
+        self.widgets['information_seperator']=information_seperator
 
         information_ssid=Label(
             text='  SSID:',
@@ -5761,11 +5837,15 @@ class NetworkScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.225},)
         self.widgets['information_signal']=information_signal
 
-        details_box=RoundedColorLayout(
+        details_box=ExpandableRoundedColorLayout(
             bg_color=(0,0,0,.85),
             size_hint =(.35, .4),
-            pos_hint = {'center_x':.225, 'center_y':.4},)
+            pos_hint = {'center_x':.225, 'center_y':.4},
+            expanded_size=(.9,.8),
+            expanded_pos={'center_x':.5,'center_y':.55})
         self.widgets['details_box']=details_box
+        details_box.bind(expanded=self.details_box_populate)
+        details_box.bind(animating=partial(general.stripargs,details_box.clear_widgets))
 
         details_title=Label(
             text=current_language['network_details_title'],
@@ -5781,6 +5861,7 @@ class NetworkScreen(Screen):
             keep_ratio=False,
             size_hint =(.9, .005),
             pos_hint = {'x':.05, 'y':.85})
+        self.widgets['details_seperator']=details_seperator
 
 
         status_box=RoundedColorLayout(
@@ -5838,7 +5919,8 @@ class NetworkScreen(Screen):
             markup=True)
         self.widgets['side_bar_scan']=side_bar_scan
         side_bar_scan.ref='side_bar_scan'
-        side_bar_scan.bind(on_press=self.side_bar_scan)
+        side_bar_scan.bind(state=self.bg_color)
+        side_bar_scan.bind(on_release=self.side_bar_scan)
 
         side_bar_info=RoundedButton(
             text=current_language['side_bar_info'],
@@ -5849,7 +5931,8 @@ class NetworkScreen(Screen):
             markup=True)
         self.widgets['side_bar_info']=side_bar_info
         side_bar_info.ref='side_bar_info'
-        # side_bar_info.bind(on_press=self.side_bar_info)
+        side_bar_info.bind(state=self.bg_color)
+        side_bar_info.bind(on_release=self.side_bar_info)
 
         side_bar_name=RoundedButton(
             text=current_language['side_bar_name'],
@@ -5860,7 +5943,8 @@ class NetworkScreen(Screen):
             markup=True)
         self.widgets['side_bar_name']=side_bar_name
         side_bar_name.ref='side_bar_name'
-        # side_bar_name.bind(on_press=self.side_bar_name)
+        side_bar_name.bind(state=self.bg_color)
+        side_bar_name.bind(on_release=self.side_bar_name)
 
         side_bar_password=RoundedButton(
             text=current_language['side_bar_password'],
@@ -5871,7 +5955,8 @@ class NetworkScreen(Screen):
             markup=True)
         self.widgets['side_bar_password']=side_bar_password
         side_bar_password.ref='side_bar_password'
-        # side_bar_password.bind(on_press=self.side_bar_password)
+        side_bar_password.bind(state=self.bg_color)
+        side_bar_password.bind(on_release=self.side_bar_password)
 
         side_bar_disconnect=RoundedButton(
             text=current_language['side_bar_disconnect'],
@@ -5882,7 +5967,8 @@ class NetworkScreen(Screen):
             markup=True)
         self.widgets['side_bar_reconnect']=side_bar_disconnect
         side_bar_disconnect.ref='side_bar_disconnect'
-        # side_bar_reconnect.bind(on_press=self.side_bar_disconnect)
+        side_bar_disconnect.bind(state=self.bg_color)
+        side_bar_disconnect.bind(on_release=self.side_bar_disconnect)
 
         account_admin_hint=ExactLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
                 color=(0,0,0,1),
@@ -5929,6 +6015,11 @@ class NetworkScreen(Screen):
         self.add_widget(status_box)
         self.add_widget(side_bar_box)
 
+    def bg_color(self,button,*args):
+        if button.state=='normal':
+            button.shape_color.rgba=(0,0,0,.9)
+        if button.state=='down':
+            button.shape_color.rgba=(.05,.05,0,.7)
     def network_back(self,button):
         self.parent.transition = SlideTransition(direction='right')
         self.manager.current='preferences'
@@ -5946,6 +6037,58 @@ class NetworkScreen(Screen):
                 height=40)
             # btn.bind(on_release=partial(self.load_selected_msg,i))
             self.widgets['status_scroll_layout'].add_widget(btn)
+    def side_bar_info(self,*args):
+        self.widgets['information_box'].expand()
+    def side_bar_name(self,*args):
+        pass
+    def side_bar_password(self,*args):
+        pass
+    def side_bar_disconnect(self,*args):
+        pass
+    def information_box_populate(self,*args):
+        information_box=self.widgets['information_box']
+        if information_box.expanded:
+            w=self.widgets
+            w['information_ssid'].pos_hint={'center_x':.1, 'center_y':.8}
+            w['information_status'].pos_hint={'center_x':.1, 'center_y':.75}
+            w['information_signal'].pos_hint={'center_x':.1, 'center_y':.7}
+            all_widgets=[
+                w['information_title'],
+                w['information_seperator'],
+                w['information_ssid'],
+                w['information_status'],
+                w['information_signal']]
+            for i in all_widgets:
+                information_box.add_widget(i)
+        elif not information_box.expanded:
+            w=self.widgets
+            w['information_ssid'].pos_hint={'center_x':.5, 'center_y':.675}
+            w['information_status'].pos_hint={'center_x':.5, 'center_y':.45}
+            w['information_signal'].pos_hint={'center_x':.5, 'center_y':.225}
+            all_widgets=[
+                w['information_title'],
+                w['information_seperator'],
+                w['information_ssid'],
+                w['information_status'],
+                w['information_signal']]
+            for i in all_widgets:
+                information_box.add_widget(i)
+    def details_box_populate(self,*args):
+        details_box=self.widgets['details_box']
+        if details_box.expanded:
+            w=self.widgets
+            all_widgets=[
+                w['details_title'],
+                w['details_seperator']]
+            for i in all_widgets:
+                details_box.add_widget(i)
+        elif not details_box.expanded:
+            w=self.widgets
+            all_widgets=[
+                w['details_title'],
+                w['details_seperator']]
+            for i in all_widgets:
+                details_box.add_widget(i)
 
     def check_admin_mode(self,*args):
         if App.get_running_app().admin_mode_start>time.time():
@@ -5972,9 +6115,16 @@ class NetworkScreen(Screen):
 
     def on_pre_enter(self, *args):
         # self.check_admin_mode()
-        Clock.schedule_interval(self.refresh_ap_data,10)
+        self.refresh_event=Clock.schedule_interval(self.refresh_ap_data,10)
+        Clock.schedule_once(self.refresh_ap_data)
+        Clock.schedule_once(self.side_bar_scan)
         return super().on_pre_enter(*args)
 
+    def on_leave(self, *args):
+        self.refresh_event.cancel()
+        self.widgets['information_box'].shrink()
+        self.widgets['details_box'].shrink()
+        return super().on_leave(*args)
 
 def listen(app_object,*args):
     event_log=logic.fs.milo
