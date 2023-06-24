@@ -193,9 +193,9 @@ and diagnostics''',
 'network_details_title' : "[size=20][color=#ffffff][b]Details",
 'network_status_title' : "[size=20][color=#ffffff][b]Available Networks",
 'side_bar_scan' : "[size=20][color=#ffffff][b]Scan for networks",
-'side_bar_disconnect' : "[size=20][color=#ffffff][b]Disconnect",
-'side_bar_name' : "[size=20][color=#ffffff][b]Set device name",
-'side_bar_password' : "[size=20][color=#ffffff][b]Set device password",
+'side_bar_disconnect_title' : "[size=20][color=#ffffff][b]Disconnect",
+'side_bar_name_title' : "[size=20][color=#ffffff][b]Set device name",
+'side_bar_password_title' : "[size=20][color=#ffffff][b]Set device password",
 'side_bar_info' : "[size=20][color=#ffffff][b]Current network info",
 
 }
