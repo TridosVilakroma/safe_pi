@@ -5943,7 +5943,7 @@ class NetworkScreen(Screen):
             bg_color=(.5,.5,.5,.85),
             size_hint =(.175, .675),
             pos_hint = {'center_x':.9, 'center_y':.5375},)
-        self.widgets['status_box']=status_box
+        self.widgets['side_bar_box']=side_bar_box
 
         side_bar_scan=RoundedButton(
             text=current_language['side_bar_scan'],
@@ -5955,7 +5955,7 @@ class NetworkScreen(Screen):
         self.widgets['side_bar_scan']=side_bar_scan
         side_bar_scan.ref='side_bar_scan'
         side_bar_scan.bind(state=self.bg_color)
-        side_bar_scan.bind(on_release=self.side_bar_scan)
+        side_bar_scan.bind(on_release=self.side_bar_scan_func)
 
         side_bar_info=RoundedButton(
             text=current_language['side_bar_info'],
@@ -5967,43 +5967,142 @@ class NetworkScreen(Screen):
         self.widgets['side_bar_info']=side_bar_info
         side_bar_info.ref='side_bar_info'
         side_bar_info.bind(state=self.bg_color)
-        side_bar_info.bind(on_release=self.side_bar_info)
+        side_bar_info.bind(on_release=self.side_bar_info_func)
 
-        side_bar_name=RoundedButton(
-            text=current_language['side_bar_name'],
+        side_bar_name=ExpandableRoundedColorLayout(
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.5},
-            background_normal='',
-            background_color=(0,0,0,.9),
-            markup=True)
+            expanded_size=(5.143,1.185),
+            expanded_pos = {'center_x':-1.785, 'center_y':.52},
+            bg_color=(0,0,0,.9),)
         self.widgets['side_bar_name']=side_bar_name
-        side_bar_name.ref='side_bar_name'
         side_bar_name.bind(state=self.bg_color)
-        side_bar_name.bind(on_release=self.side_bar_name)
+        side_bar_name.bind(expanded=self.side_bar_name_populate)
+        side_bar_name.bind(animating=partial(general.stripargs,side_bar_name.clear_widgets))
 
-        side_bar_password=RoundedButton(
-            text=current_language['side_bar_password'],
+        side_bar_name_title=Label(
+            text=current_language['side_bar_name_title'],
+            markup=True,
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['side_bar_name_title']=side_bar_name_title
+        side_bar_name_title.ref='side_bar_name_title'
+
+        side_bar_name_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['side_bar_name_seperator']=side_bar_name_seperator
+
+        side_bar_name_expand_button=RoundedButton(
+            size_hint =(.5, .075),
+            pos_hint = {'center_x':.5, 'center_y':.075},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
+            markup=True)
+        self.widgets['side_bar_name_expand_button']=side_bar_name_expand_button
+        side_bar_name_expand_button.bind(on_release=self.side_bar_name_expand_button_func)
+
+        side_bar_name_expand_lines=Image(
+            source=settings_icon,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.4, .035),
+            pos_hint = {'center_x':.5, 'center_y':.075})
+        side_bar_name_expand_lines.center=side_bar_name_expand_button.center
+        self.widgets['side_bar_name_expand_lines']=side_bar_name_expand_lines
+
+        side_bar_password=ExpandableRoundedColorLayout(
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.3125},
-            background_normal='',
-            background_color=(0,0,0,.9),
-            markup=True)
+            expanded_size=(5.143,1.185),
+            expanded_pos = {'center_x':-1.785, 'center_y':.52},
+            bg_color=(0,0,0,.9))
         self.widgets['side_bar_password']=side_bar_password
-        side_bar_password.ref='side_bar_password'
         side_bar_password.bind(state=self.bg_color)
-        side_bar_password.bind(on_release=self.side_bar_password)
+        side_bar_password.bind(expanded=self.side_bar_password_populate)
+        side_bar_password.bind(animating=partial(general.stripargs,side_bar_password.clear_widgets))
 
-        side_bar_disconnect=RoundedButton(
-            text=current_language['side_bar_disconnect'],
+        side_bar_password_title=Label(
+            text=current_language['side_bar_password_title'],
+            markup=True,
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['side_bar_password_title']=side_bar_password_title
+        side_bar_password_title.ref='side_bar_password_title'
+
+        side_bar_password_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['side_bar_password_seperator']=side_bar_password_seperator
+
+        side_bar_password_expand_button=RoundedButton(
+            size_hint =(.5, .075),
+            pos_hint = {'center_x':.5, 'center_y':.075},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
+            markup=True)
+        self.widgets['side_bar_password_expand_button']=side_bar_password_expand_button
+        side_bar_password_expand_button.bind(on_release=self.side_bar_password_expand_button_func)
+
+        side_bar_password_expand_lines=Image(
+            source=settings_icon,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.4, .035),
+            pos_hint = {'center_x':.5, 'center_y':.075})
+        side_bar_password_expand_lines.center=side_bar_password_expand_button.center
+        self.widgets['side_bar_password_expand_lines']=side_bar_password_expand_lines
+
+        side_bar_disconnect=ExpandableRoundedColorLayout(
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.125},
-            background_normal='',
-            background_color=(0,0,0,.9),
-            markup=True)
-        self.widgets['side_bar_reconnect']=side_bar_disconnect
-        side_bar_disconnect.ref='side_bar_disconnect'
+            expanded_size=(5.143,1.185),
+            expanded_pos = {'center_x':-1.785, 'center_y':.52},
+            bg_color=(0,0,0,.9))
+        self.widgets['side_bar_disconnect']=side_bar_disconnect
         side_bar_disconnect.bind(state=self.bg_color)
-        side_bar_disconnect.bind(on_release=self.side_bar_disconnect)
+        side_bar_disconnect.bind(expanded=self.side_bar_disconnect_populate)
+        side_bar_disconnect.bind(animating=partial(general.stripargs,side_bar_disconnect.clear_widgets))
+
+        side_bar_disconnect_title=Label(
+            text=current_language['side_bar_disconnect_title'],
+            markup=True,
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['side_bar_disconnect_title']=side_bar_disconnect_title
+        side_bar_disconnect_title.ref='side_bar_disconnect_title'
+
+        side_bar_disconnect_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['side_bar_disconnect_seperator']=side_bar_disconnect_seperator
+
+        side_bar_disconnect_expand_button=RoundedButton(
+            size_hint =(.5, .075),
+            pos_hint = {'center_x':.5, 'center_y':.075},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
+            markup=True)
+        self.widgets['side_bar_disconnect_expand_button']=side_bar_disconnect_expand_button
+        side_bar_disconnect_expand_button.bind(on_release=self.side_bar_disconnect_expand_button_func)
+
+        side_bar_disconnect_expand_lines=Image(
+            source=settings_icon,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.4, .035),
+            pos_hint = {'center_x':.5, 'center_y':.075})
+        side_bar_disconnect_expand_lines.center=side_bar_disconnect_expand_button.center
+        self.widgets['side_bar_disconnect_expand_lines']=side_bar_disconnect_expand_lines
 
         account_admin_hint=ExactLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
                 color=(0,0,0,1),
@@ -6043,6 +6142,12 @@ class NetworkScreen(Screen):
         side_bar_box.add_widget(side_bar_password)
         side_bar_box.add_widget(side_bar_info)
 
+        side_bar_name.add_widget(side_bar_name_title)
+
+        side_bar_password.add_widget(side_bar_password_title)
+
+        side_bar_disconnect.add_widget(side_bar_disconnect_title)
+
         self.add_widget(bg_image)
         self.add_widget(screen_name)
         self.add_widget(back)
@@ -6055,6 +6160,9 @@ class NetworkScreen(Screen):
         self.add_widget(side_bar_box)
 
     def bg_color(self,button,*args):
+        if hasattr(button,'expanded'):
+            if button.expanded:
+                return
         if button.state=='normal':
             button.shape_color.rgba=(0,0,0,.9)
         if button.state=='down':
@@ -6065,7 +6173,7 @@ class NetworkScreen(Screen):
     def network_back_main(self,button):
         self.parent.transition = SlideTransition(direction='down')
         self.manager.current='main'
-    def side_bar_scan(self,*args):
+    def side_bar_scan_func(self,*args):
         self.widgets['status_scroll_layout'].clear_widgets()
         for i in network.get_available().splitlines():
             btn = RoundedButton(
@@ -6076,14 +6184,8 @@ class NetworkScreen(Screen):
                 height=40)
             # btn.bind(on_release=partial(self.load_selected_msg,i))
             self.widgets['status_scroll_layout'].add_widget(btn)
-    def side_bar_info(self,*args):
+    def side_bar_info_func(self,*args):
         self.widgets['information_box'].expand()
-    def side_bar_name(self,*args):
-        pass
-    def side_bar_password(self,*args):
-        pass
-    def side_bar_disconnect(self,*args):
-        pass
     def information_box_populate(self,*args):
         information_box=self.widgets['information_box']
         information_box.clear_widgets()
@@ -6154,6 +6256,81 @@ class NetworkScreen(Screen):
                 w['details_expand_lines']]
             for i in all_widgets:
                 details_box.add_widget(i)
+    def side_bar_name_populate(self,*args):
+        sbn_parent=self.widgets['side_bar_box']
+        self.remove_widget(sbn_parent)
+        self.add_widget(sbn_parent)#needed to draw children on top
+        side_bar_name=self.widgets['side_bar_name']
+        side_bar_name.clear_widgets()
+        if side_bar_name.expanded:
+            w=self.widgets
+            w['side_bar_name_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            w['side_bar_name_title'].size_hint=(.4, .05)
+            all_widgets=[
+                w['side_bar_name_title'],
+                w['side_bar_name_seperator'],
+                w['side_bar_name_expand_button'],
+                w['side_bar_name_expand_lines']]
+            for i in all_widgets:
+                side_bar_name.add_widget(i)
+        elif not side_bar_name.expanded:
+            w=self.widgets
+            w['side_bar_name_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            w['side_bar_name_title'].size_hint=(1,1)
+            all_widgets=[
+                w['side_bar_name_title']]
+            for i in all_widgets:
+                side_bar_name.add_widget(i)
+    def side_bar_password_populate(self,*args):
+        sbp_parent=self.widgets['side_bar_box']
+        self.remove_widget(sbp_parent)
+        self.add_widget(sbp_parent)#needed to draw children on top
+        side_bar_password=self.widgets['side_bar_password']
+        side_bar_password.clear_widgets()
+        if side_bar_password.expanded:
+            w=self.widgets
+            w['side_bar_password_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            w['side_bar_password_title'].size_hint=(.4, .05)
+            all_widgets=[
+                w['side_bar_password_title'],
+                w['side_bar_password_seperator'],
+                w['side_bar_password_expand_button'],
+                w['side_bar_password_expand_lines']]
+            for i in all_widgets:
+                side_bar_password.add_widget(i)
+        elif not side_bar_password.expanded:
+            w=self.widgets
+            w['side_bar_password_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            w['side_bar_password_title'].size_hint=(1,1)
+            all_widgets=[
+                w['side_bar_password_title']]
+            for i in all_widgets:
+                side_bar_password.add_widget(i)
+    def side_bar_disconnect_populate(self,*args):
+        sbd_parent=self.widgets['side_bar_box']
+        self.remove_widget(sbd_parent)
+        self.add_widget(sbd_parent)#needed to draw children on top
+        side_bar_disconnect=self.widgets['side_bar_disconnect']
+        side_bar_disconnect.clear_widgets()
+        if side_bar_disconnect.expanded:
+            w=self.widgets
+            w['side_bar_disconnect_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            w['side_bar_disconnect_title'].size_hint=(.4, .05)
+            all_widgets=[
+                w['side_bar_disconnect_title'],
+                w['side_bar_disconnect_seperator'],
+                w['side_bar_disconnect_expand_button'],
+                w['side_bar_disconnect_expand_lines']]
+            for i in all_widgets:
+                side_bar_disconnect.add_widget(i)
+        elif not side_bar_disconnect.expanded:
+            w=self.widgets
+            w['side_bar_disconnect_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            w['side_bar_disconnect_title'].size_hint=(1,1)
+            all_widgets=[
+                w['side_bar_disconnect_title']]
+            for i in all_widgets:
+                side_bar_disconnect.add_widget(i)
     def information_expand_button_func(self,*args):
         ib=self.widgets['information_box']
         if ib.expanded:
@@ -6166,6 +6343,24 @@ class NetworkScreen(Screen):
             db.shrink()
         if not db.expanded:
             db.expand()
+    def side_bar_name_expand_button_func(self,*args):
+        sbn=self.widgets['side_bar_name']
+        if sbn.expanded:
+            sbn.shrink()
+        if not sbn.expanded:
+            sbn.expand()
+    def side_bar_password_expand_button_func(self,*args):
+        sbp=self.widgets['side_bar_password']
+        if sbp.expanded:
+            sbp.shrink()
+        if not sbp.expanded:
+            sbp.expand()
+    def side_bar_disconnect_expand_button_func(self,*args):
+        sbd=self.widgets['side_bar_disconnect']
+        if sbd.expanded:
+            sbd.shrink()
+        if not sbd.expanded:
+            sbd.expand()
 
     def check_admin_mode(self,*args):
         if App.get_running_app().admin_mode_start>time.time():
@@ -6194,7 +6389,7 @@ class NetworkScreen(Screen):
         # self.check_admin_mode()
         self.refresh_event=Clock.schedule_interval(self.refresh_ap_data,10)
         Clock.schedule_once(self.refresh_ap_data)
-        Clock.schedule_once(self.side_bar_scan)
+        Clock.schedule_once(self.side_bar_scan_func)
         return super().on_pre_enter(*args)
 
     def on_leave(self, *args):
