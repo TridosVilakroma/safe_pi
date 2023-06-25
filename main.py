@@ -377,6 +377,28 @@ class ExactLabel(Label):
         self.rect.pos = self.pos
         self.rect.size = (self.texture_size[0], self.texture_size[1])
 
+class MinimumBoundingLabel(Label):
+    def __init__(self, **kwargs):
+        super(MinimumBoundingLabel,self).__init__(**kwargs)
+        self.size_hint=(None,None)
+    #uncomment to see bounding boxes
+    #     with self.canvas.before:
+    #         self.colour = Color(1,0,1,1)
+    #         self.rect = Rectangle(size=self.size, pos=self.pos)
+
+    #     self.bg_color=(1,0,1,1)
+    #     self.bind(size=self._update_rect, pos=self._update_rect)
+
+    # def _update_rect(self, instance, *args):
+    #     self.rect.pos = instance.pos
+    #     self.rect.size = instance.size
+
+    # def on_bg_color(self, *args):
+    #     self.colour.rgb=self.bg_color
+
+    def on_texture_size(self,*args):
+        self.size=self.texture_size
+
 class EventpassGridLayout(GridLayout):
     pass
 
@@ -5833,21 +5855,21 @@ class NetworkScreen(Screen):
             pos_hint = {'x':.05, 'y':.85})
         self.widgets['information_seperator']=information_seperator
 
-        information_ssid=Label(
+        information_ssid=MinimumBoundingLabel(
             text='  SSID:',
             markup=True,
             size_hint =(.9, .05), 
             pos_hint = {'center_x':.5, 'center_y':.725},)
         self.widgets['information_ssid']=information_ssid
 
-        information_status=Label(
+        information_status=MinimumBoundingLabel(
             text='Status:',
             markup=True,
             size_hint =(.4, .05),
             pos_hint = {'center_x':.5, 'center_y':.55},)
         self.widgets['information_status']=information_status
 
-        information_signal=Label(
+        information_signal=MinimumBoundingLabel(
             text='Signal:',
             markup=True,
             size_hint =(.4, .05),
@@ -5898,6 +5920,34 @@ class NetworkScreen(Screen):
             pos_hint = {'x':.05, 'y':.85})
         self.widgets['details_seperator']=details_seperator
 
+        details_box_hint_text=Label(
+            text=current_language['details_box_hint_text'],
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['details_box_hint_text']=details_box_hint_text
+        details_box_hint_text.ref='details_box_hint_text'
+
+        details_ssid=MinimumBoundingLabel(
+            text='     SSID:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'x':.1, 'center_y':.8},)
+        self.widgets['details_ssid']=details_ssid
+
+        details_signal=MinimumBoundingLabel(
+            text='   Signal:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'x':.1, 'center_y':.75},)
+        self.widgets['details_signal']=details_signal
+
+        details_security=MinimumBoundingLabel(
+            text='Security:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'x':.1, 'center_y':.7},)
+        self.widgets['details_security']=details_security
 
         status_box=RoundedColorLayout(
             bg_color=(0,0,0,.85),
@@ -5950,7 +6000,7 @@ class NetworkScreen(Screen):
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.875},
             background_normal='',
-            background_color=(0,0,0,.9),
+            background_color=(0,0,0,.85),
             markup=True)
         self.widgets['side_bar_scan']=side_bar_scan
         side_bar_scan.ref='side_bar_scan'
@@ -5962,7 +6012,7 @@ class NetworkScreen(Screen):
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.6875},
             background_normal='',
-            background_color=(0,0,0,.9),
+            background_color=(0,0,0,.85),
             markup=True)
         self.widgets['side_bar_info']=side_bar_info
         side_bar_info.ref='side_bar_info'
@@ -5974,7 +6024,7 @@ class NetworkScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.5},
             expanded_size=(5.143,1.185),
             expanded_pos = {'center_x':-1.785, 'center_y':.52},
-            bg_color=(0,0,0,.9),)
+            bg_color=(0,0,0,.85),)
         self.widgets['side_bar_name']=side_bar_name
         side_bar_name.bind(state=self.bg_color)
         side_bar_name.bind(expanded=self.side_bar_name_populate)
@@ -6019,7 +6069,7 @@ class NetworkScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.3125},
             expanded_size=(5.143,1.185),
             expanded_pos = {'center_x':-1.785, 'center_y':.52},
-            bg_color=(0,0,0,.9))
+            bg_color=(0,0,0,.85))
         self.widgets['side_bar_password']=side_bar_password
         side_bar_password.bind(state=self.bg_color)
         side_bar_password.bind(expanded=self.side_bar_password_populate)
@@ -6064,7 +6114,7 @@ class NetworkScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.125},
             expanded_size=(5.143,1.185),
             expanded_pos = {'center_x':-1.785, 'center_y':.52},
-            bg_color=(0,0,0,.9))
+            bg_color=(0,0,0,.85))
         self.widgets['side_bar_disconnect']=side_bar_disconnect
         side_bar_disconnect.bind(state=self.bg_color)
         side_bar_disconnect.bind(expanded=self.side_bar_disconnect_populate)
@@ -6130,6 +6180,7 @@ class NetworkScreen(Screen):
         details_box.add_widget(details_seperator)
         details_box.add_widget(details_expand_button)
         details_box.add_widget(details_expand_lines)
+        details_box.add_widget(details_box_hint_text)
 
         status_box.add_widget(status_title)
         status_box.add_widget(status_seperator)
@@ -6182,18 +6233,21 @@ class NetworkScreen(Screen):
                 text=str(i),
                 size_hint_y=None,
                 height=40)
-            # btn.bind(on_release=partial(self.load_selected_msg,i))
+            btn.bind(on_release=partial(self.get_details,i))
             self.widgets['status_scroll_layout'].add_widget(btn)
     def side_bar_info_func(self,*args):
         self.widgets['information_box'].expand()
     def information_box_populate(self,*args):
         information_box=self.widgets['information_box']
+        darken=Animation(rgba=(0,0,0,.95))
+        lighten=Animation(rgba=(0,0,0,.85))
         information_box.clear_widgets()
         if information_box.expanded:
+            darken.start(information_box.shape_color)
             w=self.widgets
-            w['information_ssid'].pos_hint={'center_x':.1, 'center_y':.8}
-            w['information_status'].pos_hint={'center_x':.1, 'center_y':.75}
-            w['information_signal'].pos_hint={'center_x':.1, 'center_y':.7}
+            w['information_ssid'].pos_hint={'x':.1, 'center_y':.8}
+            w['information_status'].pos_hint={'x':.1, 'center_y':.75}
+            w['information_signal'].pos_hint={'x':.1, 'center_y':.7}
             w['information_expand_button'].pos_hint={'center_x':.5, 'center_y':.075}
             w['information_expand_lines'].pos_hint={'center_x':.5, 'center_y':.075}
             w['information_expand_button'].size_hint=(.5, .075)
@@ -6209,6 +6263,7 @@ class NetworkScreen(Screen):
             for i in all_widgets:
                 information_box.add_widget(i)
         elif not information_box.expanded:
+            lighten.start(information_box.shape_color)
             w=self.widgets
             w['information_ssid'].pos_hint={'center_x':.5, 'center_y':.725}
             w['information_status'].pos_hint={'center_x':.5, 'center_y':.55}
@@ -6229,8 +6284,11 @@ class NetworkScreen(Screen):
                 information_box.add_widget(i)
     def details_box_populate(self,*args):
         details_box=self.widgets['details_box']
+        darken=Animation(rgba=(0,0,0,.95))
+        lighten=Animation(rgba=(0,0,0,.85))
         details_box.clear_widgets()
         if details_box.expanded:
+            darken.start(details_box.shape_color)
             w=self.widgets
             w['details_expand_button'].pos_hint={'center_x':.5, 'center_y':.075}
             w['details_expand_lines'].pos_hint={'center_x':.5, 'center_y':.075}
@@ -6240,10 +6298,14 @@ class NetworkScreen(Screen):
                 w['details_title'],
                 w['details_seperator'],
                 w['details_expand_button'],
-                w['details_expand_lines']]
+                w['details_expand_lines'],
+                w['details_ssid'],
+                w['details_signal'],
+                w['details_security'],]
             for i in all_widgets:
                 details_box.add_widget(i)
         elif not details_box.expanded:
+            lighten.start(details_box.shape_color)
             w=self.widgets
             w['details_expand_button'].pos_hint={'center_x':.5, 'center_y':.15}
             w['details_expand_lines'].pos_hint={'center_x':.5, 'center_y':.15}
@@ -6253,16 +6315,20 @@ class NetworkScreen(Screen):
                 w['details_title'],
                 w['details_seperator'],
                 w['details_expand_button'],
-                w['details_expand_lines']]
+                w['details_expand_lines'],
+                w['details_box_hint_text']]
             for i in all_widgets:
                 details_box.add_widget(i)
     def side_bar_name_populate(self,*args):
         sbn_parent=self.widgets['side_bar_box']
+        darken=Animation(rgba=(0,0,0,.95))
+        lighten=Animation(rgba=(0,0,0,.85))
         self.remove_widget(sbn_parent)
         self.add_widget(sbn_parent)#needed to draw children on top
         side_bar_name=self.widgets['side_bar_name']
         side_bar_name.clear_widgets()
         if side_bar_name.expanded:
+            darken.start(side_bar_name.shape_color)
             w=self.widgets
             w['side_bar_name_title'].pos_hint={'center_x':.5, 'center_y':.925}
             w['side_bar_name_title'].size_hint=(.4, .05)
@@ -6274,6 +6340,7 @@ class NetworkScreen(Screen):
             for i in all_widgets:
                 side_bar_name.add_widget(i)
         elif not side_bar_name.expanded:
+            lighten.start(side_bar_name.shape_color)
             w=self.widgets
             w['side_bar_name_title'].pos_hint={'center_x':.5, 'center_y':.5}
             w['side_bar_name_title'].size_hint=(1,1)
@@ -6283,11 +6350,14 @@ class NetworkScreen(Screen):
                 side_bar_name.add_widget(i)
     def side_bar_password_populate(self,*args):
         sbp_parent=self.widgets['side_bar_box']
+        darken=Animation(rgba=(0,0,0,.95))
+        lighten=Animation(rgba=(0,0,0,.85))
         self.remove_widget(sbp_parent)
         self.add_widget(sbp_parent)#needed to draw children on top
         side_bar_password=self.widgets['side_bar_password']
         side_bar_password.clear_widgets()
         if side_bar_password.expanded:
+            darken.start(side_bar_password.shape_color)
             w=self.widgets
             w['side_bar_password_title'].pos_hint={'center_x':.5, 'center_y':.925}
             w['side_bar_password_title'].size_hint=(.4, .05)
@@ -6299,6 +6369,7 @@ class NetworkScreen(Screen):
             for i in all_widgets:
                 side_bar_password.add_widget(i)
         elif not side_bar_password.expanded:
+            lighten.start(side_bar_password.shape_color)
             w=self.widgets
             w['side_bar_password_title'].pos_hint={'center_x':.5, 'center_y':.5}
             w['side_bar_password_title'].size_hint=(1,1)
@@ -6308,11 +6379,14 @@ class NetworkScreen(Screen):
                 side_bar_password.add_widget(i)
     def side_bar_disconnect_populate(self,*args):
         sbd_parent=self.widgets['side_bar_box']
+        darken=Animation(rgba=(0,0,0,.95))
+        lighten=Animation(rgba=(0,0,0,.85))
         self.remove_widget(sbd_parent)
         self.add_widget(sbd_parent)#needed to draw children on top
         side_bar_disconnect=self.widgets['side_bar_disconnect']
         side_bar_disconnect.clear_widgets()
         if side_bar_disconnect.expanded:
+            darken.start(side_bar_disconnect.shape_color)
             w=self.widgets
             w['side_bar_disconnect_title'].pos_hint={'center_x':.5, 'center_y':.925}
             w['side_bar_disconnect_title'].size_hint=(.4, .05)
@@ -6324,6 +6398,7 @@ class NetworkScreen(Screen):
             for i in all_widgets:
                 side_bar_disconnect.add_widget(i)
         elif not side_bar_disconnect.expanded:
+            lighten.start(side_bar_disconnect.shape_color)
             w=self.widgets
             w['side_bar_disconnect_title'].pos_hint={'center_x':.5, 'center_y':.5}
             w['side_bar_disconnect_title'].size_hint=(1,1)
@@ -6361,6 +6436,27 @@ class NetworkScreen(Screen):
             sbd.shrink()
         if not sbd.expanded:
             sbd.expand()
+
+    def get_details(self,ssid,*args):
+        db=self.widgets['details_box']
+        entry_len=30
+        ssid=f'     SSID: {ssid}'
+        signal=f'   Signal: {network.get_signal()}/100'
+        security=f'Security: {network.get_security()}'
+        while len(ssid)<entry_len:
+            ssid=ssid[:11]+' '+ssid[11:]
+        if len(ssid)>entry_len:
+            ssid=ssid[:28]+'...'
+        while len(signal)<entry_len:
+            signal=signal[:11]+' '+signal[11:]
+        while len(security)<entry_len:
+            security=security[:10]+' '+security[10:]
+
+        self.widgets['details_ssid'].text=ssid
+        self.widgets['details_signal'].text=signal
+        self.widgets['details_security'].text=security
+
+        self.details_expand_button_func()
 
     def check_admin_mode(self,*args):
         if App.get_running_app().admin_mode_start>time.time():
