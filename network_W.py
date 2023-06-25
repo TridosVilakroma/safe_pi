@@ -1,11 +1,11 @@
-import subprocess
+import subprocess,random
 
 
 def get_available():
         return 'test\ntest2'
 
 def is_connected():
-        return False
+        return True
 
 def get_ssid():
         return ''
@@ -14,4 +14,7 @@ def get_status():
         return ''
 
 def get_signal():
-        return ''
+        return random.randint(0,100)
+
+def get_security():
+        return random.choice(('wep','wpa'))

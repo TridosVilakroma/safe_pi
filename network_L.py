@@ -36,6 +36,14 @@ def get_signal():
     else:
         return ''
 
+def get_security():
+    return
+    # process=subprocess.run("nmcli -f IN-USE,SIGNAL,SSID device wifi | awk '/^\*/{if (NR!=1) {print $2}}'",shell=True,stdout=subprocess.PIPE)
+    # if process.returncode == 0:
+    #     return process.stdout.decode('utf-8').strip()
+    # else:
+    #     return ''
+
 
 
 
