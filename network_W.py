@@ -18,3 +18,6 @@ def get_signal():
 
 def get_security():
         return random.choice(('wep','wpa'))
+
+def connect_to(ssid,password):
+        print(ssid,password)
