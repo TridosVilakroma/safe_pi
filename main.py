@@ -5949,6 +5949,42 @@ class NetworkScreen(Screen):
             pos_hint = {'x':.1, 'center_y':.7},)
         self.widgets['details_security']=details_security
 
+        details_connect_box=RoundedColorLayout(
+            bg_color=(.15,.15,.15,.8),
+            size_hint =(.55, .55),
+            pos_hint = {'center_x':.65, 'center_y':.5},)
+        self.widgets['details_connect_box']=details_connect_box
+
+        details_password_label=MinimumBoundingLabel(
+            text='Connect:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'center_x':.5, 'center_y':.95},)
+        self.widgets['details_password_label']=details_password_label
+
+        details_password=TextInput(
+            disabled=False,
+            multiline=False,
+            password=True,
+            hint_text='Enter Password',
+            size_hint =(.8, .1),
+            pos_hint = {'center_x':.5, 'center_y':.7})
+        # details_password.bind(on_text_validate=self.email_validate)
+        self.widgets['details_password']=details_password
+        details_password.bind(focus=self.details_password_clear_text)
+
+        details_network_connect=RoundedButton(
+            text='[color=000000]Connect to Network',
+            size_hint =(.6, .1),
+            pos_hint = {'center_x':.5, 'center_y':.4},
+            background_down='',
+            background_color=(245/250, 216/250, 41/250,.9),
+            disabled=True,
+            disabled_color=(1,1,1,1),
+            markup=True)
+        self.widgets['details_network_connect']=details_network_connect
+        details_network_connect.bind(on_press=self.details_network_connect_func)
+
         status_box=RoundedColorLayout(
             bg_color=(0,0,0,.85),
             size_hint =(.35, .675),
@@ -6182,6 +6218,10 @@ class NetworkScreen(Screen):
         details_box.add_widget(details_expand_lines)
         details_box.add_widget(details_box_hint_text)
 
+        details_connect_box.add_widget(details_password_label)
+        details_connect_box.add_widget(details_password)
+        details_connect_box.add_widget(details_network_connect)
+
         status_box.add_widget(status_title)
         status_box.add_widget(status_seperator)
         status_box.add_widget(status_scroll)
@@ -6301,7 +6341,8 @@ class NetworkScreen(Screen):
                 w['details_expand_lines'],
                 w['details_ssid'],
                 w['details_signal'],
-                w['details_security'],]
+                w['details_security'],
+                w['details_connect_box']]
             for i in all_widgets:
                 details_box.add_widget(i)
         elif not details_box.expanded:
@@ -6437,6 +6478,9 @@ class NetworkScreen(Screen):
         if not sbd.expanded:
             sbd.expand()
 
+    def details_network_connect_func(self,*args):
+        pass
+
     def get_details(self,ssid,*args):
         db=self.widgets['details_box']
         entry_len=30
@@ -6480,6 +6524,12 @@ class NetworkScreen(Screen):
             self.widgets['information_ssid'].text=ssid
             self.widgets['information_status'].text=status
             self.widgets['information_signal'].text=signal
+
+    def details_password_clear_text(self,button,focused,*args):
+        if focused:
+            self.widgets['details_password'].text=''
+        elif self.widgets['details_password'].text!='':
+            self.widgets['details_network_connect'].disabled=False
 
     def on_pre_enter(self, *args):
         # self.check_admin_mode()
