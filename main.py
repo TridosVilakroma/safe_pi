@@ -5969,7 +5969,6 @@ class NetworkScreen(Screen):
             hint_text='Enter Password',
             size_hint =(.8, .1),
             pos_hint = {'center_x':.5, 'center_y':.7})
-        # details_password.bind(on_text_validate=self.email_validate)
         self.widgets['details_password']=details_password
         details_password.bind(focus=self.details_password_clear_text)
 
@@ -5984,6 +5983,7 @@ class NetworkScreen(Screen):
             markup=True)
         self.widgets['details_network_connect']=details_network_connect
         details_network_connect.bind(on_press=self.details_network_connect_func)
+        details_network_connect.bind(disabled=self.details_network_connect_disabled)
 
         status_box=RoundedColorLayout(
             bg_color=(0,0,0,.85),
@@ -6479,7 +6479,8 @@ class NetworkScreen(Screen):
             sbd.expand()
 
     def details_network_connect_func(self,*args):
-        pass
+        print(self.widgets['details_ssid'].text,self.widgets['details_password'].text)
+        # network.connect_to(self.widgets['details_ssid'].text,self.widgets['details_password'].text)
 
     def get_details(self,ssid,*args):
         db=self.widgets['details_box']
@@ -6525,9 +6526,19 @@ class NetworkScreen(Screen):
             self.widgets['information_status'].text=status
             self.widgets['information_signal'].text=signal
 
+    def details_network_connect_disabled(self,button,disabled,*args):
+        if  button.disabled:
+            button.background_normal='None'
+            button.background_down=''
+        elif not button.disabled:
+            button.background_normal=''
+            button.background_down='None'
+        button.color_swap()
+
     def details_password_clear_text(self,button,focused,*args):
         if focused:
             self.widgets['details_password'].text=''
+            self.widgets['details_network_connect'].disabled=True
         elif self.widgets['details_password'].text!='':
             self.widgets['details_network_connect'].disabled=False
 
