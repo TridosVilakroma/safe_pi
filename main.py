@@ -5841,6 +5841,7 @@ class NetworkScreen(Screen):
         self.cols = 2
         self.widgets={}
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
+        self._scan=Thread()
 
         back=RoundedButton(
             text=current_language['settings_back'],
@@ -6050,6 +6051,7 @@ class NetworkScreen(Screen):
             bg_color=(0,0,0,.85),
             size_hint =(.35, .675),
             pos_hint = {'center_x':.6, 'center_y':.5375},)
+        status_box.widgets={}
         self.widgets['status_box']=status_box
 
         status_title=Label(
@@ -6326,16 +6328,33 @@ class NetworkScreen(Screen):
         self.parent.transition = SlideTransition(direction='down')
         self.manager.current='main'
     def side_bar_scan_func(self,*args):
-        self.widgets['status_scroll_layout'].clear_widgets()
-        for i in network.get_available().splitlines():
-            btn = RoundedButton(
-                background_normal='',
-                background_color=(.1,.1,.1,1),
-                text=str(i),
-                size_hint_y=None,
-                height=40)
-            btn.bind(on_release=partial(self.get_details,i))
-            self.widgets['status_scroll_layout'].add_widget(btn)
+        if self._scan.is_alive():
+            return
+
+        def scanning():
+            sb=self.widgets['status_box']
+            self.widgets['status_scroll_layout'].clear_widgets()
+            sb.add_widget(PreLoader(rel_size=.5,ref='1',speed=500))
+            sb.add_widget(PreLoader(rel_size=.45,ref='2',speed=550))
+            sb.add_widget(PreLoader(rel_size=.4,ref='3',speed=600))
+            sb.add_widget(PreLoader(rel_size=.35,ref='4',speed=650))
+            sb.add_widget(PreLoader(rel_size=.3,ref='5',speed=700))
+            sb.add_widget(PreLoader(rel_size=.25,ref='6',speed=750))
+            for i in network.get_available().splitlines():
+                btn = RoundedButton(
+                    background_normal='',
+                    background_color=(.1,.1,.1,1),
+                    text=str(i),
+                    size_hint_y=None,
+                    height=40)
+                btn.bind(on_release=partial(self.get_details,i))
+                self.widgets['status_scroll_layout'].add_widget(btn)
+            for i in range(6):
+                sb.remove_widget(sb.widgets[str(i+1)])
+
+        self._scan=Thread(target=scanning,daemon=True)
+        self._scan.start()
+
     def side_bar_info_func(self,*args):
         self.widgets['information_box'].expand()
     def information_box_populate(self,*args):
