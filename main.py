@@ -1519,6 +1519,67 @@ class NotificationBadge(ButtonBehavior,Image):
                 del self.parent.widgets['notification_badge']
         self.parent.remove_widget(self)
 
+class PreLoader(CircularProgressBar):
+    def __init__(self,rel_pos=(.5,.5),rel_size=.5,**kwargs):
+        if 'speed' in kwargs:
+            self.speed=kwargs.pop('speed')
+        else:self.speed=750
+        if 'length' in kwargs:
+            self.length=kwargs.pop('length')
+        else:self.length=200
+        if 'ref' in kwargs:
+            self.ref=kwargs.pop('ref')
+        else:self.ref='preloader'
+
+        super().__init__(**kwargs)
+        self._progress_colour=(1,1,1,1)
+        self.background_colour=(1,1,1,0)
+        self.rel_x=rel_pos[0]
+        self.rel_y=rel_pos[1]
+        self.rel_size=rel_size
+
+    def align(self,*args):
+        parent=self.parent
+        self.widget_size=int(parent.width*self.rel_size)
+        self.y=parent.y+parent.height*self.rel_y
+        self.x=parent.x+parent.width*self.rel_x
+
+    def on_parent(self,*args):
+        if not self.parent:
+            self.clear()
+            return
+        parent=self.parent
+        self._parent=parent
+        self.widget_size=int(parent.width*self.rel_size)
+        self.y=parent.y+parent.height*self.rel_y
+        self.x=parent.x+parent.width*self.rel_x
+        parent.bind(size=self.align)
+        parent.bind(pos=self.align)
+        Clock.schedule_once(self.start_update,.2)
+        if hasattr(parent,'widgets'):
+            parent.widgets[self.ref]=self
+
+    def clear(self,*args):
+        p=self.parent if self.parent else self._parent
+        p.unbind(size=self.align,pos=self.align)
+        if hasattr(p,'widgets'):
+            if self.ref in p.widgets:
+                del p.widgets[self.ref]
+        p.remove_widget(self)
+
+    def start_update(self,*args):
+        self.update_clock=Clock.schedule_interval(self.update,0)
+
+    def stop_update(self,*args):
+        Clock.unschedule(self.update_clock)
+
+    def update(self,delta,*args):
+        if self._angle_start>=360:
+            self._angle_start=0
+            self.value=self.length
+        self.value+=self.speed*delta
+        self._angle_start=((self.value-self.length)*.001)*360
+
 #<<<<<<<<<<>>>>>>>>>>#
 
 class ControlGrid(Screen):
