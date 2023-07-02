@@ -6107,17 +6107,50 @@ class NetworkScreen(Screen):
         side_bar_scan.bind(state=self.bg_color)
         side_bar_scan.bind(on_release=self.side_bar_scan_func)
 
-        side_bar_info=RoundedButton(
-            text=current_language['side_bar_info'],
+        side_bar_manual=ExpandableRoundedColorLayout(
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.6875},
-            background_normal='',
-            background_color=(0,0,0,.85),
+            expanded_size=(5.143,1.185),
+            expanded_pos = {'center_x':-1.785, 'center_y':.52},
+            bg_color=(0,0,0,.85))
+        self.widgets['side_bar_manual']=side_bar_manual
+        side_bar_manual.bind(state=self.bg_color)
+        side_bar_manual.bind(expanded=self.side_bar_manual_populate)
+        side_bar_manual.bind(animating=partial(general.stripargs,side_bar_manual.clear_widgets))
+
+        side_bar_manual_title=Label(
+            text=current_language['side_bar_manual_title'],
+            markup=True,
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['side_bar_manual_title']=side_bar_manual_title
+        side_bar_manual_title.ref='side_bar_manual_title'
+
+        side_bar_manual_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['side_bar_manual_seperator']=side_bar_manual_seperator
+
+        side_bar_manual_expand_button=RoundedButton(
+            size_hint =(.5, .075),
+            pos_hint = {'center_x':.5, 'center_y':.075},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
             markup=True)
-        self.widgets['side_bar_info']=side_bar_info
-        side_bar_info.ref='side_bar_info'
-        side_bar_info.bind(state=self.bg_color)
-        side_bar_info.bind(on_release=self.side_bar_info_func)
+        self.widgets['side_bar_manual_expand_button']=side_bar_manual_expand_button
+        side_bar_manual_expand_button.bind(on_release=self.side_bar_manual_expand_button_func)
+
+        side_bar_manual_expand_lines=Image(
+            source=settings_icon,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.4, .035),
+            pos_hint = {'center_x':.5, 'center_y':.075})
+        side_bar_manual_expand_lines.center=side_bar_manual_expand_button.center
+        self.widgets['side_bar_manual_expand_lines']=side_bar_manual_expand_lines
 
         side_bar_name=ExpandableRoundedColorLayout(
             size_hint =(.9, .15),
@@ -6295,12 +6328,11 @@ class NetworkScreen(Screen):
         side_bar_box.add_widget(side_bar_disconnect)
         side_bar_box.add_widget(side_bar_name)
         side_bar_box.add_widget(side_bar_password)
-        side_bar_box.add_widget(side_bar_info)
+        side_bar_box.add_widget(side_bar_manual)
 
+        side_bar_manual.add_widget(side_bar_manual_title)
         side_bar_name.add_widget(side_bar_name_title)
-
         side_bar_password.add_widget(side_bar_password_title)
-
         side_bar_disconnect.add_widget(side_bar_disconnect_title)
 
         self.add_widget(bg_image)
@@ -6355,9 +6387,6 @@ class NetworkScreen(Screen):
 
         self._scan=Thread(target=scanning,daemon=True)
         self._scan.start()
-
-    def side_bar_info_func(self,*args):
-        self.widgets['information_box'].expand()
     def information_box_populate(self,*args):
         information_box=self.widgets['information_box']
         darken=Animation(rgba=(0,0,0,.95))
@@ -6441,6 +6470,35 @@ class NetworkScreen(Screen):
                 w['details_box_hint_text']]
             for i in all_widgets:
                 details_box.add_widget(i)
+    def side_bar_manual_populate(self,*args):
+        sbm_parent=self.widgets['side_bar_box']
+        darken=Animation(rgba=(0,0,0,.95))
+        lighten=Animation(rgba=(0,0,0,.85))
+        self.remove_widget(sbm_parent)
+        self.add_widget(sbm_parent)#needed to draw children on top
+        side_bar_manual=self.widgets['side_bar_manual']
+        side_bar_manual.clear_widgets()
+        if side_bar_manual.expanded:
+            darken.start(side_bar_manual.shape_color)
+            w=self.widgets
+            w['side_bar_manual_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            w['side_bar_manual_title'].size_hint=(.4, .05)
+            all_widgets=[
+                w['side_bar_manual_title'],
+                w['side_bar_manual_seperator'],
+                w['side_bar_manual_expand_button'],
+                w['side_bar_manual_expand_lines']]
+            for i in all_widgets:
+                side_bar_manual.add_widget(i)
+        elif not side_bar_manual.expanded:
+            lighten.start(side_bar_manual.shape_color)
+            w=self.widgets
+            w['side_bar_manual_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            w['side_bar_manual_title'].size_hint=(1,1)
+            all_widgets=[
+                w['side_bar_manual_title']]
+            for i in all_widgets:
+                side_bar_manual.add_widget(i)
     def side_bar_name_populate(self,*args):
         sbn_parent=self.widgets['side_bar_box']
         darken=Animation(rgba=(0,0,0,.95))
@@ -6540,6 +6598,12 @@ class NetworkScreen(Screen):
             db.shrink()
         if not db.expanded:
             db.expand()
+    def side_bar_manual_expand_button_func(self,*args):
+        sbm=self.widgets['side_bar_manual']
+        if sbm.expanded:
+            sbm.shrink()
+        if not sbm.expanded:
+            sbm.expand()
     def side_bar_name_expand_button_func(self,*args):
         sbn=self.widgets['side_bar_name']
         if sbn.expanded:
