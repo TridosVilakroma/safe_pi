@@ -194,8 +194,8 @@ and diagnostics''',
 'network_status_title' : "[size=20][color=#ffffff][b]Available Networks",
 'side_bar_scan' : "[size=20][color=#ffffff][b]Scan for networks",
 'side_bar_disconnect_title' : "[size=20][color=#ffffff][b]Disconnect",
-'side_bar_name_title' : "[size=20][color=#ffffff][b]Set device name",
-'side_bar_password_title' : "[size=20][color=#ffffff][b]Set device password",
+'side_bar_known_title' : "[size=20][color=#ffffff][b]Known Networks",
+'side_bar_auto_title' : "[size=20][color=#ffffff][b]Auto-Join",
 'side_bar_manual_title' : "[size=20][color=#ffffff][b]Connect Manually",
 'details_box_hint_text' : '''[size=18][color=#ffffff]Select an available network
 to see additional information and
