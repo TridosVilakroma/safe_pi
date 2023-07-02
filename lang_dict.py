@@ -196,7 +196,7 @@ and diagnostics''',
 'side_bar_disconnect_title' : "[size=20][color=#ffffff][b]Disconnect",
 'side_bar_name_title' : "[size=20][color=#ffffff][b]Set device name",
 'side_bar_password_title' : "[size=20][color=#ffffff][b]Set device password",
-'side_bar_info' : "[size=20][color=#ffffff][b]Current network info",
+'side_bar_manual_title' : "[size=20][color=#ffffff][b]Connect Manually",
 'details_box_hint_text' : '''[size=18][color=#ffffff]Select an available network
 to see additional information and
 enter connection  credentials.'''
