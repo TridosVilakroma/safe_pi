@@ -44,7 +44,12 @@ def get_security():
     # else:
     #     return ''
 
-
+def get_known():
+    process=subprocess.run(['nmcli','-g','con','show'],stdout=subprocess.PIPE)
+    if process.returncode == 0:
+        return process.stdout.decode('utf-8').strip()
+    else:
+        return ''
 
 
 
