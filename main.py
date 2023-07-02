@@ -5843,6 +5843,8 @@ class NetworkScreen(Screen):
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
         self._scan=Thread()
         self._refresh_ap=Thread()
+        self._ssid_details=Thread()
+        self._known_networks=Thread()
 
         back=RoundedButton(
             text=current_language['settings_back'],
@@ -5945,6 +5947,7 @@ class NetworkScreen(Screen):
             pos_hint = {'center_x':.225, 'center_y':.4},
             expanded_size=(.9,.8),
             expanded_pos={'center_x':.5,'center_y':.55})
+        details_box.widgets={}
         self.widgets['details_box']=details_box
         details_box.bind(expanded=self.details_box_populate)
         details_box.bind(animating=partial(general.stripargs,details_box.clear_widgets))
@@ -6628,25 +6631,51 @@ class NetworkScreen(Screen):
         # network.connect_to(self.widgets['details_ssid'].text,self.widgets['details_password'].text)
 
     def get_details(self,ssid,*args):
-        db=self.widgets['details_box']
-        entry_len=30
-        ssid=f'     SSID: {ssid}'
-        signal=f'   Signal: {network.get_signal()}/100'
-        security=f'Security: {network.get_security()}'
-        while len(ssid)<entry_len:
-            ssid=ssid[:11]+' '+ssid[11:]
-        if len(ssid)>entry_len:
-            ssid=ssid[:28]+'...'
-        while len(signal)<entry_len:
-            signal=signal[:11]+' '+signal[11:]
-        while len(security)<entry_len:
-            security=security[:10]+' '+security[10:]
-
-        self.widgets['details_ssid'].text=ssid
-        self.widgets['details_signal'].text=signal
-        self.widgets['details_security'].text=security
-
         self.details_expand_button_func()
+        if self._ssid_details.is_alive():
+            return
+        def _details(ssid,*args):
+            db=self.widgets['details_box']
+            start=time.time()
+            timeout=3
+            while not db.expanded:
+                if start+timeout<time.time():
+                    break
+            db.add_widget(PreLoader(rel_size=.3,ref='1',speed=500))
+            db.add_widget(PreLoader(rel_size=.25,ref='2',speed=850))
+            db.add_widget(PreLoader(rel_size=.2,ref='3',speed=600))
+            db.add_widget(PreLoader(rel_size=.15,ref='4',speed=950))
+            db.add_widget(PreLoader(rel_size=.1,ref='5',speed=700))
+            db.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050))
+            entry_len=30
+            ssid=f'     SSID: {ssid}'
+            signal=f'   Signal: {network.get_signal()}/100'
+            security=f'Security: {network.get_security()}'
+            while len(ssid)<entry_len:
+                ssid=ssid[:11]+' '+ssid[11:]
+            if len(ssid)>entry_len:
+                ssid=ssid[:28]+'...'
+            while len(signal)<entry_len:
+                signal=signal[:11]+' '+signal[11:]
+            while len(security)<entry_len:
+                security=security[:10]+' '+security[10:]
+
+            self.widgets['details_ssid'].text=ssid
+            self.widgets['details_signal'].text=signal
+            self.widgets['details_security'].text=security
+            for i in range(6):
+                db.remove_widget(db.widgets[str(i+1)])
+        self._ssid_details=Thread(target=_details,daemon=True,args=(ssid,))
+        self._ssid_details.start()
+
+    def get_known_networks(self,*args):
+        if self._known_networks.is_alive():
+            return
+        def _known():
+            sbk=self.widgets['side_bar_known']
+            known=network.get_known()
+        self._known_networks=Thread(target=_known,daemon=True)
+        self._known_networks.start()
 
     def check_admin_mode(self,*args):
         if App.get_running_app().admin_mode_start>time.time():
