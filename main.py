@@ -5842,6 +5842,7 @@ class NetworkScreen(Screen):
         self.widgets={}
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
         self._scan=Thread()
+        self._refresh_ap=Thread()
 
         back=RoundedButton(
             text=current_language['settings_back'],
@@ -6588,23 +6589,30 @@ class NetworkScreen(Screen):
             pass
 
     def refresh_ap_data(self,*args):
-        if network.is_connected():
-            entry_len=30
-            ssid=f'  SSID: {network.get_ssid()}'
-            status=f'Status: {network.get_status()}'
-            signal=f'Signal: {network.get_signal()}/100'
-            while len(ssid)<entry_len:
-                ssid=ssid[:8]+' '+ssid[8:]
-            if len(ssid)>entry_len:
-                ssid=ssid[:28]+'...'
-            while len(status)<entry_len:
-                status=status[:8]+' '+status[8:]
-            while len(signal)<entry_len:
-                signal=signal[:8]+' '+signal[8:]
+        if self._scan.is_alive():
+            return
 
-            self.widgets['information_ssid'].text=ssid
-            self.widgets['information_status'].text=status
-            self.widgets['information_signal'].text=signal
+        def refreshing():
+            if network.is_connected():
+                entry_len=30
+                ssid=f'  SSID: {network.get_ssid()}'
+                status=f'Status: {network.get_status()}'
+                signal=f'Signal: {network.get_signal()}/100'
+                while len(ssid)<entry_len:
+                    ssid=ssid[:8]+' '+ssid[8:]
+                if len(ssid)>entry_len:
+                    ssid=ssid[:28]+'...'
+                while len(status)<entry_len:
+                    status=status[:8]+' '+status[8:]
+                while len(signal)<entry_len:
+                    signal=signal[:8]+' '+signal[8:]
+
+                self.widgets['information_ssid'].text=ssid
+                self.widgets['information_status'].text=status
+                self.widgets['information_signal'].text=signal
+
+        self._refresh_ap=Thread(target=refreshing,daemon=True)
+        self._refresh_ap.start()
 
     def details_network_connect_disabled(self,button,disabled,*args):
         if  button.disabled:
