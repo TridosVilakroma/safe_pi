@@ -6164,6 +6164,7 @@ class NetworkScreen(Screen):
         self.widgets['side_bar_known']=side_bar_known
         side_bar_known.bind(state=self.bg_color)
         side_bar_known.bind(expanded=self.side_bar_known_populate)
+        side_bar_known.bind(expanded=self.get_known_networks)
         side_bar_known.bind(animating=partial(general.stripargs,side_bar_known.clear_widgets))
 
         side_bar_known_title=Label(
@@ -6199,6 +6200,49 @@ class NetworkScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.075})
         side_bar_known_expand_lines.center=side_bar_known_expand_button.center
         self.widgets['side_bar_known_expand_lines']=side_bar_known_expand_lines
+
+        side_bar_known_status_box=RoundedColorLayout(
+            bg_color=(.1,.1,.1,.85),
+            size_hint =(.4, .6),
+            pos_hint = {'center_x':.7, 'center_y':.5},)
+        side_bar_known_status_box.widgets={}
+        self.widgets['side_bar_known_status_box']=side_bar_known_status_box
+
+        side_bar_known_status_title=Label(
+            text=current_language['side_bar_known_network_status_title'],
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.925},)
+        self.widgets['side_bar_known_status_title']=side_bar_known_status_title
+        side_bar_known_status_title.ref='side_bar_known_network_status_title'
+
+        side_bar_known_status_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['side_bar_known_status_seperator']=side_bar_known_status_seperator
+
+        side_bar_known_status_scroll=OutlineScroll(
+            size_hint =(.9,.75),
+            pos_hint = {'center_x':.5, 'center_y':.45},
+            bg_color=(1,1,1,.15),
+            bar_width=8,
+            bar_color=(245/250, 216/250, 41/250,.9),
+            bar_inactive_color=(245/250, 216/250, 41/250,.35),
+            do_scroll_y=True,
+            do_scroll_x=False)
+        self.widgets['side_bar_known_status_scroll']=side_bar_known_status_scroll
+
+        side_bar_known_status_scroll_layout = GridLayout(
+            cols=1,
+            spacing=10,
+            size_hint_y=None,
+            padding=5)
+        self.widgets['side_bar_known_status_scroll_layout']=side_bar_known_status_scroll_layout
+        # Make sure the height is such that there is something to scroll.
+        side_bar_known_status_scroll_layout.bind(minimum_height=side_bar_known_status_scroll_layout.setter('height'))
 
         side_bar_auto=ExpandableRoundedColorLayout(
             size_hint =(.9, .15),
@@ -6332,6 +6376,11 @@ class NetworkScreen(Screen):
         side_bar_box.add_widget(side_bar_known)
         side_bar_box.add_widget(side_bar_auto)
         side_bar_box.add_widget(side_bar_manual)
+
+        side_bar_known_status_box.add_widget(side_bar_known_status_title)
+        side_bar_known_status_box.add_widget(side_bar_known_status_seperator)
+        side_bar_known_status_box.add_widget(side_bar_known_status_scroll)
+        side_bar_known_status_scroll.add_widget(side_bar_known_status_scroll_layout)
 
         side_bar_manual.add_widget(side_bar_manual_title)
         side_bar_known.add_widget(side_bar_known_title)
@@ -6519,7 +6568,8 @@ class NetworkScreen(Screen):
                 w['side_bar_known_title'],
                 w['side_bar_known_seperator'],
                 w['side_bar_known_expand_button'],
-                w['side_bar_known_expand_lines']]
+                w['side_bar_known_expand_lines'],
+                w['side_bar_known_status_box']]
             for i in all_widgets:
                 side_bar_known.add_widget(i)
         elif not side_bar_known.expanded:
@@ -6673,7 +6723,15 @@ class NetworkScreen(Screen):
             return
         def _known():
             sbk=self.widgets['side_bar_known']
-            known=network.get_known()
+            for i in network.get_known().splitlines():
+                btn = RoundedButton(
+                    background_normal='',
+                    background_color=(.1,.1,.1,1),
+                    text=str(i),
+                    size_hint_y=None,
+                    height=40)
+                btn.bind(on_release=partial(print,i))
+                self.widgets['side_bar_known_status_scroll_layout'].add_widget(btn)
         self._known_networks=Thread(target=_known,daemon=True)
         self._known_networks.start()
 
