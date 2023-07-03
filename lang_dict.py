@@ -199,7 +199,8 @@ and diagnostics''',
 'side_bar_manual_title' : "[size=20][color=#ffffff][b]Connect Manually",
 'details_box_hint_text' : '''[size=18][color=#ffffff]Select an available network
 to see additional information and
-enter connection  credentials.'''
+enter connection  credentials.''',
+'side_bar_known_network_status_title' : "[size=16][color=#ffffff][b]Network Profiles",
 
 }
 
