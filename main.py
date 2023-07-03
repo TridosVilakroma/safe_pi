@@ -6723,6 +6723,7 @@ class NetworkScreen(Screen):
             return
         def _known():
             sbk=self.widgets['side_bar_known']
+            self.widgets['side_bar_known_status_scroll_layout'].clear_widgets()
             for i in network.get_known().splitlines():
                 btn = RoundedButton(
                     background_normal='',
