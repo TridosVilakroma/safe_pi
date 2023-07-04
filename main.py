@@ -104,6 +104,7 @@ delete_normal=r'media/delete_normal.png'
 delete_down=r'media/delete_down.png'
 reset_valve=r'media/redo.png'
 gray_seperator_line=r'media/line_gray.png'
+gray_seperator_line_vertical=r'media/line_gray_vertical.png'
 settings_icon=r'media/menu_lines.png'
 red_dot=r'media/red_dot.png'
 
@@ -5921,24 +5922,24 @@ class NetworkScreen(Screen):
         self.widgets['information_seperator']=information_seperator
 
         information_ssid=MinimumBoundingLabel(
-            text='  SSID:',
+            text='SSID:',
             markup=True,
-            size_hint =(.9, .05), 
-            pos_hint = {'center_x':.5, 'center_y':.725},)
+            size_hint =(.4, .05), 
+            pos_hint = {'x':.2, 'center_y':.725},)
         self.widgets['information_ssid']=information_ssid
 
         information_status=MinimumBoundingLabel(
             text='Status:',
             markup=True,
             size_hint =(.4, .05),
-            pos_hint = {'center_x':.5, 'center_y':.55},)
+            pos_hint = {'x':.2, 'center_y':.55},)
         self.widgets['information_status']=information_status
 
         information_signal=MinimumBoundingLabel(
             text='Signal:',
             markup=True,
             size_hint =(.4, .05),
-            pos_hint = {'center_x':.5, 'center_y':.375},)
+            pos_hint = {'x':.2, 'center_y':.375},)
         self.widgets['information_signal']=information_signal
 
         details_box=ExpandableRoundedColorLayout(
@@ -6154,6 +6155,63 @@ class NetworkScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.075})
         side_bar_manual_expand_lines.center=side_bar_manual_expand_button.center
         self.widgets['side_bar_manual_expand_lines']=side_bar_manual_expand_lines
+
+        side_bar_manual_vertical_seperator=Image(
+            source=gray_seperator_line_vertical,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.0005, .4),
+            pos_hint = {'center_x':.37, 'center_y':.55})
+        self.widgets['side_bar_manual_vertical_seperator']=side_bar_manual_vertical_seperator
+
+        side_bar_manual_ssid=MinimumBoundingLabel(
+            text='     SSID:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'x':.3, 'center_y':.7},)
+        self.widgets['side_bar_manual_ssid']=side_bar_manual_ssid
+
+        side_bar_manual_ssid_input=TextInput(
+            disabled=False,
+            multiline=False,
+            hint_text='Enter Network Name',
+            size_hint =(.3, .05),
+            pos_hint = {'x':.4, 'center_y':.7})
+        self.widgets['side_bar_manual_ssid_input']=side_bar_manual_ssid_input
+        side_bar_manual_ssid_input.bind(focus=self.side_bar_manual_ssid_input_clear)
+
+        side_bar_manual_security=MinimumBoundingLabel(
+            text='Security:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'x':.3, 'center_y':.55},)
+        self.widgets['side_bar_manual_security']=side_bar_manual_security
+
+        side_bar_manual_security_input=Spinner(
+            disabled=False,
+            text='Enter security type',
+            values=('None','WEP','WPA','WPA2/WPA3'),
+            size_hint =(.3, .05),
+            pos_hint = {'x':.4, 'center_y':.55})
+        self.widgets['side_bar_manual_security_input']=side_bar_manual_security_input
+        # side_bar_manual_security_input.bind(focus=)
+
+        side_bar_manual_password=MinimumBoundingLabel(
+            text='password:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'x':.3, 'center_y':.4},)
+        self.widgets['side_bar_manual_password']=side_bar_manual_password
+
+        side_bar_manual_password_input=TextInput(
+            disabled=False,
+            multiline=False,
+            password=True,
+            hint_text='Enter Network Password',
+            size_hint =(.3, .05),
+            pos_hint = {'x':.4, 'center_y':.4})
+        self.widgets['side_bar_manual_password_input']=side_bar_manual_password_input
+        side_bar_manual_password_input.bind(focus=self.side_bar_manual_password_input_clear)
 
         side_bar_known=ExpandableRoundedColorLayout(
             size_hint =(.9, .15),
@@ -6467,9 +6525,9 @@ class NetworkScreen(Screen):
         elif not information_box.expanded:
             lighten.start(information_box.shape_color)
             w=self.widgets
-            w['information_ssid'].pos_hint={'center_x':.5, 'center_y':.725}
-            w['information_status'].pos_hint={'center_x':.5, 'center_y':.55}
-            w['information_signal'].pos_hint={'center_x':.5, 'center_y':.375}
+            w['information_ssid'].pos_hint={'x':.2, 'center_y':.725}
+            w['information_status'].pos_hint={'x':.2, 'center_y':.55}
+            w['information_signal'].pos_hint={'x':.2, 'center_y':.375}
             w['information_expand_button'].pos_hint={'center_x':.5, 'center_y':.15}
             w['information_expand_lines'].pos_hint={'center_x':.5, 'center_y':.15}
             w['information_expand_button'].size_hint=(.5, .175)
@@ -6539,7 +6597,14 @@ class NetworkScreen(Screen):
                 w['side_bar_manual_title'],
                 w['side_bar_manual_seperator'],
                 w['side_bar_manual_expand_button'],
-                w['side_bar_manual_expand_lines']]
+                w['side_bar_manual_expand_lines'],
+                w['side_bar_manual_ssid'],
+                w['side_bar_manual_ssid_input'],
+                w['side_bar_manual_security'],
+                w['side_bar_manual_security_input'],
+                w['side_bar_manual_password'],
+                w['side_bar_manual_password_input'],
+                w['side_bar_manual_vertical_seperator']]
             for i in all_widgets:
                 side_bar_manual.add_widget(i)
         elif not side_bar_manual.expanded:
@@ -6781,6 +6846,36 @@ class NetworkScreen(Screen):
             self.widgets['details_network_connect'].disabled=True
         elif self.widgets['details_password'].text!='':
             self.widgets['details_network_connect'].disabled=False
+
+    def side_bar_manual_password_input_clear(self,button,focused,*args):
+        pi=self.widgets['side_bar_manual_password_input']
+        p=pi.parent
+        p.remove_widget(pi)
+        p.add_widget(pi)
+        if focused:
+            pi.text=''
+            pi.font_size=32
+            pi.pos_hint={'center_x':.5, 'center_y':.6}
+            pi.size_hint=(.8, .1)
+        else:
+            pi.font_size=15
+            pi.pos_hint={'x':.4, 'center_y':.4}
+            pi.size_hint=(.3, .05)
+
+    def side_bar_manual_ssid_input_clear(self,button,focused,*args):
+        si=self.widgets['side_bar_manual_ssid_input']
+        p=si.parent
+        p.remove_widget(si)
+        p.add_widget(si)
+        if focused:
+            si.text=''
+            si.font_size=32
+            si.pos_hint={'center_x':.5, 'center_y':.6}
+            si.size_hint=(.8, .1)
+        else:
+            si.font_size=15
+            si.pos_hint={'x':.4, 'center_y':.7}
+            si.size_hint=(.3, .05)
 
     def on_pre_enter(self, *args):
         # self.check_admin_mode()
