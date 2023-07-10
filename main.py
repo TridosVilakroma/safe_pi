@@ -6816,18 +6816,22 @@ class NetworkScreen(Screen):
     def get_known_networks(self,*args):
         if self._known_networks.is_alive():
             return
-        def _known():
-            sbk=self.widgets['side_bar_known']
-            self.widgets['side_bar_known_status_scroll_layout'].clear_widgets()
-            for i in network.get_known().splitlines():
-                btn = RoundedButton(
+
+        @mainthread
+        def add_button(profile):
+            btn = RoundedButton(
                     background_normal='',
                     background_color=(.1,.1,.1,1),
-                    text=str(i),
+                    text=str(profile),
                     size_hint_y=None,
                     height=40)
-                btn.bind(on_release=partial(print,i))
-                self.widgets['side_bar_known_status_scroll_layout'].add_widget(btn)
+            btn.bind(on_release=partial(print,profile))
+            self.widgets['side_bar_known_status_scroll_layout'].add_widget(btn)
+
+        def _known():
+            self.widgets['side_bar_known_status_scroll_layout'].clear_widgets()
+            for i in network.get_known().splitlines():
+                add_button(i)
         self._known_networks=Thread(target=_known,daemon=True)
         self._known_networks.start()
 
