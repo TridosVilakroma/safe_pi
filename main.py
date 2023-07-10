@@ -53,7 +53,7 @@ from kivy.uix.screenmanager import NoTransition
 from kivy.uix.screenmanager import SlideTransition
 from kivy.uix.screenmanager import FallOutTransition
 from kivy.uix.screenmanager import RiseInTransition
-from kivy.clock import Clock
+from kivy.clock import Clock,mainthread
 from functools import partial
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.scrollview import ScrollView
@@ -6474,7 +6474,8 @@ class NetworkScreen(Screen):
         if self._scan.is_alive():
             return
 
-        def scanning():
+        @mainthread
+        def add_spinners():
             sb=self.widgets['status_box']
             self.widgets['status_scroll_layout'].clear_widgets()
             sb.add_widget(PreLoader(rel_size=.5,ref='1',speed=500))
@@ -6483,17 +6484,29 @@ class NetworkScreen(Screen):
             sb.add_widget(PreLoader(rel_size=.35,ref='4',speed=650))
             sb.add_widget(PreLoader(rel_size=.3,ref='5',speed=700))
             sb.add_widget(PreLoader(rel_size=.25,ref='6',speed=750))
-            for i in network.get_available().splitlines():
-                btn = RoundedButton(
-                    background_normal='',
-                    background_color=(.1,.1,.1,1),
-                    text=str(i),
-                    size_hint_y=None,
-                    height=40)
-                btn.bind(on_release=partial(self.get_details,i))
-                self.widgets['status_scroll_layout'].add_widget(btn)
+
+        @mainthread
+        def remove_spinners():
+            sb=self.widgets['status_box']
             for i in range(6):
                 sb.remove_widget(sb.widgets[str(i+1)])
+
+        @mainthread
+        def add_button(ssid):
+            btn = RoundedButton(
+                    background_normal='',
+                    background_color=(.1,.1,.1,1),
+                    text=str(ssid),
+                    size_hint_y=None,
+                    height=40)
+            btn.bind(on_release=partial(self.get_details,ssid))
+            self.widgets['status_scroll_layout'].add_widget(btn)
+
+        def scanning():
+            add_spinners()
+            for i in network.get_available().splitlines():
+                add_button(i)
+            remove_spinners()
 
         self._scan=Thread(target=scanning,daemon=True)
         self._scan.start()
