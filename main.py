@@ -6839,6 +6839,12 @@ class NetworkScreen(Screen):
         if self._scan.is_alive():
             return
 
+        @mainthread
+        def set_labels(ssid,status,signal):
+            self.widgets['information_ssid'].text=ssid
+            self.widgets['information_status'].text=status
+            self.widgets['information_signal'].text=signal
+
         def refreshing():
             if network.is_connected():
                 entry_len=30
@@ -6854,9 +6860,7 @@ class NetworkScreen(Screen):
                 while len(signal)<entry_len:
                     signal=signal[:8]+' '+signal[8:]
 
-                self.widgets['information_ssid'].text=ssid
-                self.widgets['information_status'].text=status
-                self.widgets['information_signal'].text=signal
+                set_labels(ssid,status,signal)
 
         self._refresh_ap=Thread(target=refreshing,daemon=True)
         self._refresh_ap.start()
