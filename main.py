@@ -6762,19 +6762,39 @@ class NetworkScreen(Screen):
         self.details_expand_button_func()
         if self._ssid_details.is_alive():
             return
-        def _details(ssid,*args):
+
+        @mainthread
+        def add_spinners():
             db=self.widgets['details_box']
-            start=time.time()
-            timeout=3
-            while not db.expanded:
-                if start+timeout<time.time():
-                    break
             db.add_widget(PreLoader(rel_size=.3,ref='1',speed=500))
             db.add_widget(PreLoader(rel_size=.25,ref='2',speed=850))
             db.add_widget(PreLoader(rel_size=.2,ref='3',speed=600))
             db.add_widget(PreLoader(rel_size=.15,ref='4',speed=950))
             db.add_widget(PreLoader(rel_size=.1,ref='5',speed=700))
             db.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050))
+
+        @mainthread
+        def remove_spinners():
+            db=self.widgets['details_box']
+            for i in range(6):
+                if str(i+1) in db.widgets:
+                    db.remove_widget(db.widgets[str(i+1)])
+
+        @mainthread
+        def clear_details():
+            self.widgets['details_ssid'].text='     SSID:'
+            self.widgets['details_signal'].text='   Signal:'
+            self.widgets['details_security'].text='Security:'
+
+        @mainthread
+        def set_details(ssid,signal,security):
+            self.widgets['details_ssid'].text=ssid
+            self.widgets['details_signal'].text=signal
+            self.widgets['details_security'].text=security
+
+        def _details(ssid,*args):
+            clear_details()
+            add_spinners()
             entry_len=30
             ssid=f'     SSID: {ssid}'
             signal=f'   Signal: {network.get_signal()}/100'
@@ -6788,11 +6808,8 @@ class NetworkScreen(Screen):
             while len(security)<entry_len:
                 security=security[:10]+' '+security[10:]
 
-            self.widgets['details_ssid'].text=ssid
-            self.widgets['details_signal'].text=signal
-            self.widgets['details_security'].text=security
-            for i in range(6):
-                db.remove_widget(db.widgets[str(i+1)])
+            set_details(ssid,signal,security)
+            remove_spinners()
         self._ssid_details=Thread(target=_details,daemon=True,args=(ssid,))
         self._ssid_details.start()
 
