@@ -22,5 +22,8 @@ def get_security():
 def connect_to(ssid,password):
         print(ssid,password)
 
+def connect_to_saved(ssid):
+        print(ssid)
+
 def get_known():
         return 'test\ntest2'
