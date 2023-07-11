@@ -6017,17 +6017,31 @@ class NetworkScreen(Screen):
         self.widgets['details_security']=details_security
 
         details_connect_box=RoundedColorLayout(
-            bg_color=(.15,.15,.15,.8),
-            size_hint =(.55, .55),
-            pos_hint = {'center_x':.65, 'center_y':.5},)
+            bg_color=(.1,.1,.1,.85),
+            size_hint =(.4, .6),
+            pos_hint = {'center_x':.7, 'center_y':.5},)
         self.widgets['details_connect_box']=details_connect_box
 
-        details_password_label=MinimumBoundingLabel(
-            text='Connect:',
+        details_password_label=Label(
+            text='Connect',
             markup=True,
-            size_hint=(None,None),
-            pos_hint = {'center_x':.5, 'center_y':.95},)
+            size_hint=(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.925},)
         self.widgets['details_password_label']=details_password_label
+
+        details_password_label_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['details_password_label_seperator']=details_password_label_seperator
+
+        details_password_interior_box=LabelColor(
+            size_hint =(.9,.75),
+            pos_hint = {'center_x':.5, 'center_y':.45},
+            bg_color=(1,1,1,.15))
+        self.widgets['details_password_interior_box']=details_password_interior_box
 
         details_password=TextInput(
             disabled=False,
@@ -6035,16 +6049,16 @@ class NetworkScreen(Screen):
             password=True,
             hint_text='Enter Password',
             size_hint =(.8, .1),
-            pos_hint = {'center_x':.5, 'center_y':.7})
+            pos_hint = {'center_x':.5, 'center_y':.5})
         self.widgets['details_password']=details_password
         details_password.bind(focus=self.details_password_clear_text)
 
         details_network_connect=RoundedButton(
-            text='[color=000000]Connect to Network',
+            text='Password Required',
             size_hint =(.6, .1),
-            pos_hint = {'center_x':.5, 'center_y':.4},
-            background_down='',
-            background_color=(245/250, 216/250, 41/250,.9),
+            pos_hint = {'center_x':.5, 'center_y':.25},
+            background_normal='',
+            background_color=(.1,.1,.1,1),
             disabled=True,
             disabled_color=(1,1,1,1),
             markup=True)
@@ -6421,6 +6435,8 @@ class NetworkScreen(Screen):
         details_box.add_widget(details_box_hint_text)
 
         details_connect_box.add_widget(details_password_label)
+        details_connect_box.add_widget(details_password_label_seperator)
+        details_connect_box.add_widget(details_password_interior_box)
         details_connect_box.add_widget(details_password)
         details_connect_box.add_widget(details_network_connect)
 
@@ -6879,18 +6895,32 @@ class NetworkScreen(Screen):
 
     def details_network_connect_disabled(self,button,disabled,*args):
         if  button.disabled:
-            button.background_normal='None'
-            button.background_down=''
-        elif not button.disabled:
-            button.background_normal=''
             button.background_down='None'
+            button.background_normal=''
+            button.text='Password Required'
+        elif not button.disabled:
+            button.background_down=''
+            button.background_normal='None'
+            button.text='Connect to Network'
         button.color_swap()
 
     def details_password_clear_text(self,button,focused,*args):
+        pi=self.widgets['details_password']
+        p=pi.parent
+        p.remove_widget(pi)
         if focused:
+            self.widgets['details_box'].add_widget(pi)
             self.widgets['details_password'].text=''
+            pi.font_size=32
+            pi.pos_hint={'center_x':.5, 'center_y':.6}
+            pi.size_hint=(.8, .1)
             self.widgets['details_network_connect'].disabled=True
-        elif self.widgets['details_password'].text!='':
+        else:
+            self.widgets['details_connect_box'].add_widget(pi)
+            pi.font_size=15
+            pi.pos_hint={'center_x':.5, 'center_y':.5}
+            pi.size_hint=(.8, .1)
+        if self.widgets['details_password'].text!='':
             self.widgets['details_network_connect'].disabled=False
 
     def side_bar_manual_password_input_clear(self,button,focused,*args):
