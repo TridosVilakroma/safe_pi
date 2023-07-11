@@ -6802,8 +6802,7 @@ class NetworkScreen(Screen):
         # network.connect_to(self.widgets['details_ssid'].text,self.widgets['details_password'].text)
 
     def side_bar_manual_connect_func(self,*args):
-        print(self.widgets['details_ssid'].text,self.widgets['details_password'].text)
-        # network.connect_to(self.widgets['details_ssid'].text,self.widgets['details_password'].text)
+        network.connect_to(self.widgets['side_bar_manual_ssid_input'].text,self.widgets['side_bar_manual_password_input'].text)
 
     def get_details(self,ssid,*args):
         self.details_expand_button_func()
