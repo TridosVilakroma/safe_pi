@@ -5846,6 +5846,7 @@ class NetworkScreen(Screen):
         self._refresh_ap=Thread()
         self._ssid_details=Thread()
         self._known_networks=Thread()
+        self._manual_connecting=Thread()
 
         back=RoundedButton(
             text=current_language['settings_back'],
@@ -6802,7 +6803,33 @@ class NetworkScreen(Screen):
         # network.connect_to(self.widgets['details_ssid'].text,self.widgets['details_password'].text)
 
     def side_bar_manual_connect_func(self,*args):
-        network.connect_to(self.widgets['side_bar_manual_ssid_input'].text,self.widgets['side_bar_manual_password_input'].text)
+        if self._manual_connecting.is_alive():
+            return
+
+        @mainthread
+        def add_spinners():
+            sbm=self.widgets['side_bar_manual']
+            sbm.add_widget(PreLoader(rel_size=.3,ref='1',speed=500))
+            sbm.add_widget(PreLoader(rel_size=.25,ref='2',speed=850))
+            sbm.add_widget(PreLoader(rel_size=.2,ref='3',speed=600))
+            sbm.add_widget(PreLoader(rel_size=.15,ref='4',speed=950))
+            sbm.add_widget(PreLoader(rel_size=.1,ref='5',speed=700))
+            sbm.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050))
+
+        @mainthread
+        def remove_spinners():
+            sbm=self.widgets['side_bar_manual']
+            for i in range(6):
+                if str(i+1) in sbm.widgets:
+                    sbm.remove_widget(sbm.widgets[str(i+1)])
+
+        def _connect():
+            add_spinners()
+            network.connect_to(self.widgets['side_bar_manual_ssid_input'].text,self.widgets['side_bar_manual_password_input'].text)
+            remove_spinners()
+
+        self._manual_connecting=Thread(target=_connect,daemon=True)
+        self._manual_connecting.start()
 
     def get_details(self,ssid,*args):
         self.details_expand_button_func()
