@@ -6493,12 +6493,20 @@ class NetworkScreen(Screen):
 
         @mainthread
         def add_button(ssid):
+            current=False
+            prefix=''
+            suffix=''
+            if network.get_ssid()==ssid:
+                current=True
+                prefix='>  '
+                suffix='  <'
+            c=(.0, .5, .7,.8) if current else (.1,.1,.1,1)
             btn = RoundedButton(
-                    background_normal='',
-                    background_color=(.1,.1,.1,1),
-                    text=str(ssid),
-                    size_hint_y=None,
-                    height=40)
+                background_normal='',
+                background_color=c,
+                text=prefix+str(ssid)+suffix,
+                size_hint_y=None,
+                height=40)
             btn.bind(on_release=partial(self.get_details,ssid))
             self.widgets['status_scroll_layout'].add_widget(btn)
 
