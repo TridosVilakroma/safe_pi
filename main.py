@@ -6208,7 +6208,7 @@ class NetworkScreen(Screen):
             size_hint =(.3, .05),
             pos_hint = {'x':.4, 'center_y':.55})
         self.widgets['side_bar_manual_security_input']=side_bar_manual_security_input
-        # side_bar_manual_security_input.bind(focus=)
+        side_bar_manual_security_input.bind(on_text=self.security_input_func)
 
         side_bar_manual_password=MinimumBoundingLabel(
             text='password:',
@@ -6226,6 +6226,19 @@ class NetworkScreen(Screen):
             pos_hint = {'x':.4, 'center_y':.4})
         self.widgets['side_bar_manual_password_input']=side_bar_manual_password_input
         side_bar_manual_password_input.bind(focus=self.side_bar_manual_password_input_clear)
+
+        side_bar_manual_connect=RoundedButton(
+            text='All Fields Required',
+            size_hint =(.425, .075),
+            pos_hint = {'center_x':.5, 'center_y':.25},
+            background_normal='',
+            background_color=(.1,.1,.1,1),
+            disabled=True,
+            disabled_color=(1,1,1,1),
+            markup=True)
+        self.widgets['side_bar_manual_connect']=side_bar_manual_connect
+        side_bar_manual_connect.bind(on_release=self.side_bar_manual_connect_func)
+        side_bar_manual_connect.bind(disabled=self.side_bar_manual_connect_disabled)
 
         side_bar_known=ExpandableRoundedColorLayout(
             size_hint =(.9, .15),
@@ -6643,7 +6656,8 @@ class NetworkScreen(Screen):
                 w['side_bar_manual_security_input'],
                 w['side_bar_manual_password'],
                 w['side_bar_manual_password_input'],
-                w['side_bar_manual_vertical_seperator']]
+                w['side_bar_manual_vertical_seperator'],
+                w['side_bar_manual_connect']]
             for i in all_widgets:
                 side_bar_manual.add_widget(i)
         elif not side_bar_manual.expanded:
@@ -6784,6 +6798,10 @@ class NetworkScreen(Screen):
         print(self.widgets['details_ssid'].text,self.widgets['details_password'].text)
         # network.connect_to(self.widgets['details_ssid'].text,self.widgets['details_password'].text)
 
+    def side_bar_manual_connect_func(self,*args):
+        print(self.widgets['details_ssid'].text,self.widgets['details_password'].text)
+        # network.connect_to(self.widgets['details_ssid'].text,self.widgets['details_password'].text)
+
     def get_details(self,ssid,*args):
         self.details_expand_button_func()
         if self._ssid_details.is_alive():
@@ -6906,6 +6924,13 @@ class NetworkScreen(Screen):
             button.text='Connect to Network'
         button.color_swap()
 
+    def side_bar_manual_connect_disabled(self,button,disabled,*args):
+        if  button.disabled:
+            button.text='All Fields Required'
+        elif not button.disabled:
+            button.text='Connect to Network'
+        button.color_swap()
+
     def details_password_clear_text(self,button,focused,*args):
         pi=self.widgets['details_password']
         p=pi.parent
@@ -6925,6 +6950,20 @@ class NetworkScreen(Screen):
         if self.widgets['details_password'].text!='':
             self.widgets['details_network_connect'].disabled=False
 
+    def manual_connect_disable_func(self,*args):
+        con_btn=self.widgets['side_bar_manual_connect']
+        si=self.widgets['side_bar_manual_ssid_input']
+        security_input=self.widgets['side_bar_manual_security_input']
+        pi=self.widgets['side_bar_manual_password_input']
+        if (si.text!='' and security_input.text!='Enter security type' and pi.text!=''):
+            con_btn.disabled=False
+            con_btn.bg_color=(.0, .7, .9,1)
+            con_btn.color_swap()
+        else:
+            con_btn.disabled=True
+            con_btn.bg_color=(.1,.1,.1,1)
+            con_btn.color_swap()
+
     def side_bar_manual_password_input_clear(self,button,focused,*args):
         pi=self.widgets['side_bar_manual_password_input']
         p=pi.parent
@@ -6939,6 +6978,14 @@ class NetworkScreen(Screen):
             pi.font_size=15
             pi.pos_hint={'x':.4, 'center_y':.4}
             pi.size_hint=(.3, .05)
+        self.manual_connect_disable_func()
+
+    def security_input_func(self,button,focused,*args):
+        if focused:
+            print(button.text)
+        else:
+            print(button.text)
+        self.manual_connect_disable_func()
 
     def side_bar_manual_ssid_input_clear(self,button,focused,*args):
         si=self.widgets['side_bar_manual_ssid_input']
@@ -6954,6 +7001,7 @@ class NetworkScreen(Screen):
             si.font_size=15
             si.pos_hint={'x':.4, 'center_y':.7}
             si.size_hint=(.3, .05)
+        self.manual_connect_disable_func()
 
     def on_pre_enter(self, *args):
         # self.check_admin_mode()
