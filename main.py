@@ -6203,12 +6203,12 @@ class NetworkScreen(Screen):
 
         side_bar_manual_security_input=Spinner(
             disabled=False,
-            text='Enter security type',
+            text='Enter Security Type',
             values=('None','WEP','WPA','WPA2/WPA3'),
             size_hint =(.3, .05),
             pos_hint = {'x':.4, 'center_y':.55})
         self.widgets['side_bar_manual_security_input']=side_bar_manual_security_input
-        side_bar_manual_security_input.bind(on_text=self.security_input_func)
+        side_bar_manual_security_input.bind(text=self.security_input_func)
 
         side_bar_manual_password=MinimumBoundingLabel(
             text='password:',
@@ -6645,6 +6645,9 @@ class NetworkScreen(Screen):
             w=self.widgets
             w['side_bar_manual_title'].pos_hint={'center_x':.5, 'center_y':.925}
             w['side_bar_manual_title'].size_hint=(.4, .05)
+            w['side_bar_manual_ssid_input'].text=''
+            w['side_bar_manual_security_input'].text='Enter Security Type'
+            w['side_bar_manual_password_input'].text=''
             all_widgets=[
                 w['side_bar_manual_title'],
                 w['side_bar_manual_seperator'],
@@ -6980,11 +6983,7 @@ class NetworkScreen(Screen):
             pi.size_hint=(.3, .05)
         self.manual_connect_disable_func()
 
-    def security_input_func(self,button,focused,*args):
-        if focused:
-            print(button.text)
-        else:
-            print(button.text)
+    def security_input_func(self,button,*args):
         self.manual_connect_disable_func()
 
     def side_bar_manual_ssid_input_clear(self,button,focused,*args):
