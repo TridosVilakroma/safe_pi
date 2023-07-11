@@ -8,7 +8,7 @@ def is_connected():
         return True
 
 def get_ssid():
-        return ''
+        return 'test'
 
 def get_status():
         return ''
