@@ -6132,6 +6132,7 @@ class NetworkScreen(Screen):
             expanded_size=(5.143,1.185),
             expanded_pos = {'center_x':-1.785, 'center_y':.52},
             bg_color=(0,0,0,.85))
+        side_bar_manual.widgets={}
         self.widgets['side_bar_manual']=side_bar_manual
         side_bar_manual.bind(state=self.bg_color)
         side_bar_manual.bind(expanded=self.side_bar_manual_populate)
