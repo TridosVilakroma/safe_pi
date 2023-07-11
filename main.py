@@ -1582,6 +1582,95 @@ class PreLoader(CircularProgressBar):
         self.value+=self.speed*delta
         self._angle_start=((self.value-self.length)*.001)*360
 
+class MenuBubble(Bubble):
+    def __init__(self, **kwargs):
+        if 'ref' in kwargs:
+            self.ref=kwargs.pop('ref')
+        else:self.ref='menu_bubble'
+        super(MenuBubble,self).__init__(**kwargs)
+
+    def align(self,*args):
+        parent=self.parent
+        # optimize layout by preventing looking at the same attribute in a loop
+        w, h = parent.size
+        x, y = parent.pos
+        # size
+        shw, shh = self.size_hint
+        shw_min, shh_min = self.size_hint_min
+        shw_max, shh_max = self.size_hint_max
+
+        if shw is not None and shh is not None:
+            c_w = shw * w
+            c_h = shh * h
+
+            if shw_min is not None and c_w < shw_min:
+                c_w = shw_min
+            elif shw_max is not None and c_w > shw_max:
+                c_w = shw_max
+
+            if shh_min is not None and c_h < shh_min:
+                c_h = shh_min
+            elif shh_max is not None and c_h > shh_max:
+                c_h = shh_max
+            self.size = c_w, c_h
+        elif shw is not None:
+            c_w = shw * w
+
+            if shw_min is not None and c_w < shw_min:
+                c_w = shw_min
+            elif shw_max is not None and c_w > shw_max:
+                c_w = shw_max
+            self.width = c_w
+        elif shh is not None:
+            c_h = shh * h
+
+            if shh_min is not None and c_h < shh_min:
+                c_h = shh_min
+            elif shh_max is not None and c_h > shh_max:
+                c_h = shh_max
+            self.height = c_h
+
+        # pos
+        for key, value in self.pos_hint.items():
+            if key == 'x':
+                self.x = x + value * w
+            elif key == 'right':
+                self.right = x + value * w
+            elif key == 'pos':
+                self.pos = x + value[0] * w, y + value[1] * h
+            elif key == 'y':
+                self.y = y + value * h
+            elif key == 'top':
+                self.top = y + value * h
+            elif key == 'center':
+                self.center = x + value[0] * w, y + value[1] * h
+            elif key == 'center_x':
+                self.center_x = x + value * w
+            elif key == 'center_y':
+                self.center_y = y + value * h
+
+    def on_parent(self,*args):
+        if not self.parent:
+            self.clear()
+            return
+        parent=self.parent
+        self._parent=parent
+        if hasattr(parent,'widgets'):
+            parent.widgets[self.ref]=self
+        if hasattr(parent,'do_layout'):
+            return
+        self.align()
+        parent.bind(size=self.align)
+        parent.bind(pos=self.align)
+
+    def clear(self,*args):
+        p=self.parent if self.parent else self._parent
+        p.unbind(size=self.align,pos=self.align)
+        if hasattr(p,'widgets'):
+            if self.ref in p.widgets:
+                del p.widgets[self.ref]
+        p.remove_widget(self)
+
 #<<<<<<<<<<>>>>>>>>>>#
 
 class ControlGrid(Screen):
@@ -6895,13 +6984,19 @@ class NetworkScreen(Screen):
             return
 
         def add_bubble(profile,button):
-            b=Bubble(orientation = 'vertical')
-            # print(b.children)
-            # b.add_widget(BubbleButton())
-            # print(b.children)
-            # b.add_widget(BubbleButton())
-            # button.add_widget(b)
-            
+            print(self.widgets['side_bar_known_status_scroll'].bounding_box)
+            b=MenuBubble(
+                orientation='vertical',
+                arrow_pos='right_mid',
+                size_hint =(.4,2.5),
+                pos_hint = {'right':0, 'center_y':.5})
+            cnct=BubbleButton(text='Connect')
+            cnct.bind(on_release=partial(network.connect_to_saved,profile))
+            rmv=BubbleButton(text='Forget')
+            rmv.bind(on_release=partial(print,'removing'))
+            b.add_widget(cnct)
+            b.add_widget(rmv)
+            button.add_widget(b)
 
         @mainthread
         def add_button(profile):
