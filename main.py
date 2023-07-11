@@ -6958,7 +6958,7 @@ class NetworkScreen(Screen):
         si=self.widgets['side_bar_manual_ssid_input']
         security_input=self.widgets['side_bar_manual_security_input']
         pi=self.widgets['side_bar_manual_password_input']
-        if (si.text!='' and security_input.text!='Enter security type' and pi.text!=''):
+        if (si.text!='' and security_input.text!='Enter Security Type' and pi.text!=''):
             con_btn.disabled=False
             con_btn.bg_color=(.0, .7, .9,1)
             con_btn.color_swap()
