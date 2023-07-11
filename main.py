@@ -41,6 +41,7 @@ from kivy.uix.image import Image
 from kivy.graphics import BorderImage
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.uix.bubble import Bubble, BubbleButton
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.relativelayout import RelativeLayout
 from kivy.uix.floatlayout import FloatLayout
@@ -6893,6 +6894,15 @@ class NetworkScreen(Screen):
         if self._known_networks.is_alive():
             return
 
+        def add_bubble(profile,button):
+            b=Bubble(orientation = 'vertical')
+            # print(b.children)
+            # b.add_widget(BubbleButton())
+            # print(b.children)
+            # b.add_widget(BubbleButton())
+            # button.add_widget(b)
+            
+
         @mainthread
         def add_button(profile):
             btn = RoundedButton(
@@ -6901,7 +6911,7 @@ class NetworkScreen(Screen):
                     text=str(profile),
                     size_hint_y=None,
                     height=40)
-            btn.bind(on_release=partial(print,profile))
+            btn.bind(on_release=partial(add_bubble,profile))
             self.widgets['side_bar_known_status_scroll_layout'].add_widget(btn)
 
         def _known():
