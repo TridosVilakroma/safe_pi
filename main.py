@@ -6489,6 +6489,8 @@ class NetworkScreen(Screen):
     def side_bar_scan_func(self,*args):
         if self._scan.is_alive():
             return
+        bounce=Animation(size_hint=(1, .2),d=.0,t='out_back')+Animation(size_hint=(.9, .15),d=.15,t='out_back')
+        bounce.start(self.widgets['side_bar_scan'])
 
         @mainthread
         def add_spinners():
