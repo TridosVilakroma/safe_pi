@@ -97,7 +97,7 @@ def connect_to(ssid: str, password: str):
     subprocess.call(['nmcli', 'd', 'wifi', 'connect', ssid, 'password', password])
     return is_connected_to(ssid)
 
-def connect_to_saved(ssid: str):
+def connect_to_saved(ssid: str,*args):
     if not is_wifi_available(ssid):
         return False
     subprocess.call(['nmcli', 'c', 'up', ssid])
