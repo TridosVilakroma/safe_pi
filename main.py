@@ -1672,6 +1672,14 @@ class MenuBubble(Bubble):
                 del p.widgets[self.ref]
         p.remove_widget(self)
 
+    def on_touch_down(self, touch):
+        if not self.collide_point(*touch.pos):
+            if hasattr(self,'parent'):
+                self.parent.remove_widget(self)
+            super(MenuBubble,self).on_touch_down(touch)
+            return True
+        return super(MenuBubble,self).on_touch_down(touch)
+
 class ScrollMenuBubble(Bubble):
     def __init__(self,trackee_widget,scrollview,**kwargs):
         if 'ref' in kwargs:
@@ -1765,6 +1773,14 @@ class ScrollMenuBubble(Bubble):
             if self.ref in p.widgets:
                 del p.widgets[self.ref]
         p.remove_widget(self)
+
+    def on_touch_down(self, touch):
+        if not self.collide_point(*touch.pos):
+            if hasattr(self,'parent'):
+                self.parent.remove_widget(self)
+            super(ScrollMenuBubble,self).on_touch_down(touch)
+            return True
+        return super(ScrollMenuBubble,self).on_touch_down(touch)
 
 #<<<<<<<<<<>>>>>>>>>>#
 
