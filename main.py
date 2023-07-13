@@ -6249,6 +6249,14 @@ class NetworkScreen(Screen):
             bg_color=(1,1,1,.15))
         self.widgets['details_password_interior_box']=details_password_interior_box
 
+        details_ssid_known=RoundedLabelColor(
+            bg_color=(.0, .35, .45,1),
+            size_hint =(.5, .15),
+            pos_hint = {'center_x':.5, 'center_y':.7},
+            text='Network is Known (Saved)',
+            markup=True)
+        self.widgets['details_ssid_known']=details_ssid_known
+
         details_password=TextInput(
             disabled=False,
             multiline=False,
@@ -6658,6 +6666,7 @@ class NetworkScreen(Screen):
         details_connect_box.add_widget(details_password_label)
         details_connect_box.add_widget(details_password_label_seperator)
         details_connect_box.add_widget(details_password_interior_box)
+        details_connect_box.add_widget(details_ssid_known)
         details_connect_box.add_widget(details_password)
         details_connect_box.add_widget(details_network_connect)
 
@@ -7033,7 +7042,9 @@ class NetworkScreen(Screen):
             pw=self.widgets['details_password'].text
             ssid=self._details_ssid
             add_spinners()
-            success=network.connect_to(ssid,pw)
+            if ssid in network.get_known().splitlines():
+                success=network.connect_to_saved(ssid)
+            else:success=network.connect_to(ssid,pw)
             remove_spinners()
             self.refresh_ap_data()
             self.side_bar_scan_func()
@@ -7041,7 +7052,8 @@ class NetworkScreen(Screen):
                 db.shrink()
                 self.widgets['details_password'].text=''
             else:
-                self.widgets['details_password'].text=''
+                if not ssid in network.get_known().splitlines():
+                    self.widgets['details_password'].text=''
 
         self._known_connecting=Thread(target=_connect,daemon=True)
         self._known_connecting.start()
@@ -7123,6 +7135,18 @@ class NetworkScreen(Screen):
             self._details_ssid=ssid
             clear_details()
             add_spinners()
+            if ssid in network.get_known().splitlines():
+                pw=self.widgets['details_password']
+                pw.text='**********'
+                pw.disabled=True
+                self.widgets['details_network_connect'].disabled=False
+                self.widgets['details_ssid_known'].opacity=1
+            else:
+                pw=self.widgets['details_password']
+                pw.text=''
+                pw.disabled=False
+                self.widgets['details_network_connect'].disabled=True
+                self.widgets['details_ssid_known'].opacity=0
             entry_len=30
             ssid=f'     SSID: {ssid}'
             signal=f'   Signal: {network.get_signal()}/100'

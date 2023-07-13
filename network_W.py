@@ -2,7 +2,7 @@ import subprocess,random
 
 
 def get_available():
-        return 'test\ntest2'
+        return 'test\ntest2\ntest3'
 
 def is_connected():
         return True
