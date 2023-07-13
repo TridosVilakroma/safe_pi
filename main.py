@@ -6255,6 +6255,7 @@ class NetworkScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.7},
             text='Network is Known (Saved)',
             markup=True)
+        details_ssid_known.opacity=0
         self.widgets['details_ssid_known']=details_ssid_known
 
         details_password=TextInput(
@@ -6843,6 +6844,14 @@ class NetworkScreen(Screen):
             w['details_expand_lines'].pos_hint={'center_x':.5, 'center_y':.15}
             w['details_expand_button'].size_hint=(.5, .125)
             w['details_expand_lines'].size_hint=(.4, .0525)
+            w['details_ssid'].text='     SSID:'
+            w['details_signal'].text='   Signal:'
+            w['details_security'].text='Security:'
+            pw=w['details_password']
+            pw.text=''
+            pw.disabled=False
+            w['details_network_connect'].disabled=True
+            w['details_ssid_known'].opacity=0
             all_widgets=[
                 w['details_title'],
                 w['details_seperator'],
@@ -7135,7 +7144,7 @@ class NetworkScreen(Screen):
             self._details_ssid=ssid
             clear_details()
             add_spinners()
-            if ssid in network.get_known().splitlines():
+            if ssid in network.get_known().splitlines() and not ssid=='':
                 pw=self.widgets['details_password']
                 pw.text='**********'
                 pw.disabled=True
