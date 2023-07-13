@@ -21,6 +21,7 @@ def get_security():
 
 def connect_to(ssid,password):
         print(ssid,password)
+        return random.choice((True,False))
 
 def connect_to_saved(ssid,*args):
         print(ssid)

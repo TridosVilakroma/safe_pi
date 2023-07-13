@@ -7029,11 +7029,19 @@ class NetworkScreen(Screen):
                     sbm.remove_widget(sbm.widgets[str(i+1)])
 
         def _connect():
+            sbm=self.widgets['side_bar_manual']
             add_spinners()
-            network.connect_to(self.widgets['side_bar_manual_ssid_input'].text,self.widgets['side_bar_manual_password_input'].text)
+            success=network.connect_to(self.widgets['side_bar_manual_ssid_input'].text,self.widgets['side_bar_manual_password_input'].text)
             remove_spinners()
             self.refresh_ap_data()
             self.side_bar_scan_func()
+            if success:
+                sbm.shrink()
+            else:
+                w=self.widgets
+                w['side_bar_manual_ssid_input'].text=''
+                w['side_bar_manual_security_input'].text='Enter Security Type'
+                w['side_bar_manual_password_input'].text=''
 
         self._manual_connecting=Thread(target=_connect,daemon=True)
         self._manual_connecting.start()
