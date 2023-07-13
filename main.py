@@ -6048,6 +6048,8 @@ class NetworkScreen(Screen):
         self._ssid_details=Thread()
         self._known_networks=Thread()
         self._manual_connecting=Thread()
+        self._known_connecting=Thread()
+        self._known_removing=Thread()
 
         back=RoundedButton(
             text=current_language['settings_back'],
@@ -6449,6 +6451,7 @@ class NetworkScreen(Screen):
             expanded_size=(5.143,1.185),
             expanded_pos = {'center_x':-1.785, 'center_y':.52},
             bg_color=(0,0,0,.85),)
+        side_bar_known.widgets={}
         self.widgets['side_bar_known']=side_bar_known
         side_bar_known.bind(state=self.bg_color)
         side_bar_known.bind(expanded=self.side_bar_known_populate)
@@ -7090,6 +7093,78 @@ class NetworkScreen(Screen):
         self._ssid_details=Thread(target=_details,daemon=True,args=(ssid,))
         self._ssid_details.start()
 
+    def known_connect_func(self,profile,*args):
+        if self._known_connecting.is_alive():
+            return
+
+        @mainthread
+        def add_spinners():
+            sbk=self.widgets['side_bar_known']
+            sbk.add_widget(PreLoader(rel_size=.3,ref='1',speed=500))
+            sbk.add_widget(PreLoader(rel_size=.25,ref='2',speed=850))
+            sbk.add_widget(PreLoader(rel_size=.2,ref='3',speed=600))
+            sbk.add_widget(PreLoader(rel_size=.15,ref='4',speed=950))
+            sbk.add_widget(PreLoader(rel_size=.1,ref='5',speed=700))
+            sbk.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050))
+
+        @mainthread
+        def remove_spinners():
+            sbk=self.widgets['side_bar_known']
+            for i in range(6):
+                if str(i+1) in sbk.widgets:
+                    sbk.remove_widget(sbk.widgets[str(i+1)])
+
+        def _connect(profile):
+            sbk=self.widgets['side_bar_known']
+            if 'menu_bubble' in self.widgets:
+                self.remove_widget(self.widgets['menu_bubble'])
+            add_spinners()
+            success=network.connect_to_saved(profile)
+            remove_spinners()
+            self.refresh_ap_data()
+            self.side_bar_scan_func()
+            if success:
+                sbk.shrink()
+
+        self._known_connecting=Thread(target=_connect,daemon=True,args=(profile,))
+        self._known_connecting.start()
+
+    def remove_known_profile_func(self,profile,*args):
+        if self._known_removing.is_alive():
+            return
+
+        @mainthread
+        def add_spinners():
+            sbk=self.widgets['side_bar_known']
+            sbk.add_widget(PreLoader(rel_size=.3,ref='1',speed=500))
+            sbk.add_widget(PreLoader(rel_size=.25,ref='2',speed=850))
+            sbk.add_widget(PreLoader(rel_size=.2,ref='3',speed=600))
+            sbk.add_widget(PreLoader(rel_size=.15,ref='4',speed=950))
+            sbk.add_widget(PreLoader(rel_size=.1,ref='5',speed=700))
+            sbk.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050))
+
+        @mainthread
+        def remove_spinners():
+            sbk=self.widgets['side_bar_known']
+            for i in range(6):
+                if str(i+1) in sbk.widgets:
+                    sbk.remove_widget(sbk.widgets[str(i+1)])
+
+        def _remove(profile):
+            sbk=self.widgets['side_bar_known']
+            if 'menu_bubble' in self.widgets:
+                self.remove_widget(self.widgets['menu_bubble'])
+            add_spinners()
+            success=network.remove_profile(profile)
+            remove_spinners()
+            self.refresh_ap_data()
+            self.side_bar_scan_func()
+            if success:
+                self.get_known_networks()
+
+        self._known_removing=Thread(target=_remove,daemon=True,args=(profile,))
+        self._known_removing.start()
+
     def get_known_networks(self,*args):
         if self._known_networks.is_alive():
             return
@@ -7097,9 +7172,9 @@ class NetworkScreen(Screen):
         def add_bubble(profile,button):
             scroll=self.widgets['side_bar_known_status_scroll']
             cnct=BubbleButton(text='Connect')
-            cnct.bind(on_release=partial(network.connect_to_saved,profile))
+            cnct.bind(on_release=partial(self.known_connect_func,profile))
             rmv=BubbleButton(text='Forget')
-            rmv.bind(on_release=partial(network.remove_profile,profile))
+            rmv.bind(on_release=partial(self.remove_known_profile_func,profile))
 
             b=ScrollMenuBubble(
                 button,

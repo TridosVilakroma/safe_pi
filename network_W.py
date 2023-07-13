@@ -24,9 +24,10 @@ def connect_to(ssid,password):
 
 def connect_to_saved(ssid,*args):
         print(ssid)
+        return random.choice((True,False))
 
 def get_known():
         return 'test\ntest2'
 
 def remove_profile(ssid,*args):
-        return ''
+        return random.choice((True,False))
