@@ -2,6 +2,7 @@ import os,json,time,shutil,math,random,subprocess
 import traceback,errno
 from datetime import datetime
 from kivy.config import Config
+from copy import deepcopy
 
 from device_classes.exhaust import Exhaust
 from device_classes.mau import Mau
@@ -1666,6 +1667,100 @@ class MenuBubble(Bubble):
     def clear(self,*args):
         p=self.parent if self.parent else self._parent
         p.unbind(size=self.align,pos=self.align)
+        if hasattr(p,'widgets'):
+            if self.ref in p.widgets:
+                del p.widgets[self.ref]
+        p.remove_widget(self)
+
+class ScrollMenuBubble(Bubble):
+    def __init__(self,trackee_widget,scrollview,**kwargs):
+        if 'ref' in kwargs:
+            self.ref=kwargs.pop('ref')
+        else:self.ref='menu_bubble'
+        super(ScrollMenuBubble,self).__init__(**kwargs)
+        self.trackee_widget=trackee_widget
+        self._scroll=scrollview
+        self._size_hint=(self.size_hint[0],self.size_hint[1])
+        self._pos_hint=deepcopy(self.pos_hint)
+        self.size_hint,self.pos_hint=(None,None),{}
+
+    def align(self,*args):
+        tw=self.trackee_widget
+        # optimize layout by preventing looking at the same attribute in a loop
+        w, h = tw.size
+        x, y = tw.to_window(*tw.pos)
+        # size
+        shw, shh = self._size_hint
+        shw_min, shh_min = self.size_hint_min
+        shw_max, shh_max = self.size_hint_max
+
+        if shw is not None and shh is not None:
+            c_w = shw * w
+            c_h = shh * h
+
+            if shw_min is not None and c_w < shw_min:
+                c_w = shw_min
+            elif shw_max is not None and c_w > shw_max:
+                c_w = shw_max
+
+            if shh_min is not None and c_h < shh_min:
+                c_h = shh_min
+            elif shh_max is not None and c_h > shh_max:
+                c_h = shh_max
+            self.size = c_w, c_h
+        elif shw is not None:
+            c_w = shw * w
+
+            if shw_min is not None and c_w < shw_min:
+                c_w = shw_min
+            elif shw_max is not None and c_w > shw_max:
+                c_w = shw_max
+            self.width = c_w
+        elif shh is not None:
+            c_h = shh * h
+
+            if shh_min is not None and c_h < shh_min:
+                c_h = shh_min
+            elif shh_max is not None and c_h > shh_max:
+                c_h = shh_max
+            self.height = c_h
+
+        # pos
+        for key, value in self._pos_hint.items():
+            if key == 'x':
+                self.x = x + value * w
+            elif key == 'right':
+                self.right = x + value * w
+            elif key == 'pos':
+                self.pos = x + value[0] * w, y + value[1] * h
+            elif key == 'y':
+                self.y = y + value * h
+            elif key == 'top':
+                self.top = y + value * h
+            elif key == 'center':
+                self.center = x + value[0] * w, y + value[1] * h
+            elif key == 'center_x':
+                self.center_x = x + value * w
+            elif key == 'center_y':
+                self.center_y = y + value * h
+
+    def on_parent(self,*args):
+        if not self.parent:
+            self.clear()
+            return
+        tw=self.trackee_widget
+        if not hasattr(tw,'widgets'):
+            tw.widgets={}
+        parent=self.parent
+        self._parent=parent
+        if hasattr(parent,'widgets'):
+            parent.widgets[self.ref]=self
+        self.align()
+        self._scroll.bind(scroll_y=self.align)
+
+    def clear(self,*args):
+        p=self.parent if self.parent else self._parent
+        self.trackee_widget.unbind(size=self.align,pos=self.align)
         if hasattr(p,'widgets'):
             if self.ref in p.widgets:
                 del p.widgets[self.ref]
@@ -6984,19 +7079,24 @@ class NetworkScreen(Screen):
             return
 
         def add_bubble(profile,button):
-            print(self.widgets['side_bar_known_status_scroll'].bounding_box)
-            b=MenuBubble(
-                orientation='vertical',
-                arrow_pos='right_mid',
-                size_hint =(.4,2.5),
-                pos_hint = {'right':0, 'center_y':.5})
+            scroll=self.widgets['side_bar_known_status_scroll']
             cnct=BubbleButton(text='Connect')
             cnct.bind(on_release=partial(network.connect_to_saved,profile))
             rmv=BubbleButton(text='Forget')
             rmv.bind(on_release=partial(print,'removing'))
+
+            b=ScrollMenuBubble(
+                button,
+                scroll,
+                orientation='vertical',
+                arrow_pos='right_mid',
+                size_hint =(.5,3),
+                pos_hint = {'right':0, 'center_y':.5},
+                background_color=(1,1,1,1))
+
             b.add_widget(cnct)
             b.add_widget(rmv)
-            button.add_widget(b)
+            self.add_widget(b)
 
         @mainthread
         def add_button(profile):
