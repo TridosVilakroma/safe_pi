@@ -7099,7 +7099,7 @@ class NetworkScreen(Screen):
             cnct=BubbleButton(text='Connect')
             cnct.bind(on_release=partial(network.connect_to_saved,profile))
             rmv=BubbleButton(text='Forget')
-            rmv.bind(on_release=partial(print,'removing'))
+            rmv.bind(on_release=partial(network.remove_profile,profile))
 
             b=ScrollMenuBubble(
                 button,

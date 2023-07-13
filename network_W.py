@@ -27,3 +27,6 @@ def connect_to_saved(ssid,*args):
 
 def get_known():
         return 'test\ntest2'
+
+def remove_profile(ssid,*args):
+        return ''

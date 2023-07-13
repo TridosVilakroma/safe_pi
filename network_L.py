@@ -51,7 +51,12 @@ def get_known():
     else:
         return ''
 
-
+def remove_profile(ssid,*args):
+    process=subprocess.run(['nmcli','con','delete',f'{ssid}'],stdout=subprocess.PIPE)
+    if process.returncode == 0:
+        return process.stdout.decode('utf-8').strip()
+    else:
+        return ''
 
 
 
