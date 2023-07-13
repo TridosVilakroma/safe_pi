@@ -101,4 +101,4 @@ def connect_to_saved(ssid: str,*args):
     if not is_wifi_available(ssid):
         return False
     subprocess.call(['nmcli', 'c', 'up', ssid])
-    return is_connected_to(ssid)
+    return get_ssid() == ssid
