@@ -6043,6 +6043,7 @@ class NetworkScreen(Screen):
         self.cols = 2
         self.widgets={}
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
+        self._details_ssid=''
         self._scan=Thread()
         self._refresh_ap=Thread()
         self._ssid_details=Thread()
@@ -6050,6 +6051,7 @@ class NetworkScreen(Screen):
         self._manual_connecting=Thread()
         self._known_connecting=Thread()
         self._known_removing=Thread()
+        self._details_connecting=Thread()
 
         back=RoundedButton(
             text=current_language['settings_back'],
@@ -6253,7 +6255,7 @@ class NetworkScreen(Screen):
             password=True,
             hint_text='Enter Password',
             size_hint =(.8, .1),
-            pos_hint = {'center_x':.5, 'center_y':.5})
+            pos_hint = {'center_x':.5, 'center_y':.55})
         self.widgets['details_password']=details_password
         details_password.bind(focus=self.details_password_clear_text)
 
@@ -6733,10 +6735,12 @@ class NetworkScreen(Screen):
             current=False
             prefix=''
             suffix=''
+            func=self.get_details
             if network.get_ssid()==ssid:
                 current=True
                 prefix='>  '
                 suffix='  <'
+                func=self.widgets['information_box'].expand
             c=(.0, .5, .7,.8) if current else (.1,.1,.1,1)
             btn = RoundedButton(
                 background_normal='',
@@ -6744,7 +6748,7 @@ class NetworkScreen(Screen):
                 text=prefix+str(ssid)+suffix,
                 size_hint_y=None,
                 height=40)
-            btn.bind(on_release=partial(self.get_details,ssid))
+            btn.bind(on_release=partial(func,ssid))
             self.widgets['status_scroll_layout'].add_widget(btn)
 
         def scanning():
@@ -7004,8 +7008,43 @@ class NetworkScreen(Screen):
             sbd.expand()
 
     def details_network_connect_func(self,*args):
-        print(self.widgets['details_ssid'].text,self.widgets['details_password'].text)
-        # network.connect_to(self.widgets['details_ssid'].text,self.widgets['details_password'].text)
+        if self._details_connecting.is_alive():
+            return
+
+        @mainthread
+        def add_spinners():
+            db=self.widgets['details_box']
+            db.add_widget(PreLoader(rel_size=.3,ref='1',speed=500))
+            db.add_widget(PreLoader(rel_size=.25,ref='2',speed=850))
+            db.add_widget(PreLoader(rel_size=.2,ref='3',speed=600))
+            db.add_widget(PreLoader(rel_size=.15,ref='4',speed=950))
+            db.add_widget(PreLoader(rel_size=.1,ref='5',speed=700))
+            db.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050))
+
+        @mainthread
+        def remove_spinners():
+            db=self.widgets['details_box']
+            for i in range(6):
+                if str(i+1) in db.widgets:
+                    db.remove_widget(db.widgets[str(i+1)])
+
+        def _connect():
+            db=self.widgets['details_box']
+            pw=self.widgets['details_password'].text
+            ssid=self._details_ssid
+            add_spinners()
+            success=network.connect_to(ssid,pw)
+            remove_spinners()
+            self.refresh_ap_data()
+            self.side_bar_scan_func()
+            if success:
+                db.shrink()
+                self.widgets['details_password'].text=''
+            else:
+                self.widgets['details_password'].text=''
+
+        self._known_connecting=Thread(target=_connect,daemon=True)
+        self._known_connecting.start()
 
     def side_bar_manual_connect_func(self,*args):
         if self._manual_connecting.is_alive():
@@ -7081,6 +7120,7 @@ class NetworkScreen(Screen):
             self.widgets['details_security'].text=security
 
         def _details(ssid,*args):
+            self._details_ssid=ssid
             clear_details()
             add_spinners()
             entry_len=30
