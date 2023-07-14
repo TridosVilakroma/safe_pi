@@ -42,6 +42,7 @@ from kivy.uix.image import Image
 from kivy.graphics import BorderImage
 from kivy.uix.label import Label
 from kivy.uix.button import Button
+from kivy.uix.checkbox import CheckBox
 from kivy.uix.bubble import Bubble, BubbleButton
 from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.relativelayout import RelativeLayout
@@ -218,6 +219,9 @@ class RoundedToggleButton(ToggleButton):
     '''
 
     def __init__(self,**kwargs):
+        if 'second_color' in kwargs:
+            self.second_color=kwargs.pop('second_color')
+        else:self.second_color=None
         super(RoundedToggleButton,self).__init__(**kwargs)
         self.bg_color=kwargs["background_color"]
         self.background_color = (self.bg_color[0], self.bg_color[1], self.bg_color[2], 0)  # Invisible background color to regular button
@@ -226,9 +230,13 @@ class RoundedToggleButton(ToggleButton):
             if self.background_normal=="":
                 self.shape_color = Color(self.bg_color[0], self.bg_color[1], self.bg_color[2], self.bg_color[3])
             if self.background_down=="":
-                self.shape_color = Color(self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3])
+                if self.second_color:
+                    self.shape_color = Color(*self.second_color)
+                else:
+                    self.shape_color = Color(self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3])
             self.shape = RoundedRectangle(pos=self.pos, size=self.size, radius=[20])
             self.bind(pos=self.update_shape, size=self.update_shape)
+        self.bind(state=self.color_swap)
     def update_shape(self, *args):
         self.shape.pos = self.pos
         self.shape.size = self.size
@@ -237,12 +245,18 @@ class RoundedToggleButton(ToggleButton):
             if self.background_normal=="":
                 self.shape_color.rgba = self.bg_color[0], self.bg_color[1], self.bg_color[2], self.bg_color[3]
             else:
-                self.shape_color.rgba = self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3]
+                if self.second_color:
+                    self.shape_color.rgba = self.second_color[0],self.second_color[1],self.second_color[2],self.second_color[3]
+                else:
+                    self.shape_color.rgba = self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3]
         if self.state=="down":
             if self.background_down=="":
                 self.shape_color.rgba = self.bg_color[0], self.bg_color[1], self.bg_color[2], self.bg_color[3]
             else:
-                self.shape_color.rgba = self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3]
+                if self.second_color:
+                    self.shape_color.rgba = self.second_color[0],self.second_color[1],self.second_color[2],self.second_color[3]
+                else:
+                    self.shape_color.rgba = self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3]
 
     def _do_press(self):
         pass
@@ -254,7 +268,6 @@ class RoundedToggleButton(ToggleButton):
 
         self._release_group(self)
         self.state = 'normal' if self.state == 'down' else 'down'
-        self.color_swap()
 
 class LayoutButton(FloatLayout,RoundedButton):
     pass
@@ -6636,6 +6649,92 @@ class NetworkScreen(Screen):
         side_bar_disconnect_expand_lines.center=side_bar_disconnect_expand_button.center
         self.widgets['side_bar_disconnect_expand_lines']=side_bar_disconnect_expand_lines
 
+        side_bar_disconnect_vertical_seperator=Image(
+            source=gray_seperator_line_vertical,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.0005, .4),
+            pos_hint = {'center_x':.37, 'center_y':.55})
+        self.widgets['side_bar_disconnect_vertical_seperator']=side_bar_disconnect_vertical_seperator
+
+        side_bar_disconnect_temp=MinimumBoundingLabel(
+            text='Dissconect Temporarily:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'right':.35, 'center_y':.7},)
+        self.widgets['side_bar_disconnect_temp']=side_bar_disconnect_temp
+
+        side_bar_disconnect_temp_btn=RoundedButton(
+            text=f'Disconnect: ',
+            size_hint =(.3, .05),
+            pos_hint = {'x':.4, 'center_y':.7},
+            background_normal='',
+            background_color=(.0, .35, .45,1),
+            markup=True)
+        self.widgets['side_bar_disconnect_temp_btn']=side_bar_disconnect_temp_btn
+        # side_bar_disconnect_temp_btn.bind(on_release=self.side_bar_manual_connect_func)
+        # side_bar_disconnect_temp_btn.bind(disabled=self.side_bar_manual_connect_disabled)
+        # side_bar_disconnect_temp_btn.bind(focus=self.side_bar_disconnect_ssid_input_clear)
+
+        side_bar_disconnect_rmv=MinimumBoundingLabel(
+            text='Disconnect and Forget:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'right':.35, 'center_y':.55},)
+        self.widgets['side_bar_disconnect_rmv']=side_bar_disconnect_rmv
+
+        side_bar_disconnect_rmv_btn=RoundedButton(
+            text=f'Forget: ',
+            size_hint =(.3, .05),
+            pos_hint = {'x':.4, 'center_y':.55},
+            background_normal='',
+            background_color=(.5,.1,.1,1),
+            markup=True)
+        self.widgets['side_bar_disconnect_rmv_btn']=side_bar_disconnect_rmv_btn
+        # side_bar_disconnect_temp_btn.bind(on_release=self.side_bar_manual_connect_func)
+        # side_bar_disconnect_temp_btn.bind(disabled=self.side_bar_manual_connect_disabled)
+        # side_bar_disconnect_temp_btn.bind(focus=self.side_bar_disconnect_ssid_input_clear)
+
+        side_bar_disconnect_status=MinimumBoundingLabel(
+            text='Networking:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'right':.35, 'center_y':.4},)
+        self.widgets['side_bar_disconnect_status']=side_bar_disconnect_status
+
+        side_bar_disconnect_status_btn_on=RoundedToggleButton(
+            group='networking',
+            text='On',
+            size_hint =(.125, .05),
+            pos_hint = {'center_x':.475, 'center_y':.4},
+            background_down='',
+            background_color=(.1,.25,.35,1),
+            second_color=(.1,.1,.1,.85),
+            allow_no_selection=False)
+        self.widgets['side_bar_disconnect_status_btn_on']=side_bar_disconnect_status_btn_on
+
+        side_bar_disconnect_status_btn_off=RoundedToggleButton(
+            group='networking',
+            text='Off',
+            size_hint =(.125, .05),
+            pos_hint = {'center_x':.625, 'center_y':.4},
+            background_down='',
+            background_color=(.1,.25,.35,1),
+            second_color=(.1,.1,.1,.85),
+            allow_no_selection=False)
+        self.widgets['side_bar_disconnect_status_btn_off']=side_bar_disconnect_status_btn_off
+
+        with side_bar_disconnect.canvas.after:
+           side_bar_disconnect.status_lines=Line(rounded_rectangle=(100, 100, 200, 200, 10, 10, 10, 10, 100))
+
+        def update_lines(*args):
+            x=int(side_bar_disconnect.width*.457)
+            y=int(side_bar_disconnect.height*.54)
+            width=int(side_bar_disconnect.width*.3)
+            height=int(side_bar_disconnect.height*.1)
+            side_bar_disconnect.status_lines.rounded_rectangle=(x, y, width, height, 10, 10, 10, 10, 100)
+        side_bar_disconnect.bind(pos=update_lines, size=update_lines)
+
         account_admin_hint=ExactLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
                 color=(0,0,0,1),
                 pos_hint = {'center_x':.5, 'y':.14},
@@ -6972,11 +7071,22 @@ class NetworkScreen(Screen):
             w=self.widgets
             w['side_bar_disconnect_title'].pos_hint={'center_x':.5, 'center_y':.925}
             w['side_bar_disconnect_title'].size_hint=(.4, .05)
+            w['side_bar_disconnect_temp_btn'].text=f'Disconnect: {network.get_ssid()}'
+            w['side_bar_disconnect_rmv_btn'].text=f'Forget: {network.get_ssid()}'
+            # w['side_bar_disconnect_password_input'].text=''
             all_widgets=[
                 w['side_bar_disconnect_title'],
                 w['side_bar_disconnect_seperator'],
                 w['side_bar_disconnect_expand_button'],
-                w['side_bar_disconnect_expand_lines']]
+                w['side_bar_disconnect_expand_lines'],
+                w['side_bar_disconnect_temp'],
+                w['side_bar_disconnect_temp_btn'],
+                w['side_bar_disconnect_rmv'],
+                w['side_bar_disconnect_rmv_btn'],
+                w['side_bar_disconnect_status'],
+                w['side_bar_disconnect_status_btn_on'],
+                w['side_bar_disconnect_status_btn_off'],
+                w['side_bar_disconnect_vertical_seperator']]
             for i in all_widgets:
                 side_bar_disconnect.add_widget(i)
         elif not side_bar_disconnect.expanded:
