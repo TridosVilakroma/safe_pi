@@ -6280,6 +6280,7 @@ class NetworkScreen(Screen):
             size_hint =(.8, .1),
             pos_hint = {'center_x':.5, 'center_y':.55})
         self.widgets['details_password']=details_password
+        details_password.disabled=True
         details_password.bind(focus=self.details_password_clear_text)
 
         details_network_connect=RoundedButton(
@@ -6409,10 +6410,10 @@ class NetworkScreen(Screen):
         self.widgets['side_bar_manual_vertical_seperator']=side_bar_manual_vertical_seperator
 
         side_bar_manual_ssid=MinimumBoundingLabel(
-            text='     SSID:',
+            text='SSID:',
             markup=True,
             size_hint=(None,None),
-            pos_hint = {'x':.3, 'center_y':.7},)
+            pos_hint = {'right':.35, 'center_y':.7},)
         self.widgets['side_bar_manual_ssid']=side_bar_manual_ssid
 
         side_bar_manual_ssid_input=TextInput(
@@ -6428,7 +6429,7 @@ class NetworkScreen(Screen):
             text='Security:',
             markup=True,
             size_hint=(None,None),
-            pos_hint = {'x':.3, 'center_y':.55},)
+            pos_hint = {'right':.35, 'center_y':.55},)
         self.widgets['side_bar_manual_security']=side_bar_manual_security
 
         side_bar_manual_security_input=Spinner(
@@ -6444,7 +6445,7 @@ class NetworkScreen(Screen):
             text='password:',
             markup=True,
             size_hint=(None,None),
-            pos_hint = {'x':.3, 'center_y':.4},)
+            pos_hint = {'right':.35, 'center_y':.4},)
         self.widgets['side_bar_manual_password']=side_bar_manual_password
 
         side_bar_manual_password_input=TextInput(
@@ -6679,7 +6680,7 @@ class NetworkScreen(Screen):
         self.widgets['side_bar_disconnect_vertical_seperator']=side_bar_disconnect_vertical_seperator
 
         side_bar_disconnect_temp=MinimumBoundingLabel(
-            text='Dissconect Temporarily:',
+            text='Disconnect Temporarily:',
             markup=True,
             size_hint=(None,None),
             pos_hint = {'right':.35, 'center_y':.7},)
@@ -6717,7 +6718,7 @@ class NetworkScreen(Screen):
         # side_bar_disconnect_temp_btn.bind(focus=self.side_bar_disconnect_ssid_input_clear)
 
         side_bar_disconnect_status=MinimumBoundingLabel(
-            text='Networking:',
+            text='Wi-Fi:',
             markup=True,
             size_hint=(None,None),
             pos_hint = {'right':.35, 'center_y':.4},)
@@ -6729,7 +6730,7 @@ class NetworkScreen(Screen):
             size_hint =(.125, .05),
             pos_hint = {'center_x':.475, 'center_y':.4},
             background_down='',
-            background_color=(.1,.25,.35,1),
+            background_color=(.0,.35,.45,1),
             second_color=(.1,.1,.1,.85),
             allow_no_selection=False)
         self.widgets['side_bar_disconnect_status_btn_on']=side_bar_disconnect_status_btn_on
@@ -6741,7 +6742,7 @@ class NetworkScreen(Screen):
             size_hint =(.125, .05),
             pos_hint = {'center_x':.625, 'center_y':.4},
             background_down='',
-            background_color=(.1,.25,.35,1),
+            background_color=(.0,.35,.45,1),
             second_color=(.1,.1,.1,.85),
             allow_no_selection=False)
         self.widgets['side_bar_disconnect_status_btn_off']=side_bar_disconnect_status_btn_off
@@ -6997,7 +6998,7 @@ class NetworkScreen(Screen):
             w['details_security'].text='Security:'
             pw=w['details_password']
             pw.text=''
-            pw.disabled=False
+            pw.disabled=True
             w['details_network_connect'].disabled=True
             w['details_ssid_known'].opacity=0
             all_widgets=[
@@ -7514,7 +7515,7 @@ class NetworkScreen(Screen):
     def details_password_clear_text(self,button,focused,*args):
         pi=self.widgets['details_password']
         p=pi.parent
-        p.remove_widget(pi)
+        if p: p.remove_widget(pi)
         if focused:
             self.widgets['details_box'].add_widget(pi)
             self.widgets['details_password'].text=''
