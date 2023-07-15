@@ -6712,6 +6712,7 @@ class NetworkScreen(Screen):
             second_color=(.1,.1,.1,.85),
             allow_no_selection=False)
         self.widgets['side_bar_disconnect_status_btn_on']=side_bar_disconnect_status_btn_on
+        side_bar_disconnect_status_btn_on.bind(state=self.set_network_status)
 
         side_bar_disconnect_status_btn_off=RoundedToggleButton(
             group='networking',
@@ -6723,8 +6724,12 @@ class NetworkScreen(Screen):
             second_color=(.1,.1,.1,.85),
             allow_no_selection=False)
         self.widgets['side_bar_disconnect_status_btn_off']=side_bar_disconnect_status_btn_off
+        side_bar_disconnect_status_btn_off.bind(state=self.set_network_status)
 
-        with side_bar_disconnect.canvas.after:
+        side_bar_disconnect_lines_overlay=FloatLayout()
+        self.widgets['side_bar_disconnect_lines_overlay']=side_bar_disconnect_lines_overlay
+
+        with side_bar_disconnect_lines_overlay.canvas.after:
            side_bar_disconnect.status_lines=Line(rounded_rectangle=(100, 100, 200, 200, 10, 10, 10, 10, 100))
 
         def update_lines(*args):
@@ -6801,6 +6806,18 @@ class NetworkScreen(Screen):
         self.add_widget(details_box)
         self.add_widget(status_box)
         self.add_widget(side_bar_box)
+
+    def set_network_status(self,btn,val):
+        if val == 'normal':
+            return
+        config=App.get_running_app().config_
+        w=self.widgets
+        on=w['side_bar_disconnect_status_btn_on']
+        off=w['side_bar_disconnect_status_btn_off']
+        status=True if btn == on else False
+        config.set('network','status',str(status))
+        with open(preferences_path,'w') as configfile:
+                config.write(configfile)
 
     def bg_color(self,button,*args):
         if hasattr(button,'expanded'):
@@ -7059,6 +7076,11 @@ class NetworkScreen(Screen):
             for i in all_widgets:
                 side_bar_auto.add_widget(i)
     def side_bar_disconnect_populate(self,*args):
+        config=App.get_running_app().config_
+        if not config.has_option('network','status'):
+                config.add_section('network')
+                config.set('network','status','True')
+        status=App.get_running_app().config_.getboolean('network','status')
         sbd_parent=self.widgets['side_bar_box']
         darken=Animation(rgba=(0,0,0,.95))
         lighten=Animation(rgba=(0,0,0,.85))
@@ -7069,11 +7091,16 @@ class NetworkScreen(Screen):
         if side_bar_disconnect.expanded:
             darken.start(side_bar_disconnect.shape_color)
             w=self.widgets
+            if status:
+                w['side_bar_disconnect_status_btn_on'].state='down'
+                w['side_bar_disconnect_status_btn_off'].state='normal'
+            else:
+                w['side_bar_disconnect_status_btn_on'].state='normal'
+                w['side_bar_disconnect_status_btn_off'].state='down'
             w['side_bar_disconnect_title'].pos_hint={'center_x':.5, 'center_y':.925}
             w['side_bar_disconnect_title'].size_hint=(.4, .05)
             w['side_bar_disconnect_temp_btn'].text=f'Disconnect: {network.get_ssid()}'
             w['side_bar_disconnect_rmv_btn'].text=f'Forget: {network.get_ssid()}'
-            # w['side_bar_disconnect_password_input'].text=''
             all_widgets=[
                 w['side_bar_disconnect_title'],
                 w['side_bar_disconnect_seperator'],
@@ -7086,7 +7113,8 @@ class NetworkScreen(Screen):
                 w['side_bar_disconnect_status'],
                 w['side_bar_disconnect_status_btn_on'],
                 w['side_bar_disconnect_status_btn_off'],
-                w['side_bar_disconnect_vertical_seperator']]
+                w['side_bar_disconnect_vertical_seperator'],
+                w['side_bar_disconnect_lines_overlay']]
             for i in all_widgets:
                 side_bar_disconnect.add_widget(i)
         elif not side_bar_disconnect.expanded:
