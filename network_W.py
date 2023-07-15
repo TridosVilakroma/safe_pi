@@ -41,3 +41,6 @@ def disconnect_wifi(*args):
 
 def connect_wifi(*args):
         return
+
+def get_profiles_by_priority(*args):
+        return 'test\ntest2\ntest3'
