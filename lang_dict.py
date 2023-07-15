@@ -209,7 +209,18 @@ Known networks can be connected to with a
 single button press, and their order can be
 set for auto-joing in the auto join menu.
 
-Select a known network to connect or forget it.'''
+Select a known network to connect or forget it.''',
+'side_bar_auto_network_status_title' : "[size=16][color=#ffffff][b]Auto-join Priority",
+'side_bar_auto_instructions':'''[b][size=18][color=#ffffff]Networks are in order from highest
+priorty at the top of the list,
+to the lowest priorty at the bottom.
+
+Auto-join will connect to the
+highest priorty network that is
+available.
+
+Drag and drop to change order,
+or select an auto ordering style.'''
 }
 
 spanish={
