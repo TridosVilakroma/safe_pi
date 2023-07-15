@@ -6517,6 +6517,26 @@ class NetworkScreen(Screen):
         side_bar_known_expand_lines.center=side_bar_known_expand_button.center
         self.widgets['side_bar_known_expand_lines']=side_bar_known_expand_lines
 
+        side_bar_known_instructions=LabelColor(
+            bg_color=(0,0,0,1),
+            text=current_language['side_bar_known_instructions'],
+            markup=True,
+            size_hint =(.3, .4),
+            pos_hint = {'center_x':.25, 'center_y':.5},)
+        self.widgets['side_bar_known_instructions']=side_bar_known_instructions
+        side_bar_known_instructions.ref='side_bar_known_instructions'
+
+        with side_bar_known_instructions.canvas.after:
+           side_bar_known_instructions.status_lines=Line(rounded_rectangle=(100, 100, 200, 200, 10, 10, 10, 10, 100))
+
+        def update_lines(*args):
+            x=int(side_bar_known_instructions.x)
+            y=int(side_bar_known_instructions.y)
+            width=int(side_bar_known_instructions.width*1)
+            height=int(side_bar_known_instructions.height*1)
+            side_bar_known_instructions.status_lines.rounded_rectangle=(x, y, width, height, 10, 10, 10, 10, 100)
+        side_bar_known_instructions.bind(pos=update_lines, size=update_lines)
+
         side_bar_known_status_box=RoundedColorLayout(
             bg_color=(.1,.1,.1,.85),
             size_hint =(.4, .6),
@@ -7046,6 +7066,7 @@ class NetworkScreen(Screen):
                 w['side_bar_known_seperator'],
                 w['side_bar_known_expand_button'],
                 w['side_bar_known_expand_lines'],
+                w['side_bar_known_instructions'],
                 w['side_bar_known_status_box']]
             for i in all_widgets:
                 side_bar_known.add_widget(i)
