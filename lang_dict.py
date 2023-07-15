@@ -201,7 +201,15 @@ and diagnostics''',
 to see additional information and
 enter connection  credentials.''',
 'side_bar_known_network_status_title' : "[size=16][color=#ffffff][b]Network Profiles",
+'side_bar_known_instructions':'''[b][size=18][color=#ffffff]Networks that have successfully been
+connected to in the past will automatically
+be saved as a known network profile.
 
+Known networks can be connected to with a
+single button press, and their order can be
+set for auto-joing in the auto join menu.
+
+Select a known network to connect or forget it.'''
 }
 
 spanish={
