@@ -6065,6 +6065,7 @@ class NetworkScreen(Screen):
         self._known_connecting=Thread()
         self._known_removing=Thread()
         self._details_connecting=Thread()
+        self._network_switching=Thread()
 
         back=RoundedButton(
             text=current_language['settings_back'],
@@ -6712,7 +6713,7 @@ class NetworkScreen(Screen):
             second_color=(.1,.1,.1,.85),
             allow_no_selection=False)
         self.widgets['side_bar_disconnect_status_btn_on']=side_bar_disconnect_status_btn_on
-        side_bar_disconnect_status_btn_on.bind(state=self.set_network_status)
+        side_bar_disconnect_status_btn_on.bind(state=self.set_network_status_file)
 
         side_bar_disconnect_status_btn_off=RoundedToggleButton(
             group='networking',
@@ -6724,7 +6725,7 @@ class NetworkScreen(Screen):
             second_color=(.1,.1,.1,.85),
             allow_no_selection=False)
         self.widgets['side_bar_disconnect_status_btn_off']=side_bar_disconnect_status_btn_off
-        side_bar_disconnect_status_btn_off.bind(state=self.set_network_status)
+        side_bar_disconnect_status_btn_off.bind(state=self.set_network_status_file)
 
         side_bar_disconnect_lines_overlay=FloatLayout()
         self.widgets['side_bar_disconnect_lines_overlay']=side_bar_disconnect_lines_overlay
@@ -6807,7 +6808,17 @@ class NetworkScreen(Screen):
         self.add_widget(status_box)
         self.add_widget(side_bar_box)
 
-    def set_network_status(self,btn,val):
+    def set_network_status(self,status):
+        if self._network_switching.is_alive():
+            return
+        def f(*args):
+            if status:
+                network.connect_wifi()
+            else:
+                network.disconnect_wifi()
+        self._network_switching=Thread(target=f,daemon=True)
+        self._network_switching.start()
+    def set_network_status_file(self,btn,val):
         if val == 'normal':
             return
         config=App.get_running_app().config_
@@ -6815,6 +6826,7 @@ class NetworkScreen(Screen):
         on=w['side_bar_disconnect_status_btn_on']
         off=w['side_bar_disconnect_status_btn_off']
         status=True if btn == on else False
+        self.set_network_status(status)
         config.set('network','status',str(status))
         with open(preferences_path,'w') as configfile:
                 config.write(configfile)
