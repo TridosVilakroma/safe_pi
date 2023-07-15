@@ -58,9 +58,26 @@ def remove_profile(ssid,*args):
     else:
         return ''
 
+def disconnect_ssid(ssid,*args):
+    process=subprocess.run(['nmcli','con','down',ssid],stdout=subprocess.PIPE)
+    if process.returncode == 0:
+        return process.stdout.decode('utf-8').strip()
+    else:
+        return ''
 
+def disconnect_wifi(*args):
+    process=subprocess.run(['nmcli','radio','wifi','off'],stdout=subprocess.PIPE)
+    if process.returncode == 0:
+        return process.stdout.decode('utf-8').strip()
+    else:
+        return ''
 
-
+def connect_wifi(*args):
+    process=subprocess.run(['nmcli','radio','wifi','on'],stdout=subprocess.PIPE)
+    if process.returncode == 0:
+        return process.stdout.decode('utf-8').strip()
+    else:
+        return ''
 
 
 

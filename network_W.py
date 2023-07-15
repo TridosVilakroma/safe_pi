@@ -32,3 +32,12 @@ def get_known():
 
 def remove_profile(ssid,*args):
         return random.choice((True,False))
+
+def disconnect_ssid(ssid,*args):
+        return
+
+def disconnect_wifi(*args):
+        return
+
+def connect_wifi(*args):
+        return
