@@ -6993,8 +6993,8 @@ class NetworkScreen(Screen):
             w['details_expand_lines'].pos_hint={'center_x':.5, 'center_y':.15}
             w['details_expand_button'].size_hint=(.5, .125)
             w['details_expand_lines'].size_hint=(.4, .0525)
-            w['details_ssid'].text='     SSID:'
-            w['details_signal'].text='   Signal:'
+            w['details_ssid'].text='        SSID:'
+            w['details_signal'].text='     Signal:'
             w['details_security'].text='Security:'
             pw=w['details_password']
             pw.text=''
@@ -7013,11 +7013,11 @@ class NetworkScreen(Screen):
         sbm_parent=self.widgets['side_bar_box']
         darken=Animation(rgba=(0,0,0,.95))
         lighten=Animation(rgba=(0,0,0,.85))
-        self.remove_widget(sbm_parent)
-        self.add_widget(sbm_parent)#needed to draw children on top
         side_bar_manual=self.widgets['side_bar_manual']
         side_bar_manual.clear_widgets()
         if side_bar_manual.expanded:
+            self.remove_widget(sbm_parent)
+            self.add_widget(sbm_parent)#needed to draw children on top
             darken.start(side_bar_manual.shape_color)
             w=self.widgets
             w['side_bar_manual_title'].pos_hint={'center_x':.5, 'center_y':.925}
@@ -7053,11 +7053,11 @@ class NetworkScreen(Screen):
         sbn_parent=self.widgets['side_bar_box']
         darken=Animation(rgba=(0,0,0,.95))
         lighten=Animation(rgba=(0,0,0,.85))
-        self.remove_widget(sbn_parent)
-        self.add_widget(sbn_parent)#needed to draw children on top
         side_bar_known=self.widgets['side_bar_known']
         side_bar_known.clear_widgets()
         if side_bar_known.expanded:
+            self.remove_widget(sbn_parent)
+            self.add_widget(sbn_parent)#needed to draw children on top
             darken.start(side_bar_known.shape_color)
             w=self.widgets
             w['side_bar_known_title'].pos_hint={'center_x':.5, 'center_y':.925}
@@ -7084,11 +7084,11 @@ class NetworkScreen(Screen):
         sba_parent=self.widgets['side_bar_box']
         darken=Animation(rgba=(0,0,0,.95))
         lighten=Animation(rgba=(0,0,0,.85))
-        self.remove_widget(sba_parent)
-        self.add_widget(sba_parent)#needed to draw children on top
         side_bar_auto=self.widgets['side_bar_auto']
         side_bar_auto.clear_widgets()
         if side_bar_auto.expanded:
+            self.remove_widget(sba_parent)
+            self.add_widget(sba_parent)#needed to draw children on top
             darken.start(side_bar_auto.shape_color)
             w=self.widgets
             w['side_bar_auto_title'].pos_hint={'center_x':.5, 'center_y':.925}
@@ -7118,11 +7118,11 @@ class NetworkScreen(Screen):
         sbd_parent=self.widgets['side_bar_box']
         darken=Animation(rgba=(0,0,0,.95))
         lighten=Animation(rgba=(0,0,0,.85))
-        self.remove_widget(sbd_parent)
-        self.add_widget(sbd_parent)#needed to draw children on top
         side_bar_disconnect=self.widgets['side_bar_disconnect']
         side_bar_disconnect.clear_widgets()
         if side_bar_disconnect.expanded:
+            self.remove_widget(sbd_parent)
+            self.add_widget(sbd_parent)#needed to draw children on top
             darken.start(side_bar_disconnect.shape_color)
             w=self.widgets
             if status:
@@ -7302,7 +7302,7 @@ class NetworkScreen(Screen):
 
         @mainthread
         def clear_details():
-            self.widgets['details_ssid'].text='     SSID:'
+            self.widgets['details_ssid'].text='      SSID:'
             self.widgets['details_signal'].text='   Signal:'
             self.widgets['details_security'].text='Security:'
 
@@ -7329,7 +7329,7 @@ class NetworkScreen(Screen):
                 self.widgets['details_network_connect'].disabled=True
                 self.widgets['details_ssid_known'].opacity=0
             entry_len=30
-            ssid=f'     SSID: {ssid}'
+            ssid=f'      SSID: {ssid}'
             signal=f'   Signal: {network.get_signal()}/100'
             security=f'Security: {network.get_security()}'
             while len(ssid)<entry_len:
@@ -7418,28 +7418,39 @@ class NetworkScreen(Screen):
         self._known_removing=Thread(target=_remove,daemon=True,args=(profile,))
         self._known_removing.start()
 
+    def swap_to_details(self,profile,btn,*args):
+        btn.parent.parent.clear()  #gets the ScrollBubbleMenu to clear
+        self.side_bar_known_expand_button_func()
+        if network.get_ssid()==profile:
+            self.widgets['information_box'].expand()
+        else:self.get_details(profile)
+
     def get_known_networks(self,*args):
         if self._known_networks.is_alive():
             return
 
         def add_bubble(profile,button):
             scroll=self.widgets['side_bar_known_status_scroll']
-            cnct=BubbleButton(text='Connect')
+            cnct=BubbleButton(text='Connect',size_hint_y=.3,background_color=(0,.7,2,1))
             cnct.bind(on_release=partial(self.known_connect_func,profile))
-            rmv=BubbleButton(text='Forget')
+            rmv=BubbleButton(text='Forget',size_hint_y=.2,background_color=(1,0,0,1))
             rmv.bind(on_release=partial(self.remove_known_profile_func,profile))
+            dtl=BubbleButton(text='Details',size_hint_y=.2)
+            dtl.bind(on_release=partial(self.swap_to_details,profile))
 
             b=ScrollMenuBubble(
                 button,
                 scroll,
                 orientation='vertical',
+                spacing=[0,100],
                 arrow_pos='right_mid',
-                size_hint =(.5,3),
+                size_hint =(.5,7.5),
                 pos_hint = {'right':0, 'center_y':.5},
                 background_color=(1,1,1,1))
 
             b.add_widget(cnct)
             b.add_widget(rmv)
+            b.add_widget(dtl)
             self.add_widget(b)
 
         @mainthread
@@ -7477,7 +7488,7 @@ class NetworkScreen(Screen):
         def refreshing():
             if network.is_connected():
                 entry_len=30
-                ssid=f'  SSID: {network.get_ssid()}'
+                ssid=f'   SSID: {network.get_ssid()}'
                 status=f'Status: {network.get_status()}'
                 signal=f'Signal: {network.get_signal()}/100'
                 while len(ssid)<entry_len:
