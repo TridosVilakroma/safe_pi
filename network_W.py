@@ -44,3 +44,6 @@ def connect_wifi(*args):
 
 def get_profiles_by_priority(*args):
         return 'test\ntest2\ntest3'
+
+def set_profile_priority(ssid,priority,*args):
+        return

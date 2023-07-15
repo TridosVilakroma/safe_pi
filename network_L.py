@@ -86,8 +86,12 @@ def get_profiles_by_priority():
     else:
         return ''
 
-
-
+def set_profile_priority(ssid,priority,*args):
+    process=subprocess.run(['nmcli','con','modify',ssid,'connection.autoconnect-priority',str(priority)],stdout=subprocess.PIPE)
+    if process.returncode == 0:
+        return process.stdout.decode('utf-8').strip()
+    else:
+        return ''
 
 
 
