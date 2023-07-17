@@ -111,7 +111,7 @@ gray_seperator_line=r'media/line_gray.png'
 gray_seperator_line_vertical=r'media/line_gray_vertical.png'
 settings_icon=r'media/menu_lines.png'
 red_dot=r'media/red_dot.png'
-
+opaque_bubble=r'media/opaque_bubble.png'
 
 
 class PinPop(Popup):
@@ -6587,7 +6587,7 @@ class NetworkScreen(Screen):
             bg_color=(0,0,0,1),
             text=current_language['side_bar_known_instructions'],
             markup=True,
-            size_hint =(.3, .4),
+            size_hint =(.35, .4),
             pos_hint = {'center_x':.25, 'center_y':.5},)
         self.widgets['side_bar_known_instructions']=side_bar_known_instructions
         side_bar_known_instructions.ref='side_bar_known_instructions'
@@ -7583,7 +7583,7 @@ class NetworkScreen(Screen):
                 arrow_pos='right_mid',
                 size_hint =(.5,7.5),
                 pos_hint = {'right':0, 'center_y':.5},
-                background_color=(1,1,1,1))
+                background_image=opaque_bubble)
 
             b.add_widget(cnct)
             b.add_widget(rmv)
