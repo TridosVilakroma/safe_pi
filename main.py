@@ -58,7 +58,7 @@ from kivy.uix.screenmanager import FallOutTransition
 from kivy.uix.screenmanager import RiseInTransition
 from kivy.clock import Clock,mainthread
 from functools import partial
-from kivy.uix.behaviors import ButtonBehavior
+from kivy.uix.behaviors import ButtonBehavior,DragBehavior
 from kivy.uix.scrollview import ScrollView
 from kivy.graphics import Rectangle, Color, Line, Bezier
 from kivy.properties import ListProperty,StringProperty,NumericProperty,ColorProperty,OptionProperty,BooleanProperty
@@ -83,6 +83,7 @@ from circle_progress_bar import CircularProgressBar
 from kivy.uix.filechooser import FileChooserIconView, FileChooserListView
 from kivy.graphics.context_instructions import PopMatrix,PushMatrix,Rotate,Scale
 from kivy.uix.accordion import Accordion, AccordionItem
+from kivy.metrics import sp
 
 kivy.require('2.0.0')
 current_language=lang_dict.english
@@ -196,6 +197,10 @@ class RoundedButton(Button):
                 self.shape_color.rgba = self.bg_color[0], self.bg_color[1], self.bg_color[2], self.bg_color[3]
             else:
                 self.shape_color.rgba = self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3]
+
+class DraggableRoundedButton(DragBehavior,Button):
+    def _do_touch_up(self, touch, *largs):
+        return super(DragBehavior, self)._do_touch_up(self, touch, *largs)
 
 class RoundedToggleButton(ToggleButton):
     '''`RoundedToggleButton` has two key differences from `ToggleButton`
@@ -500,6 +505,64 @@ class RoundedLabelColor(Label):
         #before __init__ is called the bg_color changes, so we wait untill __init__() to proceed
         if hasattr(self,'shape_color'):
             self.shape_color.rgb=self.bg_color
+
+class DraggableRoundedLabelColor(DragBehavior,RoundedLabelColor):
+    def __init__(self,index, **kwargs):
+        self.index=index
+        if 'func' in kwargs:
+            self.func=kwargs.pop('func')
+        else:self.func=None
+        super(DraggableRoundedLabelColor, self).__init__(**kwargs)
+        self.bind(pos=self.align_drag_rect)
+        self.pluck=Animation(size_hint_x=.275,d=.035,t='out_back')
+        self.plant=Animation(size_hint_x=1,d=.035,t='in_quad')
+        self.plant&=Animation(height=40,d=.035,t='in_quad')
+
+    def align_drag_rect(self,pos,*args):
+        self.drag_rectangle=(self.x,self.y,self.width,self.height)
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            self.bg_color=(.2,.1,.1,1)
+        return super(DraggableRoundedLabelColor, self).on_touch_down(touch)
+
+    def on_touch_up(self, touch):
+        self.bg_color=(.1,.1,.1,1)
+        return super(DraggableRoundedLabelColor, self).on_touch_up(touch)
+
+    def on_touch_move(self, touch):
+        if self._get_uid('svavoid') in touch.ud or\
+                self._drag_touch is not touch:
+            return super(DragBehavior, self).on_touch_move(touch) or\
+                self._get_uid() in touch.ud
+        if touch.grab_current is not self:
+            return True
+
+        uid = self._get_uid()
+        ud = touch.ud[uid]
+        mode = ud['mode']
+        if mode == 'unknown':
+            ud['dx'] += abs(touch.dx)
+            ud['dy'] += abs(touch.dy)
+            if ud['dx'] > sp(self.drag_distance):
+                mode = 'drag'
+            if ud['dy'] > sp(self.drag_distance):
+                mode = 'drag'
+            ud['mode'] = mode
+        if mode == 'drag':
+            self.set_index(touch)
+        return True
+
+    def set_index(self,touch,*args):
+
+        dpos=touch.spos[1]-touch.pos[1]
+        index=self.index
+        btns=self.parent.children
+        print(dpos)
+        if abs(dpos)>40:
+            print('b')
+        else:
+            print('')
 
 class RoundedColorLayout(FloatLayout):
     bg_color=ColorProperty()
@@ -6066,6 +6129,8 @@ class NetworkScreen(Screen):
         self._known_removing=Thread()
         self._details_connecting=Thread()
         self._network_switching=Thread()
+        self._auto_networks=Thread()
+        self._priority_setting=Thread()
 
         back=RoundedButton(
             text=current_language['settings_back'],
@@ -6590,6 +6655,7 @@ class NetworkScreen(Screen):
         self.widgets['side_bar_auto']=side_bar_auto
         side_bar_auto.bind(state=self.bg_color)
         side_bar_auto.bind(expanded=self.side_bar_auto_populate)
+        side_bar_auto.bind(expanded=self.get_auto_networks)
         side_bar_auto.bind(animating=partial(general.stripargs,side_bar_auto.clear_widgets))
 
         side_bar_auto_title=Label(
@@ -6625,6 +6691,70 @@ class NetworkScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.075})
         side_bar_auto_expand_lines.center=side_bar_auto_expand_button.center
         self.widgets['side_bar_auto_expand_lines']=side_bar_auto_expand_lines
+
+        side_bar_auto_instructions=LabelColor(
+            bg_color=(0,0,0,1),
+            text=current_language['side_bar_auto_instructions'],
+            markup=True,
+            size_hint =(.3, .4),
+            pos_hint = {'center_x':.25, 'center_y':.4},)
+        self.widgets['side_bar_auto_instructions']=side_bar_auto_instructions
+        side_bar_auto_instructions.ref='side_bar_auto_instructions'
+
+        with side_bar_auto_instructions.canvas.after:
+           side_bar_auto_instructions.status_lines=Line(rounded_rectangle=(100, 100, 200, 200, 10, 10, 10, 10, 100))
+
+        def update_lines(*args):
+            x=int(side_bar_auto_instructions.x)
+            y=int(side_bar_auto_instructions.y)
+            width=int(side_bar_auto_instructions.width*1)
+            height=int(side_bar_auto_instructions.height*1)
+            side_bar_auto_instructions.status_lines.rounded_rectangle=(x, y, width, height, 10, 10, 10, 10, 100)
+        side_bar_auto_instructions.bind(pos=update_lines, size=update_lines)
+
+        side_bar_auto_status_box=RoundedColorLayout(
+            bg_color=(.1,.1,.1,.85),
+            size_hint =(.4, .6),
+            pos_hint = {'center_x':.7, 'center_y':.5},)
+        side_bar_auto_status_box.widgets={}
+        self.widgets['side_bar_auto_status_box']=side_bar_auto_status_box
+
+        side_bar_auto_status_title=Label(
+            text=current_language['side_bar_auto_network_status_title'],
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.925},)
+        self.widgets['side_bar_auto_status_title']=side_bar_auto_status_title
+        side_bar_auto_status_title.ref='side_bar_auto_network_status_title'
+
+        side_bar_auto_status_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['side_bar_auto_status_seperator']=side_bar_auto_status_seperator
+
+        side_bar_auto_status_scroll=OutlineScroll(
+            size_hint =(.9,.75),
+            pos_hint = {'center_x':.5, 'center_y':.45},
+            bg_color=(1,1,1,.15),
+            bar_width=8,
+            bar_color=(245/250, 216/250, 41/250,.9),
+            bar_inactive_color=(245/250, 216/250, 41/250,.35),
+            do_scroll_y=True,
+            do_scroll_x=False,
+            scroll_timeout=10)
+        self.widgets['side_bar_auto_status_scroll']=side_bar_auto_status_scroll
+
+        side_bar_auto_status_scroll_layout = GridLayout(
+            cols=1,
+            spacing=10,
+            size_hint_y=None,
+            padding=5)
+        self.widgets['side_bar_auto_status_scroll_layout']=side_bar_auto_status_scroll_layout
+        # Make sure the height is such that there is something to scroll.
+        side_bar_auto_status_scroll_layout.bind(minimum_height=side_bar_auto_status_scroll_layout.setter('height'))
 
         side_bar_disconnect=ExpandableRoundedColorLayout(
             size_hint =(.9, .15),
@@ -6812,6 +6942,11 @@ class NetworkScreen(Screen):
         side_bar_known_status_box.add_widget(side_bar_known_status_seperator)
         side_bar_known_status_box.add_widget(side_bar_known_status_scroll)
         side_bar_known_status_scroll.add_widget(side_bar_known_status_scroll_layout)
+
+        side_bar_auto_status_box.add_widget(side_bar_auto_status_title)
+        side_bar_auto_status_box.add_widget(side_bar_auto_status_seperator)
+        side_bar_auto_status_box.add_widget(side_bar_auto_status_scroll)
+        side_bar_auto_status_scroll.add_widget(side_bar_auto_status_scroll_layout)
 
         side_bar_manual.add_widget(side_bar_manual_title)
         side_bar_known.add_widget(side_bar_known_title)
@@ -7097,7 +7232,9 @@ class NetworkScreen(Screen):
                 w['side_bar_auto_title'],
                 w['side_bar_auto_seperator'],
                 w['side_bar_auto_expand_button'],
-                w['side_bar_auto_expand_lines']]
+                w['side_bar_auto_expand_lines'],
+                w['side_bar_auto_instructions'],
+                w['side_bar_auto_status_box']]
             for i in all_widgets:
                 side_bar_auto.add_widget(i)
         elif not side_bar_auto.expanded:
@@ -7470,6 +7607,43 @@ class NetworkScreen(Screen):
                 add_button(i)
         self._known_networks=Thread(target=_known,daemon=True)
         self._known_networks.start()
+
+    def get_auto_networks(self,*args):
+        if self._auto_networks.is_alive():
+            return
+
+        @mainthread
+        def add_button(profile,index):
+            btn = DraggableRoundedLabelColor(
+                index=index,
+                drag_rectangle= (self.x, self.y, self.width, self.height),
+                drag_timeout= 100000000,
+                drag_distance= 10,
+                bg_color=(.1,.1,.1,1),
+                text=f'[size=16]{str(profile)}',
+                markup=True,
+                size_hint_y=None,
+                height=40,
+                func=partial(self._set_priority,profile))
+            self.widgets['side_bar_auto_status_scroll_layout'].add_widget(btn)
+
+        def _auto():
+            self.widgets['side_bar_auto_status_scroll_layout'].clear_widgets()
+            for profile,index in enumerate(network.get_profiles_by_priority().splitlines()):
+                add_button(profile,index)
+        self._auto_networks=Thread(target=_auto,daemon=True,)
+        self._auto_networks.start()
+
+    def _set_priority(self,profile,*args):
+        print('werk')
+        return
+        if self._priority_setting.is_alive():
+            return
+        priority=0
+        def f(*args):
+            network.set_profile_priority(profile,priority)
+        self._priority_setting=Thread(target=f,daemon=True)
+        self._priority_setting.start()
 
     def check_admin_mode(self,*args):
         if App.get_running_app().admin_mode_start>time.time():
