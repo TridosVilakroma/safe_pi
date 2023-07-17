@@ -346,7 +346,7 @@ class Logic():
             print("fired state")
         elif self.state=='Normal':
             self.normal()
-            print("normal state")
+            # print("normal state")
 
     def auxillary(self):
         self.trouble()
