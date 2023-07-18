@@ -506,60 +506,78 @@ class RoundedLabelColor(Label):
         if hasattr(self,'shape_color'):
             self.shape_color.rgb=self.bg_color
 
-class DraggableRoundedLabelColor(DragBehavior,RoundedLabelColor):
+class ImageGhost(Image):
+        def __init__(self,touch, **kwargs):
+            super(ImageGhost,self).__init__(**kwargs)
+            screen=App.get_running_app().context_screen.get_screen('network')
+            screen.add_widget(self)
+            self.opacity=.85
+            self.bind(texture=self._on_texture_)
+
+        def _on_texture_(self,img,texture,*args):
+            self.texture.flip_vertical()
+            print(self.center)
+            print(self.size)
+            Clock.schedule_once(partial(print,self.center))
+
+        def on_touch_up(self, touch):
+            if touch.grab_current is self:
+                touch.ungrab(self)
+                self.parent.remove_widget(self)
+            return super(ImageGhost, self).on_touch_up(touch)
+
+        def on_touch_move(self, touch):
+            if touch.grab_current is self:
+                self.center=touch.pos
+                print(self.size)
+            return super(ImageGhost, self).on_touch_move(touch)
+
+class DraggableRoundedLabelColor(RoundedLabelColor):
+    '''for use in single column gridlayouts in scrollviews'''
+
     def __init__(self,index, **kwargs):
         self.index=index
         if 'func' in kwargs:
             self.func=kwargs.pop('func')
         else:self.func=None
         super(DraggableRoundedLabelColor, self).__init__(**kwargs)
-        self.bind(pos=self.align_drag_rect)
         self.pluck=Animation(size_hint_x=.275,d=.035,t='out_back')
         self.plant=Animation(size_hint_x=1,d=.035,t='in_quad')
         self.plant&=Animation(height=40,d=.035,t='in_quad')
 
-    def align_drag_rect(self,pos,*args):
-        self.drag_rectangle=(self.x,self.y,self.width,self.height)
+    def _avatar(self,touch,*args):
+        image=self.export_as_image(flip_vertical=False)
+        avatar=ImageGhost(touch)
+        avatar.texture=image.texture
+        touch.grab(avatar)
+        return avatar
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             self.bg_color=(.2,.1,.1,1)
+            touch.grab(self)
+            avatar=self._avatar(touch)
+            
+            self.opacity=0
         return super(DraggableRoundedLabelColor, self).on_touch_down(touch)
 
     def on_touch_up(self, touch):
-        self.bg_color=(.1,.1,.1,1)
+        if touch.grab_current is self:
+            self.bg_color=(.1,.1,.1,1)
+            self.opacity=1
+            touch.ungrab(self)
         return super(DraggableRoundedLabelColor, self).on_touch_up(touch)
 
     def on_touch_move(self, touch):
-        if self._get_uid('svavoid') in touch.ud or\
-                self._drag_touch is not touch:
-            return super(DragBehavior, self).on_touch_move(touch) or\
-                self._get_uid() in touch.ud
-        if touch.grab_current is not self:
-            return True
-
-        uid = self._get_uid()
-        ud = touch.ud[uid]
-        mode = ud['mode']
-        if mode == 'unknown':
-            ud['dx'] += abs(touch.dx)
-            ud['dy'] += abs(touch.dy)
-            if ud['dx'] > sp(self.drag_distance):
-                mode = 'drag'
-            if ud['dy'] > sp(self.drag_distance):
-                mode = 'drag'
-            ud['mode'] = mode
-        if mode == 'drag':
+        if touch.grab_current is self:
             self.set_index(touch)
-        return True
+        return super(DraggableRoundedLabelColor, self).on_touch_move(touch)
 
     def set_index(self,touch,*args):
-
         dpos=touch.spos[1]-touch.pos[1]
         index=self.index
         btns=self.parent.children
-        print(dpos)
-        if abs(dpos)>40:
+        if abs(dpos)>1000:
             print('b')
         else:
             print('')
@@ -6743,8 +6761,7 @@ class NetworkScreen(Screen):
             bar_color=(245/250, 216/250, 41/250,.9),
             bar_inactive_color=(245/250, 216/250, 41/250,.35),
             do_scroll_y=True,
-            do_scroll_x=False,
-            scroll_timeout=10)
+            do_scroll_x=False)
         self.widgets['side_bar_auto_status_scroll']=side_bar_auto_status_scroll
 
         side_bar_auto_status_scroll_layout = GridLayout(
@@ -7568,11 +7585,11 @@ class NetworkScreen(Screen):
 
         def add_bubble(profile,button):
             scroll=self.widgets['side_bar_known_status_scroll']
-            cnct=BubbleButton(text='Connect',size_hint_y=.3,background_color=(0,.7,2,1))
+            cnct=BubbleButton(markup=True,text='[b][size=18]Connect',size_hint_y=.3,background_color=(0,.7,1,1))
             cnct.bind(on_release=partial(self.known_connect_func,profile))
-            rmv=BubbleButton(text='Forget',size_hint_y=.2,background_color=(1,0,0,1))
+            rmv=BubbleButton(markup=True,text='[b][size=18]Forget',size_hint_y=.2,background_color=(1,0,0,1))
             rmv.bind(on_release=partial(self.remove_known_profile_func,profile))
-            dtl=BubbleButton(text='Details',size_hint_y=.2)
+            dtl=BubbleButton(markup=True,text='[b][size=18]Details',size_hint_y=.2)
             dtl.bind(on_release=partial(self.swap_to_details,profile))
 
             b=ScrollMenuBubble(
@@ -7583,7 +7600,8 @@ class NetworkScreen(Screen):
                 arrow_pos='right_mid',
                 size_hint =(.5,7.5),
                 pos_hint = {'right':0, 'center_y':.5},
-                background_image=opaque_bubble)
+                background_image=opaque_bubble,
+                background_color=(.05,.05,.05,1))
 
             b.add_widget(cnct)
             b.add_widget(rmv)
@@ -7616,9 +7634,6 @@ class NetworkScreen(Screen):
         def add_button(profile,index):
             btn = DraggableRoundedLabelColor(
                 index=index,
-                drag_rectangle= (self.x, self.y, self.width, self.height),
-                drag_timeout= 100000000,
-                drag_distance= 10,
                 bg_color=(.1,.1,.1,1),
                 text=f'[size=16]{str(profile)}',
                 markup=True,
