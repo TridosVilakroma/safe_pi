@@ -511,12 +511,9 @@ class ImageGhost(Image):
             super(ImageGhost,self).__init__(**kwargs)
             self.screen=App.get_running_app().context_screen.get_screen('network')
             scroll=self.screen.widgets['side_bar_auto_status_scroll']
-            self.screen.add_widget(self)
             self.opacity=.85
             self.bind(texture=self._on_texture_)
             self.size_hint=(None,None)
-            self.center=(scroll.x+touch.x-self.width*touch.osx,
-                         scroll.y+touch.y+150)
 
         def _on_texture_(self,img,texture,*args):
             self.texture.flip_vertical()
@@ -524,15 +521,17 @@ class ImageGhost(Image):
 
         def on_touch_up(self, touch):
             if touch.grab_current is self:
-                print(touch.pos)
                 touch.ungrab(self)
-                self.parent.remove_widget(self)
+                if self.parent:
+                    self.parent.remove_widget(self)
             return super(ImageGhost, self).on_touch_up(touch)
 
         def on_touch_move(self, touch):
             if touch.grab_current is self:
-                print('here')
+                print('test')
                 self.center=touch.pos
+                if not self.parent:
+                    self.screen.add_widget(self)
             return super(ImageGhost, self).on_touch_move(touch)
 
 class DraggableRoundedLabelColor(RoundedLabelColor):
@@ -560,8 +559,6 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
             self.bg_color=(.2,.1,.1,1)
             touch.grab(self)
             avatar=self._avatar(touch)
-            
-            self.opacity=0
         return super(DraggableRoundedLabelColor, self).on_touch_down(touch)
 
     def on_touch_up(self, touch):
@@ -573,6 +570,7 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
 
     def on_touch_move(self, touch):
         if touch.grab_current is self:
+            self.opacity=0
             self.set_index(touch)
         return super(DraggableRoundedLabelColor, self).on_touch_move(touch)
 
