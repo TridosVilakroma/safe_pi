@@ -7644,7 +7644,7 @@ class NetworkScreen(Screen):
 
         def _auto():
             self.widgets['side_bar_auto_status_scroll_layout'].clear_widgets()
-            for profile,index in enumerate(network.get_profiles_by_priority().splitlines()):
+            for index,profile in enumerate(network.get_profiles_by_priority().splitlines()):
                 add_button(profile,index)
         self._auto_networks=Thread(target=_auto,daemon=True,)
         self._auto_networks.start()
