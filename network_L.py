@@ -80,7 +80,7 @@ def connect_wifi(*args):
         return ''
 
 def get_profiles_by_priority():
-    process=subprocess.run('nmcli -g name con | sort -nr',shell=True,stdout=subprocess.PIPE)
+    process=subprocess.run('nmcli -g autoconnect-priority,name con | sort -nr',shell=True,stdout=subprocess.PIPE)
     if process.returncode == 0:
         return process.stdout.decode('utf-8').strip()
     else:
