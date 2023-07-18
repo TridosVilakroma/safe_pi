@@ -509,27 +509,30 @@ class RoundedLabelColor(Label):
 class ImageGhost(Image):
         def __init__(self,touch, **kwargs):
             super(ImageGhost,self).__init__(**kwargs)
-            screen=App.get_running_app().context_screen.get_screen('network')
-            screen.add_widget(self)
+            self.screen=App.get_running_app().context_screen.get_screen('network')
+            scroll=self.screen.widgets['side_bar_auto_status_scroll']
+            self.screen.add_widget(self)
             self.opacity=.85
             self.bind(texture=self._on_texture_)
+            self.size_hint=(None,None)
+            self.center=(scroll.x+touch.x-self.width*touch.osx,
+                         scroll.y+touch.y+150)
 
         def _on_texture_(self,img,texture,*args):
             self.texture.flip_vertical()
-            print(self.center)
-            print(self.size)
-            Clock.schedule_once(partial(print,self.center))
+            self.size=self.texture_size
 
         def on_touch_up(self, touch):
             if touch.grab_current is self:
+                print(touch.pos)
                 touch.ungrab(self)
                 self.parent.remove_widget(self)
             return super(ImageGhost, self).on_touch_up(touch)
 
         def on_touch_move(self, touch):
             if touch.grab_current is self:
+                print('here')
                 self.center=touch.pos
-                print(self.size)
             return super(ImageGhost, self).on_touch_move(touch)
 
 class DraggableRoundedLabelColor(RoundedLabelColor):
@@ -7645,7 +7648,8 @@ class NetworkScreen(Screen):
         def _auto():
             self.widgets['side_bar_auto_status_scroll_layout'].clear_widgets()
             for index,profile in enumerate(network.get_profiles_by_priority().splitlines()):
-                profile = profile.split(':',1)[1]
+                if os.name=='posix':
+                    profile = profile.split(':',1)[1]
                 add_button(profile,index)
         self._auto_networks=Thread(target=_auto,daemon=True,)
         self._auto_networks.start()
