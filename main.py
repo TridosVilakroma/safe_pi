@@ -7568,11 +7568,11 @@ class NetworkScreen(Screen):
 
         def add_bubble(profile,button):
             scroll=self.widgets['side_bar_known_status_scroll']
-            cnct=BubbleButton(text='Connect',size_hint_y=.3,background_color=(0,.7,2,1))
+            cnct=BubbleButton(markup=True,text='[b][size=18]Connect',size_hint_y=.3,background_color=(0,.7,1,1))
             cnct.bind(on_release=partial(self.known_connect_func,profile))
-            rmv=BubbleButton(text='Forget',size_hint_y=.2,background_color=(1,0,0,1))
+            rmv=BubbleButton(markup=True,text='[b][size=18]Forget',size_hint_y=.2,background_color=(1,0,0,1))
             rmv.bind(on_release=partial(self.remove_known_profile_func,profile))
-            dtl=BubbleButton(text='Details',size_hint_y=.2)
+            dtl=BubbleButton(markup=True,text='[b][size=18]Details',size_hint_y=.2)
             dtl.bind(on_release=partial(self.swap_to_details,profile))
 
             b=ScrollMenuBubble(
@@ -7583,7 +7583,8 @@ class NetworkScreen(Screen):
                 arrow_pos='right_mid',
                 size_hint =(.5,7.5),
                 pos_hint = {'right':0, 'center_y':.5},
-                background_image=opaque_bubble)
+                background_image=opaque_bubble,
+                background_color=(.05,.05,.05,1))
 
             b.add_widget(cnct)
             b.add_widget(rmv)
