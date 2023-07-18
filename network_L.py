@@ -52,7 +52,7 @@ def get_known():
         return ''
 
 def remove_profile(ssid,*args):
-    process=subprocess.run(['nmcli','con','delete',f'{ssid}'],stdout=subprocess.PIPE)
+    process=subprocess.run(['nmcli','con','delete',ssid],stdout=subprocess.PIPE)
     if process.returncode == 0:
         return process.stdout.decode('utf-8').strip()
     else:
@@ -66,21 +66,23 @@ def disconnect_ssid(ssid,*args):
         return ''
 
 def disconnect_wifi(*args):
-    process=subprocess.run(['nmcli','radio','wifi','off'],stdout=subprocess.PIPE)
+    process=subprocess.run(['sudo','nmcli','radio','wifi','off'],stdout=subprocess.PIPE)
     if process.returncode == 0:
         return process.stdout.decode('utf-8').strip()
     else:
         return ''
 
 def connect_wifi(*args):
-    process=subprocess.run(['nmcli','radio','wifi','on'],stdout=subprocess.PIPE)
+    process=subprocess.run(['sudo','nmcli','radio','wifi','on'],stdout=subprocess.PIPE)
     if process.returncode == 0:
         return process.stdout.decode('utf-8').strip()
     else:
         return ''
 
 def get_profiles_by_priority():
-    process=subprocess.run(['nmcli','-g','autoconnect-priority','name','con'],stdout=subprocess.PIPE)
+    # process=subprocess.run(['nmcli','-g','name,autoconnect-priority','con'],stdout=subprocess.PIPE)
+    process=subprocess.run(['nmcli', '-g', 'autoconnect-priority,name',
+                             'c', '|', 'tail', '-n', '+2', '|', 'sort', '-nr'],stdout=subprocess.PIPE)
     if process.returncode == 0:
         return process.stdout.decode('utf-8').strip()
     else:
