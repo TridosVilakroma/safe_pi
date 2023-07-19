@@ -510,7 +510,6 @@ class ImageGhost(Image):
         def __init__(self,touch, **kwargs):
             super(ImageGhost,self).__init__(**kwargs)
             self.screen=App.get_running_app().context_screen.get_screen('network')
-            scroll=self.screen.widgets['side_bar_auto_status_scroll']
             self.opacity=.85
             self.bind(texture=self._on_texture_)
             self.size_hint=(None,None)
@@ -528,8 +527,8 @@ class ImageGhost(Image):
 
         def on_touch_move(self, touch):
             if touch.grab_current is self:
-                print('test')
                 self.center=touch.pos
+                print('herex')
                 if not self.parent:
                     self.screen.add_widget(self)
             return super(ImageGhost, self).on_touch_move(touch)
@@ -539,6 +538,7 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
 
     def __init__(self,index, **kwargs):
         self.index=index
+        self._new_move=True
         if 'func' in kwargs:
             self.func=kwargs.pop('func')
         else:self.func=None
@@ -554,15 +554,30 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
         touch.grab(avatar)
         return avatar
 
+    def add_drop_points(self,*args):
+        layout=self.parent
+        btns=layout.children
+        index=0
+        for i in range(len(btns)+1):
+            print(index)
+            drop_point=Label(
+                size_hint_y=None,
+                height=0)
+            layout.add_widget(drop_point, index=index)
+            index+=2
+
+
+
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             self.bg_color=(.2,.1,.1,1)
             touch.grab(self)
-            avatar=self._avatar(touch)
+            self._avatar(touch)
         return super(DraggableRoundedLabelColor, self).on_touch_down(touch)
 
     def on_touch_up(self, touch):
         if touch.grab_current is self:
+            self._new_move=True
             self.bg_color=(.1,.1,.1,1)
             self.opacity=1
             touch.ungrab(self)
@@ -570,7 +585,10 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
 
     def on_touch_move(self, touch):
         if touch.grab_current is self:
-            self.opacity=0
+            if self._new_move:
+                self._new_move=False
+                self.opacity=0
+                self.add_drop_points()
             self.set_index(touch)
         return super(DraggableRoundedLabelColor, self).on_touch_move(touch)
 
