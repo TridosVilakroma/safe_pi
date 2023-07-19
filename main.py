@@ -562,7 +562,7 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
         for i in range(len(btns)+1):
             drop_point=Label(
                 size_hint_y=None,
-                height=0)
+                height=1)
             self.drop_points.append(drop_point)
             layout.add_widget(drop_point, index=index)
             layout.rows_minimum[index]=0
@@ -596,13 +596,12 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
                 self._new_move=False
                 self.opacity=0
                 self.add_drop_points()
-            for i in self.drop_points:
-                if i.collide_point(*i.to_parent(*touch.pos)):
-                    self.set_index(touch,i)
+            for dp in self.drop_points:
+                if self._collide_with(dp):
+                    self.set_index(touch,dp)
         return super(DraggableRoundedLabelColor, self).on_touch_move(touch)
 
     def set_index(self,touch,*args):
-        print('collision')
         dpos=touch.spos[1]-touch.pos[1]
         index=self.index
         btns=self.parent.children
@@ -610,6 +609,21 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
             print('b')
         else:
             pass
+
+    def _collide_with(self,wid):
+        avatar=self.avatar
+        transformed_pos=wid.to_window(*wid.pos)
+        tx=transformed_pos[0]
+        ty=transformed_pos[1]
+        if avatar.right < tx:
+            return False
+        if avatar.x > tx+wid.width:
+            return False
+        if avatar.top < ty:
+            return False
+        if avatar.y > ty+wid.height:
+            return False
+        return True
 
 class RoundedColorLayout(FloatLayout):
     bg_color=ColorProperty()
