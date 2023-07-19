@@ -528,7 +528,6 @@ class ImageGhost(Image):
         def on_touch_move(self, touch):
             if touch.grab_current is self:
                 self.center=touch.pos
-                print('herex')
                 if not self.parent:
                     self.screen.add_widget(self)
             return super(ImageGhost, self).on_touch_move(touch)
@@ -539,6 +538,7 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
     def __init__(self,index, **kwargs):
         self.index=index
         self._new_move=True
+        self.drop_points=[]
         if 'func' in kwargs:
             self.func=kwargs.pop('func')
         else:self.func=None
@@ -555,24 +555,30 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
         return avatar
 
     def add_drop_points(self,*args):
+        self.drop_points=[]
         layout=self.parent
-        btns=layout.children
+        self.btns=btns=layout.children
         index=0
         for i in range(len(btns)+1):
-            print(index)
             drop_point=Label(
                 size_hint_y=None,
                 height=0)
+            self.drop_points.append(drop_point)
             layout.add_widget(drop_point, index=index)
+            layout.rows_minimum[index]=0
             index+=2
 
-
+    def remove_drop_points(self,*args):
+        layout=self.parent
+        for i in self.drop_points:
+            layout.remove_widget(i)
+        self.drop_points=[]
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
             self.bg_color=(.2,.1,.1,1)
             touch.grab(self)
-            self._avatar(touch)
+            self.avatar=self._avatar(touch)
         return super(DraggableRoundedLabelColor, self).on_touch_down(touch)
 
     def on_touch_up(self, touch):
@@ -581,6 +587,7 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
             self.bg_color=(.1,.1,.1,1)
             self.opacity=1
             touch.ungrab(self)
+            self.remove_drop_points()
         return super(DraggableRoundedLabelColor, self).on_touch_up(touch)
 
     def on_touch_move(self, touch):
@@ -589,17 +596,20 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
                 self._new_move=False
                 self.opacity=0
                 self.add_drop_points()
-            self.set_index(touch)
+            for i in self.drop_points:
+                if i.collide_point(*i.to_parent(*touch.pos)):
+                    self.set_index(touch,i)
         return super(DraggableRoundedLabelColor, self).on_touch_move(touch)
 
     def set_index(self,touch,*args):
+        print('collision')
         dpos=touch.spos[1]-touch.pos[1]
         index=self.index
         btns=self.parent.children
         if abs(dpos)>1000:
             print('b')
         else:
-            print('')
+            pass
 
 class RoundedColorLayout(FloatLayout):
     bg_color=ColorProperty()
@@ -7661,8 +7671,12 @@ class NetworkScreen(Screen):
                 func=partial(self._set_priority,profile))
             self.widgets['side_bar_auto_status_scroll_layout'].add_widget(btn)
 
-        def _auto():
+        @mainthread
+        def _clear_children():
             self.widgets['side_bar_auto_status_scroll_layout'].clear_widgets()
+
+        def _auto():
+            _clear_children()
             for index,profile in enumerate(network.get_profiles_by_priority().splitlines()):
                 if os.name=='posix':
                     profile = profile.split(':',1)[1]
