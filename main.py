@@ -66,6 +66,7 @@ import configparser
 import logs.configurations.preferences as preferences
 from kivy.uix.settings import SettingsWithNoMenu
 from kivy.uix.settings import SettingsWithSidebar
+from kivy.effects.scroll.ScrollEffect import ScrollEffect
 from kivy.uix.effectwidget import EffectWidget
 from kivy.uix.effectwidget import HorizontalBlurEffect, VerticalBlurEffect
 from kivy.uix.popup import Popup
@@ -153,6 +154,36 @@ class OutlineScroll(ScrollView):
     def update_rect(self, *args):
         self.rect.pos = self.pos
         self.rect.size = (self.size[0], self.size[1])
+
+class OutlineAutoScroll(ScrollView):
+    def __init__(self,bg_color=(0,0,0,1), **kwargs):
+        super(OutlineAutoScroll,self).__init__(**kwargs)
+        self.bind(pos=self.update_rect)
+        self.bind(size=self.update_rect)
+        with self.canvas.before:
+                    Color(*bg_color)
+                    self.rect = Rectangle(pos=self.center,size=(self.width,self.height))
+    def update_rect(self, *args):
+        self.rect.pos = self.pos
+        self.rect.size = (self.size[0], self.size[1])
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            touch.grab(self)
+        return super(OutlineAutoScroll, self).on_touch_down(touch)
+
+    def on_touch_up(self, touch):
+        if touch.grab_current is self:
+            touch.ungrab(self)
+        return super(OutlineAutoScroll, self).on_touch_up(touch)
+
+    def on_touch_move(self, touch):
+        if touch.grab_current is self:
+            if touch.pos[1]>self.y+self.height*.75:
+                self.scroll_y+=self.convert_distance_to_scroll(dx=0,dy=10)[1]
+            if touch.pos[1]<self.y+self.height*.25:
+                self.scroll_y-=self.convert_distance_to_scroll(dx=0,dy=10)[1]
+        return super(OutlineAutoScroll, self).on_touch_move(touch)
 
 class IconButton(ButtonBehavior, Image):
     #uncomment block of code to see hit boxes for your button
@@ -6799,7 +6830,7 @@ class NetworkScreen(Screen):
             pos_hint = {'x':.05, 'y':.85})
         self.widgets['side_bar_auto_status_seperator']=side_bar_auto_status_seperator
 
-        side_bar_auto_status_scroll=OutlineScroll(
+        side_bar_auto_status_scroll=OutlineAutoScroll(
             size_hint =(.9,.75),
             pos_hint = {'center_x':.5, 'center_y':.45},
             bg_color=(1,1,1,.15),
@@ -6807,7 +6838,8 @@ class NetworkScreen(Screen):
             bar_color=(245/250, 216/250, 41/250,.9),
             bar_inactive_color=(245/250, 216/250, 41/250,.35),
             do_scroll_y=True,
-            do_scroll_x=False)
+            do_scroll_x=False,
+            effect_cls=ScrollEffect)
         self.widgets['side_bar_auto_status_scroll']=side_bar_auto_status_scroll
 
         side_bar_auto_status_scroll_layout = GridLayout(
