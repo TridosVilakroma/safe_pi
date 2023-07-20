@@ -66,7 +66,7 @@ import configparser
 import logs.configurations.preferences as preferences
 from kivy.uix.settings import SettingsWithNoMenu
 from kivy.uix.settings import SettingsWithSidebar
-from kivy.effects.scroll.ScrollEffect import ScrollEffect
+from kivy.effects.scroll import ScrollEffect
 from kivy.uix.effectwidget import EffectWidget
 from kivy.uix.effectwidget import HorizontalBlurEffect, VerticalBlurEffect
 from kivy.uix.popup import Popup
@@ -180,9 +180,11 @@ class OutlineAutoScroll(ScrollView):
     def on_touch_move(self, touch):
         if touch.grab_current is self:
             if touch.pos[1]>self.y+self.height*.75:
-                self.scroll_y+=self.convert_distance_to_scroll(dx=0,dy=10)[1]
-            if touch.pos[1]<self.y+self.height*.25:
-                self.scroll_y-=self.convert_distance_to_scroll(dx=0,dy=10)[1]
+                if self.scroll_y<1.1:
+                    self.scroll_y+=self.convert_distance_to_scroll(dx=0,dy=10)[1]
+            elif touch.pos[1]<self.y+self.height*.25:
+                if self.scroll_y>-.1:
+                    self.scroll_y-=self.convert_distance_to_scroll(dx=0,dy=10)[1]
         return super(OutlineAutoScroll, self).on_touch_move(touch)
 
 class IconButton(ButtonBehavior, Image):
@@ -6838,8 +6840,7 @@ class NetworkScreen(Screen):
             bar_color=(245/250, 216/250, 41/250,.9),
             bar_inactive_color=(245/250, 216/250, 41/250,.35),
             do_scroll_y=True,
-            do_scroll_x=False,
-            effect_cls=ScrollEffect)
+            do_scroll_x=False)
         self.widgets['side_bar_auto_status_scroll']=side_bar_auto_status_scroll
 
         side_bar_auto_status_scroll_layout = GridLayout(
