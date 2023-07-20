@@ -158,6 +158,7 @@ class OutlineScroll(ScrollView):
 class OutlineAutoScroll(ScrollView):
     def __init__(self,bg_color=(0,0,0,1), **kwargs):
         super(OutlineAutoScroll,self).__init__(**kwargs)
+        self.auto=False
         self.bind(pos=self.update_rect)
         self.bind(size=self.update_rect)
         with self.canvas.before:
@@ -175,9 +176,12 @@ class OutlineAutoScroll(ScrollView):
     def on_touch_up(self, touch):
         if touch.grab_current is self:
             touch.ungrab(self)
+            self.auto=False
         return super(OutlineAutoScroll, self).on_touch_up(touch)
 
     def on_touch_move(self, touch):
+        if not self.auto:
+            return super(OutlineAutoScroll, self).on_touch_move(touch)
         if touch.grab_current is self:
             if touch.pos[1]>self.y+self.height*.75:
                 if self.scroll_y<1.1:
@@ -562,6 +566,7 @@ class ImageGhost(Image):
             if touch.grab_current is self:
                 self.center=touch.pos
                 if not self.parent:
+                    self.screen.widgets['side_bar_auto_status_scroll'].auto=True
                     self.screen.add_widget(self)
             return super(ImageGhost, self).on_touch_move(touch)
 
