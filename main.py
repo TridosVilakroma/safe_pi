@@ -559,14 +559,16 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
         layout=self.parent
         self.btns=btns=layout.children
         index=0
-        for i in range(len(btns)+1):
-            drop_point=Label(
+        for point in range(len(btns)+1):
+            if point==self.index or point==self.index+1:
+                continue
+            drop_point=LabelColor(
                 size_hint_y=None,
                 height=1)
             self.drop_points.append(drop_point)
-            layout.add_widget(drop_point, index=index)
+            layout.add_widget(drop_point, index=point+index)
             layout.rows_minimum[index]=0
-            index+=2
+            index+=1
 
     def remove_drop_points(self,*args):
         layout=self.parent
@@ -602,6 +604,7 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
         return super(DraggableRoundedLabelColor, self).on_touch_move(touch)
 
     def set_index(self,touch,*args):
+        print('<><><><><><><><><><><><>')
         dpos=touch.spos[1]-touch.pos[1]
         index=self.index
         btns=self.parent.children
@@ -7675,6 +7678,7 @@ class NetworkScreen(Screen):
 
         @mainthread
         def add_button(profile,index):
+            layout=self.widgets['side_bar_auto_status_scroll_layout']
             btn = DraggableRoundedLabelColor(
                 index=index,
                 bg_color=(.1,.1,.1,1),
@@ -7683,7 +7687,7 @@ class NetworkScreen(Screen):
                 size_hint_y=None,
                 height=40,
                 func=partial(self._set_priority,profile))
-            self.widgets['side_bar_auto_status_scroll_layout'].add_widget(btn)
+            layout.add_widget(btn,len(layout.children))
 
         @mainthread
         def _clear_children():
@@ -7691,7 +7695,7 @@ class NetworkScreen(Screen):
 
         def _auto():
             _clear_children()
-            for index,profile in enumerate(network.get_profiles_by_priority().splitlines()):
+            for index,profile in enumerate(reversed(network.get_profiles_by_priority().splitlines())):
                 if os.name=='posix':
                     profile = profile.split(':',1)[1]
                 add_button(profile,index)
