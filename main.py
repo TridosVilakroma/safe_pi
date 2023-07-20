@@ -631,6 +631,9 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
             self.opacity=1
             touch.ungrab(self)
             self.remove_drop_points()
+            for index,profile in enumerate(reversed(self.parent.children)):
+                network.set_profile_priority(profile,index)
+
         return super(DraggableRoundedLabelColor, self).on_touch_up(touch)
 
     def on_touch_move(self, touch):
