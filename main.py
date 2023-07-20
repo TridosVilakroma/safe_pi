@@ -595,7 +595,7 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
         for point in range(len(btns)+1):
             if point==self.index or point==self.index+1:
                 continue
-            drop_point=LabelColor(
+            drop_point=Label(
                 size_hint_y=None,
                 height=1)
             self.drop_points.append(drop_point)
@@ -618,6 +618,9 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
 
     def on_touch_up(self, touch):
         if touch.grab_current is self:
+            for dp in self.drop_points:
+                if self._collide_with(dp):
+                    self.set_index(touch,dp)
             self._new_move=True
             self.bg_color=(.1,.1,.1,1)
             self.opacity=1
@@ -631,20 +634,22 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
                 self._new_move=False
                 self.opacity=0
                 self.add_drop_points()
-            for dp in self.drop_points:
-                if self._collide_with(dp):
-                    self.set_index(touch,dp)
         return super(DraggableRoundedLabelColor, self).on_touch_move(touch)
 
-    def set_index(self,touch,*args):
-        print('<><><><><><><><><><><><>')
-        dpos=touch.spos[1]-touch.pos[1]
-        index=self.index
-        btns=self.parent.children
-        if abs(dpos)>1000:
-            print('b')
-        else:
-            pass
+    def set_index(self,touch,point,*args):
+        p=self.parent
+        p.remove_widget(self)
+        btns=p.children.copy()
+        for index,btn in enumerate(btns):
+            if point==btn:
+                insert_index=index
+        p.clear_widgets()
+        new_index=0
+        for i in reversed(btns):
+            i.index=new_index
+            new_index+=1
+            p.add_widget(i)
+        p.add_widget(self,index=insert_index)
 
     def _collide_with(self,wid):
         avatar=self.avatar
@@ -6840,7 +6845,8 @@ class NetworkScreen(Screen):
             bar_color=(245/250, 216/250, 41/250,.9),
             bar_inactive_color=(245/250, 216/250, 41/250,.35),
             do_scroll_y=True,
-            do_scroll_x=False)
+            do_scroll_x=False,
+            effect_cls=ScrollEffect)
         self.widgets['side_bar_auto_status_scroll']=side_bar_auto_status_scroll
 
         side_bar_auto_status_scroll_layout = GridLayout(
