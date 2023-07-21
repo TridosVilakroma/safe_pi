@@ -6247,6 +6247,8 @@ class NetworkScreen(Screen):
         self._network_switching=Thread()
         self._auto_networks=Thread()
         self._priority_setting=Thread()
+        self._disconnect_temp=Thread()
+        self._disconnect_rmv=Thread()
 
         back=RoundedButton(
             text=current_language['settings_back'],
@@ -6880,6 +6882,7 @@ class NetworkScreen(Screen):
             expanded_pos = {'center_x':-1.785, 'center_y':.52},
             bg_color=(0,0,0,.85))
         self.widgets['side_bar_disconnect']=side_bar_disconnect
+        side_bar_disconnect.widgets={}
         side_bar_disconnect.bind(state=self.bg_color)
         side_bar_disconnect.bind(expanded=self.side_bar_disconnect_populate)
         side_bar_disconnect.bind(animating=partial(general.stripargs,side_bar_disconnect.clear_widgets))
@@ -6941,9 +6944,7 @@ class NetworkScreen(Screen):
             background_color=(.0, .35, .45,1),
             markup=True)
         self.widgets['side_bar_disconnect_temp_btn']=side_bar_disconnect_temp_btn
-        # side_bar_disconnect_temp_btn.bind(on_release=self.side_bar_manual_connect_func)
-        # side_bar_disconnect_temp_btn.bind(disabled=self.side_bar_manual_connect_disabled)
-        # side_bar_disconnect_temp_btn.bind(focus=self.side_bar_disconnect_ssid_input_clear)
+        side_bar_disconnect_temp_btn.bind(on_release=self.side_bar_disconnect_temp_btn_func)
 
         side_bar_disconnect_rmv=MinimumBoundingLabel(
             text='[b][size=16]Disconnect and Forget:',
@@ -6960,9 +6961,7 @@ class NetworkScreen(Screen):
             background_color=(.5,.1,.1,1),
             markup=True)
         self.widgets['side_bar_disconnect_rmv_btn']=side_bar_disconnect_rmv_btn
-        # side_bar_disconnect_temp_btn.bind(on_release=self.side_bar_manual_connect_func)
-        # side_bar_disconnect_temp_btn.bind(disabled=self.side_bar_manual_connect_disabled)
-        # side_bar_disconnect_temp_btn.bind(focus=self.side_bar_disconnect_ssid_input_clear)
+        side_bar_disconnect_rmv_btn.bind(on_release=self.side_bar_disconnect_rmv_btn_func)
 
         side_bar_disconnect_status=MinimumBoundingLabel(
             text='[b][size=16]Wi-Fi:',
@@ -7091,6 +7090,8 @@ class NetworkScreen(Screen):
                 network.connect_wifi()
             else:
                 network.disconnect_wifi()
+            self.refresh_ap_data()
+            self.side_bar_scan_func()
         self._network_switching=Thread(target=f,daemon=True)
         self._network_switching.start()
     def set_network_status_file(self,btn,val):
@@ -7454,6 +7455,88 @@ class NetworkScreen(Screen):
             sbd.shrink()
         if not sbd.expanded:
             sbd.expand()
+
+    def side_bar_disconnect_temp_btn_func(self,*args):
+        if self._disconnect_temp.is_alive():
+            return
+
+        @mainthread
+        def add_spinners():
+            db=self.widgets['side_bar_disconnect']
+            db.add_widget(PreLoader(rel_size=.3,ref='1',speed=500))
+            db.add_widget(PreLoader(rel_size=.25,ref='2',speed=850))
+            db.add_widget(PreLoader(rel_size=.2,ref='3',speed=600))
+            db.add_widget(PreLoader(rel_size=.15,ref='4',speed=950))
+            db.add_widget(PreLoader(rel_size=.1,ref='5',speed=700))
+            db.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050))
+
+        @mainthread
+        def remove_spinners():
+            db=self.widgets['side_bar_disconnect']
+            for i in range(6):
+                if str(i+1) in db.widgets:
+                    db.remove_widget(db.widgets[str(i+1)])
+
+        @mainthread
+        def  _refresh_btn_text():
+            w=self.widgets
+            tmp=w['side_bar_disconnect_temp_btn']
+            tmp.text='[b][size=16]Disconnect: '
+
+        def _disconnect():
+            db=self.widgets['side_bar_disconnect']
+            add_spinners()
+            if network.get_ssid():
+                network.disconnect_ssid(network.get_ssid())
+                _refresh_btn_text()
+            remove_spinners()
+            self.refresh_ap_data()
+            self.side_bar_scan_func()
+
+        self._disconnect_temp=Thread(target=_disconnect,daemon=True)
+        self._disconnect_temp.start()
+
+    def side_bar_disconnect_rmv_btn_func(self,*args):
+        if self._disconnect_rmv.is_alive():
+            return
+
+        @mainthread
+        def add_spinners():
+            db=self.widgets['side_bar_disconnect']
+            db.add_widget(PreLoader(rel_size=.3,ref='1',speed=500))
+            db.add_widget(PreLoader(rel_size=.25,ref='2',speed=850))
+            db.add_widget(PreLoader(rel_size=.2,ref='3',speed=600))
+            db.add_widget(PreLoader(rel_size=.15,ref='4',speed=950))
+            db.add_widget(PreLoader(rel_size=.1,ref='5',speed=700))
+            db.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050))
+
+        @mainthread
+        def remove_spinners():
+            db=self.widgets['side_bar_disconnect']
+            for i in range(6):
+                if str(i+1) in db.widgets:
+                    db.remove_widget(db.widgets[str(i+1)])
+
+        @mainthread
+        def  _refresh_btn_text():
+            w=self.widgets
+            tmp=w['side_bar_disconnect_temp_btn']
+            tmp.text='[b][size=16]Disconnect: '
+            rmv=w['side_bar_disconnect_rmv_btn']
+            rmv.text='[b][size=16]Forget: '
+
+        def _forget():
+            db=self.widgets['side_bar_disconnect']
+            add_spinners()
+            if network.get_ssid():
+                network.remove_profile(network.get_ssid())
+                _refresh_btn_text()
+            remove_spinners()
+            self.refresh_ap_data()
+            self.side_bar_scan_func()
+
+        self._disconnect_rmv=Thread(target=_forget,daemon=True)
+        self._disconnect_rmv.start()
 
     def details_network_connect_func(self,*args):
         if self._details_connecting.is_alive():
