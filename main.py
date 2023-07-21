@@ -7168,7 +7168,8 @@ class NetworkScreen(Screen):
         def scanning():
             add_spinners()
             for i in network.get_available().splitlines():
-                add_button(i)
+                if i:
+                    add_button(i)
             remove_spinners()
 
         self._scan=Thread(target=scanning,daemon=True)
