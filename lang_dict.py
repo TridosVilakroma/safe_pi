@@ -219,8 +219,8 @@ Auto-join will connect to the
 highest priorty network that is
 available.
 
-Drag and drop to change order,
-or select an auto ordering style.'''
+Drag and drop to change order;
+Highest priority at the top.'''
 }
 
 spanish={
