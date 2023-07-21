@@ -651,8 +651,6 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
                 insert_index=index
         p.add_widget(self,index=insert_index)
         self.remove_drop_points(p)
-        for i in reversed(self.parent.children):
-            print('text: ',i.text,' index: ', i.index)
         for index,profile in enumerate(self.parent.children):
                 network.set_profile_priority(profile.text,index)
         App.get_running_app().context_screen.get_screen('network').get_auto_networks()
@@ -6805,7 +6803,7 @@ class NetworkScreen(Screen):
             text=current_language['side_bar_auto_instructions'],
             markup=True,
             size_hint =(.3, .4),
-            pos_hint = {'center_x':.25, 'center_y':.4},)
+            pos_hint = {'center_x':.25, 'center_y':.5},)
         self.widgets['side_bar_auto_instructions']=side_bar_auto_instructions
         side_bar_auto_instructions.ref='side_bar_auto_instructions'
 
