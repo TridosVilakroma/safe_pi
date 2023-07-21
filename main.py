@@ -609,13 +609,14 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
             index+=1
 
     def remove_drop_points(self,layout,*args):
-        for i in self.drop_points:
+        for i in layout.children:
+            if isinstance(i,DraggableRoundedLabelColor):
+                continue
             layout.remove_widget(i)
         self.drop_points=[]
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
-            print(self.index)
             self.bg_color=(.2,.1,.1,1)
             touch.grab(self)
             self.avatar=self._avatar(touch)
@@ -626,12 +627,11 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
             for dp in self.drop_points:
                 if self._collide_with(dp):
                     self.set_index(dp)
+            self.remove_drop_points(self.parent)
             self._new_move=True
             self.bg_color=(.1,.1,.1,1)
             self.opacity=1
             touch.ungrab(self)
-            for index,profile in enumerate(reversed(self.parent.children)):
-                network.set_profile_priority(profile,index)
 
         return super(DraggableRoundedLabelColor, self).on_touch_up(touch)
 
@@ -646,20 +646,16 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
     def set_index(self,point,*args):
         p=self.parent
         p.remove_widget(self)
-        btns=p.children.copy()
-        for index,btn in enumerate(btns):
+        for index,btn in enumerate(p.children):
             if point==btn:
                 insert_index=index
-        self.remove_drop_points(p)
-        btns=p.children.copy()
-        p.clear_widgets()
-        new_index=0
-        for i in reversed(btns):
-            print(new_index)
-            i.index=new_index
-            new_index+=1
-            p.add_widget(i)
         p.add_widget(self,index=insert_index)
+        self.remove_drop_points(p)
+        for i in reversed(self.parent.children):
+            print('text: ',i.text,' index: ', i.index)
+        for index,profile in enumerate(self.parent.children):
+                network.set_profile_priority(profile.text,index)
+        App.get_running_app().context_screen.get_screen('network').get_auto_networks()
 
     def _collide_with(self,wid):
         avatar=self.avatar
