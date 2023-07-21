@@ -46,5 +46,5 @@ def get_profiles_by_priority(*args):
         return 'test1\ntest2\ntest3\ntest4\ntest5\ntest6'
 
 def set_profile_priority(ssid,priority,*args):
-        # return
-        print(ssid,' priority set to: ',priority)
+        return
+        # print(ssid,' priority set to: ',priority)
