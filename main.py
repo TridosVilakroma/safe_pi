@@ -6424,7 +6424,7 @@ class NetworkScreen(Screen):
         self.widgets['details_connect_box']=details_connect_box
 
         details_password_label=Label(
-            text='[b][size=16]Connect',
+            text='[b][size=20]Connect',
             markup=True,
             size_hint=(.4, .05),
             pos_hint = {'center_x':.5, 'center_y':.925},)
