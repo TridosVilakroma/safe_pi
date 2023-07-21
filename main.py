@@ -61,7 +61,7 @@ from functools import partial
 from kivy.uix.behaviors import ButtonBehavior,DragBehavior
 from kivy.uix.scrollview import ScrollView
 from kivy.graphics import Rectangle, Color, Line, Bezier
-from kivy.properties import ListProperty,StringProperty,NumericProperty,ColorProperty,OptionProperty,BooleanProperty
+from kivy.properties import ListProperty,StringProperty,NumericProperty,ColorProperty,OptionProperty,BooleanProperty,ObjectProperty
 import configparser
 import logs.configurations.preferences as preferences
 from kivy.uix.settings import SettingsWithNoMenu
@@ -77,7 +77,7 @@ from kivy.input.providers.mouse import MouseMotionEvent
 from kivy.uix.carousel import Carousel
 from kivy.uix.textinput import TextInput
 from kivy.uix.vkeyboard import VKeyboard
-from kivy.uix.spinner import Spinner
+from kivy.uix.spinner import Spinner,SpinnerOption
 from kivy.graphics import RoundedRectangle
 from kivy.uix.progressbar import ProgressBar
 from circle_progress_bar import CircularProgressBar
@@ -114,6 +114,16 @@ settings_icon=r'media/menu_lines.png'
 red_dot=r'media/red_dot.png'
 opaque_bubble=r'media/opaque_bubble.png'
 
+
+class MarkupSpinnerOption(SpinnerOption):
+    def __init__(self, **kwargs):
+        kwargs['markup']=True
+        super(MarkupSpinnerOption,self).__init__(**kwargs)
+
+class MarkupSpinner(Spinner):
+    def __init__(self, **kwargs):
+        super(MarkupSpinner,self).__init__(**kwargs)
+        self.option_cls = MarkupSpinnerOption
 
 class PinPop(Popup):
     def __init__(self,name, **kwargs):
@@ -6313,21 +6323,21 @@ class NetworkScreen(Screen):
         self.widgets['information_seperator']=information_seperator
 
         information_ssid=MinimumBoundingLabel(
-            text='SSID:',
+            text='[b][size=16]SSID:',
             markup=True,
             size_hint =(.4, .05), 
             pos_hint = {'x':.2, 'center_y':.725},)
         self.widgets['information_ssid']=information_ssid
 
         information_status=MinimumBoundingLabel(
-            text='Status:',
+            text='[b][size=16]Status:',
             markup=True,
             size_hint =(.4, .05),
             pos_hint = {'x':.2, 'center_y':.55},)
         self.widgets['information_status']=information_status
 
         information_signal=MinimumBoundingLabel(
-            text='Signal:',
+            text='[b][size=16]Signal:',
             markup=True,
             size_hint =(.4, .05),
             pos_hint = {'x':.2, 'center_y':.375},)
@@ -6387,21 +6397,21 @@ class NetworkScreen(Screen):
         details_box_hint_text.ref='details_box_hint_text'
 
         details_ssid=MinimumBoundingLabel(
-            text='     SSID:',
+            text='[b][size=16]     SSID:',
             markup=True,
             size_hint=(None,None),
             pos_hint = {'x':.1, 'center_y':.8},)
         self.widgets['details_ssid']=details_ssid
 
         details_signal=MinimumBoundingLabel(
-            text='   Signal:',
+            text='[b][size=16]   Signal:',
             markup=True,
             size_hint=(None,None),
             pos_hint = {'x':.1, 'center_y':.75},)
         self.widgets['details_signal']=details_signal
 
         details_security=MinimumBoundingLabel(
-            text='Security:',
+            text='[b][size=16]Security:',
             markup=True,
             size_hint=(None,None),
             pos_hint = {'x':.1, 'center_y':.7},)
@@ -6414,7 +6424,7 @@ class NetworkScreen(Screen):
         self.widgets['details_connect_box']=details_connect_box
 
         details_password_label=Label(
-            text='Connect',
+            text='[b][size=16]Connect',
             markup=True,
             size_hint=(.4, .05),
             pos_hint = {'center_x':.5, 'center_y':.925},)
@@ -6438,7 +6448,7 @@ class NetworkScreen(Screen):
             bg_color=(.0, .35, .45,1),
             size_hint =(.5, .15),
             pos_hint = {'center_x':.5, 'center_y':.7},
-            text='Network is Known (Saved)',
+            text='[b][size=16]Network is Known (Saved)',
             markup=True)
         details_ssid_known.opacity=0
         self.widgets['details_ssid_known']=details_ssid_known
@@ -6455,7 +6465,7 @@ class NetworkScreen(Screen):
         details_password.bind(focus=self.details_password_clear_text)
 
         details_network_connect=RoundedButton(
-            text='Password Required',
+            text='[b][size=16]Password Required',
             size_hint =(.6, .1),
             pos_hint = {'center_x':.5, 'center_y':.25},
             background_normal='',
@@ -6581,7 +6591,7 @@ class NetworkScreen(Screen):
         self.widgets['side_bar_manual_vertical_seperator']=side_bar_manual_vertical_seperator
 
         side_bar_manual_ssid=MinimumBoundingLabel(
-            text='SSID:',
+            text='[b][size=16]SSID:',
             markup=True,
             size_hint=(None,None),
             pos_hint = {'right':.35, 'center_y':.7},)
@@ -6597,23 +6607,24 @@ class NetworkScreen(Screen):
         side_bar_manual_ssid_input.bind(focus=self.side_bar_manual_ssid_input_clear)
 
         side_bar_manual_security=MinimumBoundingLabel(
-            text='Security:',
+            text='[b][size=16]Security:',
             markup=True,
             size_hint=(None,None),
             pos_hint = {'right':.35, 'center_y':.55},)
         self.widgets['side_bar_manual_security']=side_bar_manual_security
 
-        side_bar_manual_security_input=Spinner(
+        side_bar_manual_security_input=MarkupSpinner(
             disabled=False,
-            text='Enter Security Type',
-            values=('None','WEP','WPA','WPA2/WPA3'),
+            text='[size=16]Enter Security Type',
+            markup=True,
+            values=('[b][size=16]None','[b][size=16]WEP','[b][size=16]WPA','[b][size=16]WPA2/WPA3'),
             size_hint =(.3, .05),
             pos_hint = {'x':.4, 'center_y':.55})
         self.widgets['side_bar_manual_security_input']=side_bar_manual_security_input
         side_bar_manual_security_input.bind(text=self.security_input_func)
 
         side_bar_manual_password=MinimumBoundingLabel(
-            text='password:',
+            text='[b][size=16]Password:',
             markup=True,
             size_hint=(None,None),
             pos_hint = {'right':.35, 'center_y':.4},)
@@ -6630,7 +6641,7 @@ class NetworkScreen(Screen):
         side_bar_manual_password_input.bind(focus=self.side_bar_manual_password_input_clear)
 
         side_bar_manual_connect=RoundedButton(
-            text='All Fields Required',
+            text='[b][size=16]All Fields Required',
             size_hint =(.425, .075),
             pos_hint = {'center_x':.5, 'center_y':.25},
             background_normal='',
@@ -6916,14 +6927,14 @@ class NetworkScreen(Screen):
         self.widgets['side_bar_disconnect_vertical_seperator']=side_bar_disconnect_vertical_seperator
 
         side_bar_disconnect_temp=MinimumBoundingLabel(
-            text='Disconnect Temporarily:',
+            text='[b][size=16]Disconnect Temporarily:',
             markup=True,
             size_hint=(None,None),
             pos_hint = {'right':.35, 'center_y':.7},)
         self.widgets['side_bar_disconnect_temp']=side_bar_disconnect_temp
 
         side_bar_disconnect_temp_btn=RoundedButton(
-            text=f'Disconnect: ',
+            text='[b][size=16]Disconnect: ',
             size_hint =(.3, .05),
             pos_hint = {'x':.4, 'center_y':.7},
             background_normal='',
@@ -6935,14 +6946,14 @@ class NetworkScreen(Screen):
         # side_bar_disconnect_temp_btn.bind(focus=self.side_bar_disconnect_ssid_input_clear)
 
         side_bar_disconnect_rmv=MinimumBoundingLabel(
-            text='Disconnect and Forget:',
+            text='[b][size=16]Disconnect and Forget:',
             markup=True,
             size_hint=(None,None),
             pos_hint = {'right':.35, 'center_y':.55},)
         self.widgets['side_bar_disconnect_rmv']=side_bar_disconnect_rmv
 
         side_bar_disconnect_rmv_btn=RoundedButton(
-            text=f'Forget: ',
+            text='[b][size=16]Forget: ',
             size_hint =(.3, .05),
             pos_hint = {'x':.4, 'center_y':.55},
             background_normal='',
@@ -6954,7 +6965,7 @@ class NetworkScreen(Screen):
         # side_bar_disconnect_temp_btn.bind(focus=self.side_bar_disconnect_ssid_input_clear)
 
         side_bar_disconnect_status=MinimumBoundingLabel(
-            text='Wi-Fi:',
+            text='[b][size=16]Wi-Fi:',
             markup=True,
             size_hint=(None,None),
             pos_hint = {'right':.35, 'center_y':.4},)
@@ -6962,7 +6973,8 @@ class NetworkScreen(Screen):
 
         side_bar_disconnect_status_btn_on=RoundedToggleButton(
             group='networking',
-            text='On',
+            text='[b][size=16]On',
+            markup=True,
             size_hint =(.125, .05),
             pos_hint = {'center_x':.475, 'center_y':.4},
             background_down='',
@@ -6974,7 +6986,8 @@ class NetworkScreen(Screen):
 
         side_bar_disconnect_status_btn_off=RoundedToggleButton(
             group='networking',
-            text='Off',
+            text='[b][size=16]Off',
+            markup=True,
             size_hint =(.125, .05),
             pos_hint = {'center_x':.625, 'center_y':.4},
             background_down='',
@@ -7145,7 +7158,8 @@ class NetworkScreen(Screen):
             btn = RoundedButton(
                 background_normal='',
                 background_color=c,
-                text=prefix+str(ssid)+suffix,
+                text='[b][size=16]'+prefix+str(ssid)+suffix,
+                markup=True,
                 size_hint_y=None,
                 height=40)
             btn.bind(on_release=partial(func,ssid))
@@ -7234,9 +7248,9 @@ class NetworkScreen(Screen):
             w['details_expand_lines'].pos_hint={'center_x':.5, 'center_y':.15}
             w['details_expand_button'].size_hint=(.5, .125)
             w['details_expand_lines'].size_hint=(.4, .0525)
-            w['details_ssid'].text='        SSID:'
-            w['details_signal'].text='     Signal:'
-            w['details_security'].text='Security:'
+            w['details_ssid'].text='[b][size=16]        SSID:'
+            w['details_signal'].text='[b][size=16]     Signal:'
+            w['details_security'].text='[b][size=16]Security:'
             pw=w['details_password']
             pw.text=''
             pw.disabled=True
@@ -7264,7 +7278,7 @@ class NetworkScreen(Screen):
             w['side_bar_manual_title'].pos_hint={'center_x':.5, 'center_y':.925}
             w['side_bar_manual_title'].size_hint=(.4, .05)
             w['side_bar_manual_ssid_input'].text=''
-            w['side_bar_manual_security_input'].text='Enter Security Type'
+            w['side_bar_manual_security_input'].text='[b][size=16]Enter Security Type'
             w['side_bar_manual_password_input'].text=''
             all_widgets=[
                 w['side_bar_manual_title'],
@@ -7376,8 +7390,8 @@ class NetworkScreen(Screen):
                 w['side_bar_disconnect_status_btn_off'].state='down'
             w['side_bar_disconnect_title'].pos_hint={'center_x':.5, 'center_y':.925}
             w['side_bar_disconnect_title'].size_hint=(.4, .05)
-            w['side_bar_disconnect_temp_btn'].text=f'Disconnect: {network.get_ssid()}'
-            w['side_bar_disconnect_rmv_btn'].text=f'Forget: {network.get_ssid()}'
+            w['side_bar_disconnect_temp_btn'].text=f'[b][size=16]Disconnect: [size=20][u]{network.get_ssid()}'
+            w['side_bar_disconnect_rmv_btn'].text=f'[b][size=16]Forget: [size=20][u]{network.get_ssid()}'
             all_widgets=[
                 w['side_bar_disconnect_title'],
                 w['side_bar_disconnect_seperator'],
@@ -7515,7 +7529,7 @@ class NetworkScreen(Screen):
             else:
                 w=self.widgets
                 w['side_bar_manual_ssid_input'].text=''
-                w['side_bar_manual_security_input'].text='Enter Security Type'
+                w['side_bar_manual_security_input'].text='[b][size=16]Enter Security Type'
                 w['side_bar_manual_password_input'].text=''
 
         self._manual_connecting=Thread(target=_connect,daemon=True)
@@ -7545,15 +7559,15 @@ class NetworkScreen(Screen):
 
         @mainthread
         def clear_details():
-            self.widgets['details_ssid'].text='      SSID:'
-            self.widgets['details_signal'].text='   Signal:'
-            self.widgets['details_security'].text='Security:'
+            self.widgets['details_ssid'].text='[b][size=16]      SSID:'
+            self.widgets['details_signal'].text='[b][size=16]   Signal:'
+            self.widgets['details_security'].text='[b][size=16]Security:'
 
         @mainthread
         def set_details(ssid,signal,security):
-            self.widgets['details_ssid'].text=ssid
-            self.widgets['details_signal'].text=signal
-            self.widgets['details_security'].text=security
+            self.widgets['details_ssid'].text='[b][size=16]'+ssid
+            self.widgets['details_signal'].text='[b][size=16]'+signal
+            self.widgets['details_security'].text='[b][size=16]'+security
 
         def _details(ssid,*args):
             self._details_ssid=ssid
@@ -7702,7 +7716,8 @@ class NetworkScreen(Screen):
             btn = RoundedButton(
                     background_normal='',
                     background_color=(.1,.1,.1,1),
-                    text=str(profile),
+                    text='[b][size=16]'+str(profile),
+                    markup=True,
                     size_hint_y=None,
                     height=40)
             btn.bind(on_release=partial(add_bubble,profile))
@@ -7725,7 +7740,7 @@ class NetworkScreen(Screen):
             btn = DraggableRoundedLabelColor(
                 index=index,
                 bg_color=(.1,.1,.1,1),
-                text=f'[size=16]{str(profile)}',
+                text=f'[b][size=16]{str(profile)}',
                 markup=True,
                 size_hint_y=None,
                 height=40,
@@ -7766,9 +7781,9 @@ class NetworkScreen(Screen):
 
         @mainthread
         def set_labels(ssid,status,signal):
-            self.widgets['information_ssid'].text=ssid
-            self.widgets['information_status'].text=status
-            self.widgets['information_signal'].text=signal
+            self.widgets['information_ssid'].text='[b][size=16]'+ssid
+            self.widgets['information_status'].text='[b][size=16]'+status
+            self.widgets['information_signal'].text='[b][size=16]'+signal
 
         def refreshing():
             if network.is_connected():
@@ -7794,18 +7809,18 @@ class NetworkScreen(Screen):
         if  button.disabled:
             button.background_down='None'
             button.background_normal=''
-            button.text='Password Required'
+            button.text='[b][size=16]Password Required'
         elif not button.disabled:
             button.background_down=''
             button.background_normal='None'
-            button.text='Connect to Network'
+            button.text='[b][size=16]Connect to Network'
         button.color_swap()
 
     def side_bar_manual_connect_disabled(self,button,disabled,*args):
         if  button.disabled:
-            button.text='All Fields Required'
+            button.text='[b][size=16]All Fields Required'
         elif not button.disabled:
-            button.text='Connect to Network'
+            button.text='[b][size=16]Connect to Network'
         button.color_swap()
 
     def details_password_clear_text(self,button,focused,*args):
@@ -7832,7 +7847,7 @@ class NetworkScreen(Screen):
         si=self.widgets['side_bar_manual_ssid_input']
         security_input=self.widgets['side_bar_manual_security_input']
         pi=self.widgets['side_bar_manual_password_input']
-        if (si.text!='' and security_input.text!='Enter Security Type' and pi.text!=''):
+        if (si.text!='' and security_input.text!='[b][size=16]Enter Security Type' and pi.text!=''):
             con_btn.disabled=False
             con_btn.bg_color=(.0, .7, .9,1)
             con_btn.color_swap()
