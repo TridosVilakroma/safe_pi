@@ -7724,8 +7724,12 @@ class NetworkScreen(Screen):
             btn.bind(on_release=partial(add_bubble,profile))
             self.widgets['side_bar_known_status_scroll_layout'].add_widget(btn)
 
-        def _known():
+        @mainthread
+        def _clear_widgets(self):
             self.widgets['side_bar_known_status_scroll_layout'].clear_widgets()
+
+        def _known():
+            _clear_widgets(self)
             for i in network.get_known().splitlines():
                 add_button(i)
         self._known_networks=Thread(target=_known,daemon=True)
