@@ -48,3 +48,6 @@ def get_profiles_by_priority(*args):
 def set_profile_priority(ssid,priority,*args):
         return
         # print(ssid,' priority set to: ',priority)
+
+def get_connection_details(connection):
+        return

@@ -93,7 +93,12 @@ def set_profile_priority(ssid,priority,*args):
     else:
         return ''
 
-
+def get_connection_details(connection,*args):
+    process=subprocess.run(['nmcli','-g','con','show',connection],stdout=subprocess.PIPE)
+    if process.returncode == 0:
+        return process.stdout.decode('utf-8').strip()
+    else:
+        return ''
 
 
 #########################################################################################################
