@@ -667,6 +667,7 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
         p.add_widget(self,index=insert_index)
         self.remove_drop_points(p)
         for index,profile in enumerate(self.parent.children):
+                profile.text=profile.text[12:]
                 network.set_profile_priority(profile.text,index)
         App.get_running_app().context_screen.get_screen('network').get_auto_networks()
 
