@@ -168,6 +168,9 @@ class OutlineScroll(ScrollView):
 class OutlineAutoScroll(ScrollView):
     def __init__(self,bg_color=(0,0,0,1), **kwargs):
         super(OutlineAutoScroll,self).__init__(**kwargs)
+        if os.name=='nt':
+            self.scroll_speed=10
+        else:self.scroll_speed=.01
         self.auto=False
         self.bind(pos=self.update_rect)
         self.bind(size=self.update_rect)
@@ -192,13 +195,15 @@ class OutlineAutoScroll(ScrollView):
     def on_touch_move(self, touch):
         if not self.auto:
             return super(OutlineAutoScroll, self).on_touch_move(touch)
+        if self.height>=self.viewport_size[1]:
+            return super(OutlineAutoScroll, self).on_touch_move(touch)
         if touch.grab_current is self:
-            if touch.pos[1]>self.y+self.height*.75:
+            if touch.pos[1]>self.y+self.height*.85:
                 if self.scroll_y<1.1:
-                    self.scroll_y+=self.convert_distance_to_scroll(dx=0,dy=10)[1]
-            elif touch.pos[1]<self.y+self.height*.25:
+                    self.scroll_y+=self.convert_distance_to_scroll(dx=0,dy=self.scroll_speed)[1]
+            elif touch.pos[1]<self.y+self.height*.15:
                 if self.scroll_y>-.1:
-                    self.scroll_y-=self.convert_distance_to_scroll(dx=0,dy=10)[1]
+                    self.scroll_y-=self.convert_distance_to_scroll(dx=0,dy=self.scroll_speed)[1]
         return super(OutlineAutoScroll, self).on_touch_move(touch)
 
 class IconButton(ButtonBehavior, Image):
