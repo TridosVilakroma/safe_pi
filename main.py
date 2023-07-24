@@ -7094,10 +7094,12 @@ class NetworkScreen(Screen):
         def f(*args):
             if status:
                 network.connect_wifi()
+                self.refresh_ap_data()
+                self.side_bar_scan_func()
             else:
                 network.disconnect_wifi()
-            self.refresh_ap_data()
-            self.side_bar_scan_func()
+                self.refresh_ap_data()
+                self.side_bar_scan_func()
         self._network_switching=Thread(target=f,daemon=True)
         self._network_switching.start()
     def set_network_status_file(self,btn,val):
@@ -7756,11 +7758,11 @@ class NetworkScreen(Screen):
                 self.remove_widget(self.widgets['menu_bubble'])
             add_spinners()
             success=network.remove_profile(profile)
-            remove_spinners()
-            self.refresh_ap_data()
-            self.side_bar_scan_func()
             if success:
+                self.refresh_ap_data()
+                self.side_bar_scan_func()
                 self.get_known_networks()
+            remove_spinners()
 
         self._known_removing=Thread(target=_remove,daemon=True,args=(profile,))
         self._known_removing.start()
