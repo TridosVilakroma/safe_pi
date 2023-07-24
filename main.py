@@ -7990,7 +7990,7 @@ class NetworkScreen(Screen):
 
     def on_pre_enter(self, *args):
         # self.check_admin_mode()
-        self.refresh_event=Clock.schedule_interval(self.refresh_ap_data,10)
+        self.refresh_event=Clock.schedule_interval(self.refresh_ap_data,5)
         Clock.schedule_once(self.refresh_ap_data)
         Clock.schedule_once(self.side_bar_scan_func)
         return super().on_pre_enter(*args)
