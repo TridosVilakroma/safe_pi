@@ -7882,21 +7882,22 @@ class NetworkScreen(Screen):
             self.widgets['information_signal'].text='[b][size=16]'+signal
 
         def refreshing():
+            entry_len=30
+            ssid=f'   SSID: {network.get_ssid()}'
+            status=f'Status: {network.get_status()}'
             if network.is_connected():
-                entry_len=30
-                ssid=f'   SSID: {network.get_ssid()}'
-                status=f'Status: {network.get_status()}'
                 signal=f'Signal: {network.get_signal()}/100'
-                while len(ssid)<entry_len:
-                    ssid=ssid[:8]+' '+ssid[8:]
-                if len(ssid)>entry_len:
-                    ssid=ssid[:28]+'...'
-                while len(status)<entry_len:
-                    status=status[:8]+' '+status[8:]
-                while len(signal)<entry_len:
-                    signal=signal[:8]+' '+signal[8:]
+            else:signal=f'Signal: {network.get_signal()}'
+            while len(ssid)<entry_len:
+                ssid=ssid[:8]+' '+ssid[8:]
+            if len(ssid)>entry_len:
+                ssid=ssid[:28]+'...'
+            while len(status)<entry_len:
+                status=status[:8]+' '+status[8:]
+            while len(signal)<entry_len:
+                signal=signal[:8]+' '+signal[8:]
 
-                set_labels(ssid,status,signal)
+            set_labels(ssid,status,signal)
 
         self._refresh_ap=Thread(target=refreshing,daemon=True)
         self._refresh_ap.start()
