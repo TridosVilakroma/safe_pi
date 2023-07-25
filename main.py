@@ -3962,6 +3962,7 @@ class PreferenceScreen(Screen):
         self.widgets['account']=account
         account.ref='account'
         account.bind(on_release=self.account_func)
+        account.disabled=True
 
         network=RoundedButton(text=current_language['network'],
                         size_hint =(1, 1),
@@ -3972,7 +3973,6 @@ class PreferenceScreen(Screen):
         self.widgets['network']=network
         network.ref='network'
         network.bind(on_release=self.network_func)
-        # network.disabled=True
 
         clean_mode=RoundedButton(text=current_language['clean_mode'],
                         size_hint =(1, 1),
@@ -8192,7 +8192,6 @@ class Hood_Control(App):
         settings_setter(self.config_)
         Clock.schedule_once(partial(language_setter,config=self.config_))
         self.context_screen=ScreenManager()
-        self.context_screen.add_widget(NetworkScreen(name='network'))
         self.context_screen.add_widget(ControlGrid(name='main'))
         self.context_screen.add_widget(ActuationScreen(name='alert'))
         self.context_screen.add_widget(SettingsScreen(name='settings'))
@@ -8205,7 +8204,7 @@ class Hood_Control(App):
         self.context_screen.add_widget(TroubleScreen(name='trouble'))
         self.context_screen.add_widget(MountScreen(name='mount'))
         self.context_screen.add_widget(AccountScreen(name='account'))
-        # self.context_screen.add_widget(NetworkScreen(name='network'))
+        self.context_screen.add_widget(NetworkScreen(name='network'))
         listener_event=Clock.schedule_interval(partial(listen, self.context_screen),.75)
         Clock.schedule_interval(listen_to_UpdateService,.75)
         device_update_event=Clock.schedule_interval(partial(logic.update_devices),.75)
