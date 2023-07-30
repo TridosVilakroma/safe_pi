@@ -3516,6 +3516,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         self.widgets['overlay_menu'].dismiss()
 
     def new_device_save(self,current_device,button):
+        if current_device.name in [general.strip_markup(i.text) for i in self.widgets['device_layout'].children]:
+            print("main.new_device_save(): can not save device; device name already taken")
+            return
         if current_device.name=="default":
             print("main.new_device_save(): can not save device without name")
             return
@@ -3708,6 +3711,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         self.info_overlay(device,open=False)
 
     def edit_device_save(self,current_device,device,button):
+        if current_device.name in [general.strip_markup(i.text) for i in self.widgets['device_layout'].children]:
+            print("main.edit_device_save(): can not save device; device name already taken")
+            return
         if current_device.name=="default":
             print("main.edit_device_save(): can not save device without name")
             return
