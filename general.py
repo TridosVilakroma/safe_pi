@@ -1,4 +1,4 @@
-import os
+import os,re
 def Convert_time(n):
     day = int(n // (24 * 3600))
     n = n % (24 * 3600)
@@ -39,3 +39,15 @@ def stripargs(func,*args,**kwargs):
     Wrap `stripargs` in `partial` with `func` as
     the argument'''
     return func()
+
+def strip_markup(text):
+        '''Return text with all the markup split::
+
+            >>> text='[b]Hello world[/b]'
+            >>> returns ('[b]', 'Hello world', '[/b]')
+
+        '''
+        s = re.split(r'(\[.*?\])', text)
+        s = [x for x in s if x != '']
+        s = ''.join([x for x in s if '[' not in x])
+        return s
