@@ -3472,6 +3472,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         hint_text="Device name is required",
                         size_hint =(.5, .055),
                         pos_hint = {'x':.40, 'y':.9})
+        self.widgets['get_name']=get_name
         get_name.bind(on_text_validate=partial(self.get_name_func,current_device))
         get_name.bind(text=partial(self.get_name_func,current_device))
 
@@ -3486,6 +3487,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         size_hint =(.5, .05),
                         pos_hint = {'x':.40, 'y':.8})
         get_device_type.bind(text=partial(self.get_device_type_func,current_device))
+        get_device_type.bind(text=partial(self.set_default_name,current_device))
 
         get_device_pin_label=ExactLabel(text="[size=18]Device I/O Pin:[/size]",
                         pos_hint = {'x':.05, 'y':.7},
@@ -3538,6 +3540,32 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
     def get_name_func(self,current_device,button,*args):
         current_device.name=button.text
+    def set_default_name(self,current_device,button,text,*args):
+        name_input=self.widgets['get_name']
+        default_values={"Exfan":'Exhaust Fan',
+                        "MAU":'Makeup Air Fan',
+                        "Heat":'Heat Sensor',
+                        "Light":'Lights',
+                        "Dry":'Dry Contact',
+                        "GV":'Gas Valve',
+                        "Micro":'Fire System Micro Switch',
+                        "Light Switch":'Light Switch',
+                        "Fans Switch":'Fans Switch'}
+        if name_input.text!='' and name_input.text.translate({ord(ch): None for ch in '-0123456789'}) not in default_values.values():
+            print('custom text found')
+            print(name_input.text)
+            return
+
+        print('no custom text found')
+        name_input.text=default_values[button.text]
+        if name_input.text in [general.strip_markup(i.text) for i in self.widgets['device_layout'].children]:
+            temp_name=name_input.text
+            temp_name+='-'
+            auto_increment=2
+            while temp_name+str(auto_increment) in [general.strip_markup(i.text) for i in self.widgets['device_layout'].children]:
+                auto_increment+=1
+            name_input.text=temp_name+str(auto_increment)
+
     def get_device_type_func(self,current_device,button,value):
         current_device.type=value
         if value=="Exfan":
