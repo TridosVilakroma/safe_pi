@@ -3486,8 +3486,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         values=("Exfan","MAU","Heat","Light","Dry","GV","Micro","Light Switch","Fans Switch"),
                         size_hint =(.5, .05),
                         pos_hint = {'x':.40, 'y':.8})
+        self.widgets['get_device_type']=get_device_type
         get_device_type.bind(text=partial(self.get_device_type_func,current_device))
-        get_device_type.bind(text=partial(self.set_default_name,current_device))
+        get_device_type.bind(text=partial(self.set_default_name))
 
         get_device_pin_label=ExactLabel(text="[size=18]Device I/O Pin:[/size]",
                         pos_hint = {'x':.05, 'y':.7},
@@ -3510,6 +3511,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         lay_out.add_widget(new_device_back_button)
         lay_out.add_widget(new_device_save_button)
         if open:
+            self.set_default_name()
             overlay_menu.open()
 
     def new_device_overlay_close(self,button):
@@ -3543,8 +3545,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
     def get_name_func(self,current_device,button,*args):
         current_device.name=button.text
-    def set_default_name(self,current_device,button,text,*args):
+    def set_default_name(self,*args):
         name_input=self.widgets['get_name']
+        gdt=self.widgets['get_device_type']
         default_values={"Exfan":'Exhaust Fan',
                         "MAU":'Makeup Air Fan',
                         "Heat":'Heat Sensor',
@@ -3555,12 +3558,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         "Light Switch":'Light Switch',
                         "Fans Switch":'Fans Switch'}
         if name_input.text!='' and name_input.text.translate({ord(ch): None for ch in '-0123456789'}) not in default_values.values():
-            print('custom text found')
-            print(name_input.text)
             return
-
-        print('no custom text found')
-        name_input.text=default_values[button.text]
+        name_input.text=default_values[gdt.text]
         if name_input.text in [general.strip_markup(i.text) for i in self.widgets['device_layout'].children]:
             temp_name=name_input.text
             temp_name+='-'
