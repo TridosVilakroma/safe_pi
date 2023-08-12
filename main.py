@@ -23,6 +23,7 @@ from messages import messages
 import version.updater as UpdateService
 from version.version import version as VERSION
 UpdateService.current_version=VERSION
+from notifications.handler import Notifications as Notifications
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
 if os.name=='posix':
@@ -4713,6 +4714,7 @@ class PinScreen(Screen):
         def date_confirm_func(button):
             self.date_flag=1
             self.widgets['date_overlay'].dismiss()
+            App.get_running_app().notifications.toast(f'[size=20]Enter Inspection Date Format:\n\n              [b]MMDDYYYY','error')
         date_confirm.bind(on_release=date_confirm_func)
 
         def date_cancel_func(button):
@@ -5057,6 +5059,7 @@ class PinScreen(Screen):
             config.set('timestamps','System Inspection',f'{timestamp }')
             with open(preferences_path,'w') as configfile:
                 config.write(configfile)
+            App.get_running_app().notifications.toast(f'[b][size=20]Inspection date set to\n    {month}-{day}-{year}')
         elif hasattr(pindex.Pindex,f'p{self.pin}'):
             eval(f'pindex.Pindex.p{self.pin}(self)')
         self.pin=''
@@ -7642,6 +7645,10 @@ class NetworkScreen(Screen):
                 if str(i+1) in sbm.widgets:
                     sbm.remove_widget(sbm.widgets[str(i+1)])
 
+        @mainthread
+        def set_toast_msg(text,level):
+            App.get_running_app().notifications.toast(text,level)
+
         def _connect():
             sbm=self.widgets['side_bar_manual']
             add_spinners()
@@ -7650,8 +7657,10 @@ class NetworkScreen(Screen):
             self.refresh_ap_data()
             self.side_bar_scan_func()
             if success:
+                set_toast_msg('Connection Successful','info')
                 sbm.shrink()
             else:
+                set_toast_msg('Connection Failed','error')
                 w=self.widgets
                 w['side_bar_manual_ssid_input'].text=''
                 w['side_bar_manual_security_input'].text='[b][size=16]Enter Security Type'
@@ -8248,6 +8257,9 @@ class Hood_Control(App):
         # Clock.schedule_once(self.context_screen.get_screen('account').auth_server)
         Clock.schedule_interval(UpdateService.update,10)
         Window.bind(on_request_close=self.exit_check)
+        self.notifications=Notifications(pos_hint={'x':.75,'y':.135},size_hint=(.25,.8))
+        Clock.schedule_once(partial(Window.add_widget,self.notifications))
+        Clock.schedule_interval(self.notifications.update,.1)
         return self.context_screen
 
     def exit_check(*args):
