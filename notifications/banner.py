@@ -1,0 +1,4 @@
+
+
+class Banner:
+    pass
