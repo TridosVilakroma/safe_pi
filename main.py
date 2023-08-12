@@ -1,4 +1,4 @@
-import os,json,time,shutil,math,random,subprocess
+import os,json,time,shutil,math,random,subprocess,re
 import traceback,errno
 from datetime import datetime
 from kivy.config import Config
@@ -3444,24 +3444,23 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         new_device_back_button=RoundedButton(text=current_language['about_back'],
                         size_hint =(.4, .15),
                         pos_hint = {'x':.05, 'y':.025},
-                        background_normal='',
+                        # background_normal='',
                         background_down='',
                         background_color=(255/255, 50/255, 50/255,.85),
                         markup=True)
         self.widgets['new_device_back_button']=new_device_back_button
         new_device_back_button.ref='about_back'
-        new_device_back_button.bind(on_press=self.new_device_overlay_close)
+        new_device_back_button.bind(on_release=self.new_device_overlay_close)
 
         new_device_save_button=RoundedButton(text=current_language['save'],
                         size_hint =(.4, .15),
                         pos_hint = {'x':.55, 'y':.025},
-                        background_normal='',
                         background_down='',
                         background_color=(100/255, 255/255, 100/255,.85),
                         markup=True)
         self.widgets['new_device_save_button']=new_device_save_button
         new_device_save_button.ref='save'
-        new_device_save_button.bind(on_press=partial(self.new_device_save,current_device))
+        new_device_save_button.bind(on_release=partial(self.new_device_save,current_device))
 
         get_name_label=ExactLabel(text="[size=18]Device Name:[/size]",
                         pos_hint = {'x':.05, 'y':.9},
@@ -3519,14 +3518,18 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         self.widgets['overlay_menu'].dismiss()
 
     def new_device_save(self,current_device,button):
+        toast=App.get_running_app().notifications.toast
         if current_device.name in [general.strip_markup(i.text) for i in self.widgets['device_layout'].children]:
             print("main.new_device_save(): can not save device; device name already taken")
+            toast('[b][size=20]Device name already exists','error')
             return
-        if current_device.name=="default":
+        if current_device.name=="default" or re.search('^\s*$',current_device.name):
             print("main.new_device_save(): can not save device without name")
+            toast('[b][size=20]Can not save without\ndevice name','error')
             return
         if current_device.pin==0:
             print("main.new_device_save(): can not save device without pin designation")
+            toast('[b][size=20]Can not save without\npin designation','error')
             return
         data={
             "device_name":current_device.name,
@@ -3641,24 +3644,24 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         edit_device_back_button=RoundedButton(text=current_language['about_back'],
                         size_hint =(.4, .15),
                         pos_hint = {'x':.05, 'y':.025},
-                        background_normal='',
+                        # background_normal='',
                         background_down='',
                         background_color=(255/255, 50/255, 50/255,.85),
                         markup=True)
         self.widgets['edit_device_back_button']=edit_device_back_button
         edit_device_back_button.ref='about_back'
-        edit_device_back_button.bind(on_press=partial(self.edit_device_overlay_close,device))
+        edit_device_back_button.bind(on_release=partial(self.edit_device_overlay_close,device))
 
         edit_device_save_button=RoundedButton(text=current_language['save'],
                         size_hint =(.4, .15),
                         pos_hint = {'x':.55, 'y':.025},
-                        background_normal='',
+                        # background_normal='',
                         background_down='',
                         background_color=(100/255, 255/255, 100/255,.85),
                         markup=True)
         self.widgets['edit_device_save_button']=edit_device_save_button
         edit_device_save_button.ref='save'
-        edit_device_save_button.bind(on_press=partial(self.edit_device_save,current_device,device))
+        edit_device_save_button.bind(on_release=partial(self.edit_device_save,current_device,device))
 
         get_name_label=ExactLabel(text="[size=18]Device Name:[/size]",
                         pos_hint = {'x':.05, 'y':.9},
@@ -3711,14 +3714,19 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         self.info_overlay(device,open=False)
 
     def edit_device_save(self,current_device,device,button):
-        if current_device.name in [general.strip_markup(i.text) for i in self.widgets['device_layout'].children]:
+        toast=App.get_running_app().notifications.toast
+        if device.name!=current_device.name and \
+            current_device.name in [general.strip_markup(i.text) for i in self.widgets['device_layout'].children]:
             print("main.edit_device_save(): can not save device; device name already taken")
+            toast('[b][size=20]Device name already exists','error')
             return
-        if current_device.name=="default":
+        if current_device.name=="default" or re.search('^\s*$',current_device.name):
             print("main.edit_device_save(): can not save device without name")
+            toast('[b][size=20]Can not save without\ndevice name','error')
             return
         if current_device.pin==0:
             print("main.edit_device_save(): can not save device without pin designation")
+            toast('[b][size=20]Can not save without\npin designation','error')
             return
         data={
             "device_name":current_device.name,
@@ -4714,7 +4722,7 @@ class PinScreen(Screen):
         def date_confirm_func(button):
             self.date_flag=1
             self.widgets['date_overlay'].dismiss()
-            App.get_running_app().notifications.toast(f'[size=20]Enter Inspection Date Format:\n\n              [b]MMDDYYYY','error')
+            App.get_running_app().notifications.toast(f'[size=20]Date Format:\n\n[b]MMDDYYYY','error')
         date_confirm.bind(on_release=date_confirm_func)
 
         def date_cancel_func(button):
@@ -7603,6 +7611,10 @@ class NetworkScreen(Screen):
                 if str(i+1) in db.widgets:
                     db.remove_widget(db.widgets[str(i+1)])
 
+        @mainthread
+        def set_toast_msg(text,level):
+            App.get_running_app().notifications.toast(text,level)
+
         def _connect():
             db=self.widgets['details_box']
             pw=self.widgets['details_password'].text
@@ -7615,9 +7627,11 @@ class NetworkScreen(Screen):
             self.refresh_ap_data()
             self.side_bar_scan_func()
             if success:
+                set_toast_msg('[b][size=20]Connection Successful','info')
                 db.shrink()
                 self.widgets['details_password'].text=''
             else:
+                set_toast_msg('[b][size=20]Connection Failed','error')
                 if not ssid in network.get_known().splitlines():
                     self.widgets['details_password'].text=''
 
@@ -7657,10 +7671,10 @@ class NetworkScreen(Screen):
             self.refresh_ap_data()
             self.side_bar_scan_func()
             if success:
-                set_toast_msg('Connection Successful','info')
+                set_toast_msg('[b][size=20]Connection Successful','info')
                 sbm.shrink()
             else:
-                set_toast_msg('Connection Failed','error')
+                set_toast_msg('[b][size=20]Connection Failed','error')
                 w=self.widgets
                 w['side_bar_manual_ssid_input'].text=''
                 w['side_bar_manual_security_input'].text='[b][size=16]Enter Security Type'
@@ -7758,6 +7772,10 @@ class NetworkScreen(Screen):
                 if str(i+1) in sbk.widgets:
                     sbk.remove_widget(sbk.widgets[str(i+1)])
 
+        @mainthread
+        def set_toast_msg(text,level):
+            App.get_running_app().notifications.toast(text,level)
+
         def _connect(profile):
             sbk=self.widgets['side_bar_known']
             if 'menu_bubble' in self.widgets:
@@ -7768,7 +7786,10 @@ class NetworkScreen(Screen):
             self.refresh_ap_data()
             self.side_bar_scan_func()
             if success:
+                set_toast_msg('[b][size=20]Connection Successful','info')
                 sbk.shrink()
+            else:
+                set_toast_msg('[b][size=20]Connection Failed','warning')
 
         self._known_connecting=Thread(target=_connect,daemon=True,args=(profile,))
         self._known_connecting.start()
@@ -7794,6 +7815,10 @@ class NetworkScreen(Screen):
                 if str(i+1) in sbk.widgets:
                     sbk.remove_widget(sbk.widgets[str(i+1)])
 
+        @mainthread
+        def set_toast_msg(text,level):
+            App.get_running_app().notifications.toast(text,level)
+
         def _remove(profile):
             sbk=self.widgets['side_bar_known']
             if 'menu_bubble' in self.widgets:
@@ -7801,9 +7826,12 @@ class NetworkScreen(Screen):
             add_spinners()
             success=network.remove_profile(profile)
             if success:
+                set_toast_msg(f'[b][size=20]Removed Connection:\n        {profile}','info')
                 self.refresh_ap_data()
                 self.side_bar_scan_func()
                 self.get_known_networks()
+            else:
+                set_toast_msg(f'[b][size=20]Failed to remove connection:\n            {profile}','warning')
             remove_spinners()
 
         self._known_removing=Thread(target=_remove,daemon=True,args=(profile,))
@@ -8130,6 +8158,7 @@ def listen(app_object,*args):
                     heat_trouble.ref='heat_trouble'
 
                     def fan_switch(*args):
+                        App.get_running_app().notifications.toast('[b][size=20]Fans Activated')
                         app_object.get_screen('main').widgets['fans'].trigger_action()
 
                     heat_trouble.bind(on_release=fan_switch)
@@ -8257,10 +8286,22 @@ class Hood_Control(App):
         # Clock.schedule_once(self.context_screen.get_screen('account').auth_server)
         Clock.schedule_interval(UpdateService.update,10)
         Window.bind(on_request_close=self.exit_check)
+        Window.bind(children=self.keep_notifications_on_top)
         self.notifications=Notifications(pos_hint={'x':.75,'y':.135},size_hint=(.25,.8))
         Clock.schedule_once(partial(Window.add_widget,self.notifications))
         Clock.schedule_interval(self.notifications.update,.1)
         return self.context_screen
+
+    def keep_notifications_on_top(self,window,children,*args):
+        if children[0] == self.notifications:
+            return
+        if self.notifications.parent == None:
+            return
+        def _reorder(*args):
+            self.notifications.parent.remove_widget(self.notifications)
+            self.notifications.parent=None
+            Window.add_widget(self.notifications)
+        Clock.schedule_once(_reorder,0)
 
     def exit_check(*args):
         print('main.py Hood_control.exit_check(): on_request_close')
