@@ -8072,6 +8072,8 @@ class NetworkScreen(Screen):
         return super().on_leave(*args)
 
 def listen(app_object,*args):
+    root=App.get_running_app()
+    notifications=App.get_running_app().notifications
     event_log=logic.fs.milo
     pass_flag=False
     if len(app_object.children)== 2:
@@ -8152,6 +8154,7 @@ def listen(app_object,*args):
             if app_object.current!='alert':
                 main_screen.widgets['fans'].text =current_language['fans_heat']
                 if 'heat_trouble' not in troubles_screen.widgets:
+                    root.heat_trouble_banner=notifications.banner('[i][size=20]Unsafe temperatures detected while fan switch off. Fan override activated.','warning')
                     heat_trouble=trouble_template('heat_trouble_title',
                     'heat_trouble_body',
                     link_text='heat_trouble_link',ref_tag='fans')
@@ -8168,12 +8171,16 @@ def listen(app_object,*args):
                     trouble_display.add_widget(heat_trouble)
         elif trouble_log['heat_override']==0:
             if 'heat_trouble' in troubles_screen.widgets:
+                if hasattr(root,'heat_trouble_banner'):
+                    notifications.remove_banner(root.heat_trouble_banner)
+                    delattr(root,'heat_trouble_banner')
                 trouble_display.remove_widget(troubles_screen.widgets['heat_trouble'])
                 del troubles_screen.widgets['heat_trouble']
     #short duration trouble
         if trouble_log['short_duration']==1:
             if app_object.current!='alert':
                 if 'duration_trouble' not in troubles_screen.widgets:
+                    root.short_duration_trouble_banner=notifications.banner('[i][size=20]Heat sensor override duration set to test mode')
                     duration_trouble=trouble_template('duration_trouble_title',
                     'duration_trouble_body',
                     link_text='duration_trouble_link',ref_tag='duration_trouble')
@@ -8191,6 +8198,9 @@ def listen(app_object,*args):
                     trouble_display.add_widget(duration_trouble)
         elif trouble_log['short_duration']==0:
             if 'duration_trouble' in troubles_screen.widgets:
+                if hasattr(root,'short_duration_trouble_banner'):
+                    notifications.remove_banner(root.short_duration_trouble_banner)
+                    delattr(root,'short_duration_trouble_banner')
                 trouble_display.remove_widget(troubles_screen.widgets['duration_trouble'])
                 del troubles_screen.widgets['duration_trouble']
 
