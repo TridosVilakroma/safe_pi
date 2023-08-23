@@ -5225,25 +5225,37 @@ class TroubleScreen(Screen):
             size_hint_x=1,
             cols=1,
             padding=10,
-            spacing=(1,5)
-            )
+            spacing=(1,5))
         self.widgets['trouble_layout']=trouble_layout
         trouble_layout.bind(minimum_height=trouble_layout.setter('height'))
 
         trouble_scroll=ScrollView(
             bar_width=8,
+            scroll_type=['bars','content'],
             do_scroll_y=True,
             do_scroll_x=False,
-            size_hint_y=None,
-            size_hint_x=1,
-            size_hint =(.9, .80),
-            pos_hint = {'center_x':.5, 'y':.18}
-            )
+            size_hint =(.9, .75),
+            pos_hint = {'center_x':.5, 'y':.15})
         self.widgets['trouble_scroll']=trouble_scroll
 
         self.add_widget(bg_image)
         trouble_layout.add_widget(trouble_details)
         trouble_scroll.add_widget(trouble_layout)
+
+        with self.canvas:
+            self.outline_color=Color(.65,.65,.65,.85)
+            self.outline=Line(rectangle=(100, 100, 200, 200))
+
+        def _update_rect(self, *args):
+            ts=trouble_scroll
+            x=int(ts.x)
+            y=int(ts.y)
+            width=int(ts.width)
+            height=int(ts.height)
+            self.outline.rectangle=(x, y, width, height)
+
+        self._update_rect=_update_rect
+        self.bind(size=self._update_rect, pos=self._update_rect)
 
         seperator_line=Image(source=gray_seperator_line,
                     allow_stretch=True,
