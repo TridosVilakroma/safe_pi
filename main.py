@@ -13,6 +13,7 @@ from device_classes.micro_switch import MicroSwitch
 from device_classes.switch_light import SwitchLight
 from device_classes.switch_fans import SwitchFans
 from device_classes.heat_sensor import HeatSensor
+from device_classes.manometer import Manometer
 
 if os.name=='posix':
     import network_L as network
@@ -3431,7 +3432,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                     "Micro":"micro_switch.MicroSwitch",
                     "Heat":"heat_sensor.HeatSensor",
                     "Light Switch":"switch_light.SwitchLight",
-                    "Fans Switch":"switch_fans.SwitchFans"}
+                    "Fans Switch":"switch_fans.SwitchFans",
+                    "Manometer":"manometer.Manometer"}
         current_device=InfoShelf()
 
         overlay_menu=self.widgets['overlay_menu']
@@ -3483,12 +3485,13 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         get_device_type=Spinner(
                         text="Exfan",
-                        values=("Exfan","MAU","Heat","Light","Dry","GV","Micro","Light Switch","Fans Switch"),
+                        values=("Exfan","MAU","Heat","Light","Dry","GV","Micro","Light Switch","Fans Switch","Manometer"),
                         size_hint =(.5, .05),
                         pos_hint = {'x':.40, 'y':.8})
         self.widgets['get_device_type']=get_device_type
         get_device_type.bind(text=partial(self.get_device_type_func,current_device))
         get_device_type.bind(text=partial(self.set_default_name))
+        get_device_type.bind(text=partial(self.set_default_pin,current_device))
 
         get_device_pin_label=ExactLabel(text="[size=18]Device I/O Pin:[/size]",
                         pos_hint = {'x':.05, 'y':.7},
@@ -3501,6 +3504,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         size_hint =(.5, .05),
                         pos_hint = {'x':.40, 'y':.7})
         get_device_pin.bind(text=partial(self.get_device_pin_func,current_device))
+        self.widgets['get_device_pin']=get_device_pin
 
         lay_out.add_widget(get_name_label)
         lay_out.add_widget(get_name)
@@ -3560,7 +3564,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         "GV":'Gas Valve',
                         "Micro":'Fire System Micro Switch',
                         "Light Switch":'Light Switch',
-                        "Fans Switch":'Fans Switch'}
+                        "Fans Switch":'Fans Switch',
+                        "Manometer":"Manometer"}
         if name_input.text!='' and name_input.text.translate({ord(ch): None for ch in '-0123456789'}) not in default_values.values():
             return
         name_input.text=default_values[gdt.text]
@@ -3571,6 +3576,17 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             while temp_name+str(auto_increment) in [general.strip_markup(i.text) for i in self.widgets['device_layout'].children]:
                 auto_increment+=1
             name_input.text=temp_name+str(auto_increment)
+
+    def set_default_pin(self,device,button,device_type,*args):
+        pin_select_button=self.widgets['get_device_pin']
+        if device_type=="Manometer":
+            device.pin=(3,5)
+            pin_select_button.disabled=True
+            pin_select_button.text='3(sda),5(scl)'
+        elif pin_select_button.text=='3(sda),5(scl)':
+            pin_select_button.disabled=False
+            pin_select_button.text="Select GPIO Pin"
+
 
     def get_device_type_func(self,current_device,button,value):
         current_device.type=value
@@ -3592,7 +3608,13 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             current_device.color=(0/255, 0/255, 0/255,.85)
         elif value=="Fans Switch":
             current_device.color=(0/255, 0/255, 0/255,.85)
+        elif value=="Manometer":
+            current_device.color=(0/255, 0/255, 0/255,.85)
     def get_device_pin_func(self,current_device,button,value):
+        if current_device.type=='Manometer':
+            return
+        if value=='Select GPIO Pin':
+            return
         #value is get_device_pin.text
         #string is split to pull out BOARD int
         current_device.pin=int(value.split()[1])
@@ -3619,6 +3641,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                     self.type="Light Switch"
                 elif isinstance(device,SwitchFans):
                     self.type="Fans Switch"
+                elif isinstance(device,Manometer):
+                    self.type="Manometer"
                 self.pin=device.pin
                 self.color=device.color
                 self.run_time=device.run_time
@@ -3631,7 +3655,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                     "Micro":"micro_switch.MicroSwitch",
                     "Heat":"heat_sensor.HeatSensor",
                     "Light Switch":"switch_light.SwitchLight",
-                    "Fans Switch":"switch_fans.SwitchFans"}
+                    "Fans Switch":"switch_fans.SwitchFans",
+                    "Manometer":"manometer.Manometer"}
         current_device=InfoShelf(device)
 
         overlay_menu=self.widgets['overlay_menu']
@@ -3684,7 +3709,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         get_device_type=Spinner(
                         disabled=True,
                         text=current_device.type,
-                        values=("Exfan","MAU","Heat","Light","Dry","Micro","Light Switch","Fans Switch"),
+                        values=("Exfan","MAU","Heat","Light","Dry","Micro","Light Switch","Fans Switch","Manometer"),
                         size_hint =(.5, .05),
                         pos_hint = {'x':.40, 'y':.8})
         get_device_type.bind(text=partial(self.edit_device_type_func,current_device))
@@ -3724,7 +3749,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             print("main.edit_device_save(): can not save device without name")
             toast('[b][size=20]Can not save without\ndevice name','error')
             return
-        if current_device.pin==0:
+        if current_device.pin==0 or not isinstance(current_device.pin,int):
             print("main.edit_device_save(): can not save device without pin designation")
             toast('[b][size=20]Can not save without\npin designation','error')
             return
@@ -3777,6 +3802,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         elif value=="Light Switch":
             current_device.color=(0/255, 0/255, 0/255,.85)
         elif value=="Fans Switch":
+            current_device.color=(0/255, 0/255, 0/255,.85)
+        elif value=="Manometer":
             current_device.color=(0/255, 0/255, 0/255,.85)
     def edit_device_pin_func(self,current_device,button,value):
         #value is get_device_pin.text
