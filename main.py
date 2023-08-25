@@ -3531,7 +3531,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             print("main.new_device_save(): can not save device without name")
             toast('[b][size=20]Can not save without\ndevice name','error')
             return
-        if current_device.pin==0:
+        if current_device.pin==0 or all((not isinstance(current_device.pin,int), current_device.type!='Manometer')):
             print("main.new_device_save(): can not save device without pin designation")
             toast('[b][size=20]Can not save without\npin designation','error')
             return
@@ -3749,7 +3749,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             print("main.edit_device_save(): can not save device without name")
             toast('[b][size=20]Can not save without\ndevice name','error')
             return
-        if current_device.pin==0 or not isinstance(current_device.pin,int):
+        if current_device.pin==0 or all((not isinstance(current_device.pin,int), current_device.type!='Manometer')):
             print("main.edit_device_save(): can not save device without pin designation")
             toast('[b][size=20]Can not save without\npin designation','error')
             return
@@ -3806,6 +3806,10 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         elif value=="Manometer":
             current_device.color=(0/255, 0/255, 0/255,.85)
     def edit_device_pin_func(self,current_device,button,value):
+        if current_device.type=='Manometer':
+            return
+        if value=='Select GPIO Pin':
+            return
         #value is get_device_pin.text
         #string is split to pull out BOARD int
         current_device.pin=int(value.split()[1])
