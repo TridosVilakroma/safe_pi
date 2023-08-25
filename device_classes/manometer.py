@@ -29,7 +29,7 @@ class Manometer():
         data=self.read()
         if data:
             self.name=data["device_name"]
-            self.pin=int(data["gpio_pin"])
+            self.pin=0#3(sda),5(scl)
             self.run_time=float(data["run_time"])
             self.color=data["color"]
 
