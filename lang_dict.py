@@ -23,6 +23,7 @@ in accordance with applicable codes.
     'reset' : "[size=32][b][color=#000000] Reset [/color][/b][/size]",
     'settings_back' : "[size=50][b][color=#000000]  Back [/color][/b][/size]",
     'logs' : "[size=32][b][color=#000000]  Devices [/color][/b][/size]",
+    'analytics' : "[size=32][b][color=#000000]  Data Analytics [/color][/b][/size]",
     'sys_report' : "[size=32][b][color=#000000]  System Report [/color][/b][/size]",
     'preferences' : "[size=32][b][color=#000000]  Settings [/color][/b][/size]",
     'train' : "[size=32][b][color=#000000]  Training [/color][/b][/size]",
@@ -220,7 +221,8 @@ highest priorty network that is
 available.
 
 Drag and drop to change order;
-Highest priority at the top.'''
+Highest priority at the top.''',
+'analytic_screen_name' : "[size=50][color=#000000][b][u][i]       Analytics       ",
 }
 
 spanish={
