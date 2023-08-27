@@ -97,6 +97,7 @@ if os.name == 'posix':
     preferences_path='/home/pi/Pi-ro-safe/logs/configurations/hood_control.ini'
 
 background_image=r'media/patrick-tomasso-GXXYkSwndP4-unsplash.jpg'
+white_gradient=r'media/white_filter.png'
 msg_icon_image=r'media/msg_icon.png'
 language_image=r'media/higer_res_thick.png'
 trouble_icon=r'media/trouble icon_high_res.png'
@@ -112,6 +113,7 @@ delete_down=r'media/delete_down.png'
 reset_valve=r'media/redo.png'
 gray_seperator_line=r'media/line_gray.png'
 gray_seperator_line_vertical=r'media/line_gray_vertical.png'
+black_seperator_line=r'media/line_black.png'
 settings_icon=r'media/menu_lines.png'
 red_dot=r'media/red_dot.png'
 opaque_bubble=r'media/opaque_bubble.png'
@@ -2844,15 +2846,16 @@ class SettingsScreen(Screen):
         version_info.ref='version_info'
         version_info.bind(on_release=self.about_func)
 
-        logs=RoundedButton(text=current_language['logs'],
-                        size_hint =(.9, .18),
-                        pos_hint = {'x':.05, 'y':.78},
-                        background_down='',
-                        background_color=(200/255, 200/255, 200/255,.9),
-                        markup=True)
-        self.widgets['logs']=logs
-        logs.ref='logs'
-        logs.bind(on_release=self.device_logs)
+        analytics=RoundedButton(
+            text=current_language['analytics'],
+            size_hint =(.9, .18),
+            pos_hint = {'x':.05, 'y':.78},
+            background_down='',
+            background_color=(200/255, 200/255, 200/255,.9),
+            markup=True)
+        self.widgets['analytics']=analytics
+        analytics.ref='analytics'
+        analytics.bind(on_release=self.device_analytics)
 
         sys_report=RoundedButton(text=current_language['sys_report'],
                         size_hint =(.9, .18),
@@ -2896,7 +2899,7 @@ class SettingsScreen(Screen):
         self.add_widget(bg_image)
         self.add_widget(back)
         self.add_widget(version_info)
-        self.add_widget(logs)
+        self.add_widget(analytics)
         self.add_widget(sys_report)
         self.add_widget(preferences)
         self.add_widget(seperator_line)
@@ -2904,9 +2907,9 @@ class SettingsScreen(Screen):
     def settings_back (self,button):
         self.parent.transition = SlideTransition(direction='left')
         self.manager.current='main'
-    def device_logs (self,button):
+    def device_analytics (self,button):
         self.parent.transition = SlideTransition(direction='down')
-        self.manager.current='devices'
+        self.manager.current='analytics'
     def sys_report (self,button):
         self.parent.transition = SlideTransition(direction='down')
         self.manager.current='report'
@@ -3817,11 +3820,11 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
     def devices_back (self,button):
         self.widgets['device_scroll'].scroll_y=1
-        self.parent.transition = SlideTransition(direction='up')
-        self.manager.current='settings'
+        self.parent.transition = SlideTransition(direction='right')
+        self.manager.current='preferences'
     def devices_back_main (self,button):
         self.widgets['device_scroll'].scroll_y=1
-        self.parent.transition = SlideTransition(direction='left')
+        self.parent.transition = SlideTransition(direction='down')
         self.manager.current='main'
     def info_func (self,device,button):
         self.info_overlay(device)
@@ -3977,11 +3980,11 @@ class PreferenceScreen(Screen):
         self.widgets['pref_scroll']=pref_scroll
 
         scroll_layout=EventpassGridLayout(
-            size_hint_y=1.95,
+            size_hint_y=1.25,
             size_hint_x=.95,
-            cols=1,
+            cols=2,
             padding=10,
-            spacing=(1,35))
+            spacing=(35,35))
         self.widgets['scroll_layout']=scroll_layout
         scroll_layout.bind(minimum_height=scroll_layout.setter('height'))
 
@@ -4068,6 +4071,17 @@ class PreferenceScreen(Screen):
         commission.ref='commission'
         commission.bind(on_release=self.commission_func)
 
+        logs=RoundedButton(
+            text=current_language['logs'],
+            size_hint =(.9, .18),
+            pos_hint = {'x':.05, 'y':.78},
+            background_down='',
+            background_color=(200/255, 200/255, 200/255,.9),
+            markup=True)
+        self.widgets['logs']=logs
+        logs.ref='logs'
+        logs.bind(on_release=self.device_logs)
+
         pins=RoundedButton(text=current_language['pins'],
                         size_hint =(1, 1),
                         pos_hint = {'x':.01, 'y':.4},
@@ -4104,15 +4118,16 @@ class PreferenceScreen(Screen):
         self.add_widget(bg_image)
         self.add_widget(back)
         self.add_widget(back_main)
-        scroll_layout.add_widget(heat_sensor)
-        scroll_layout.add_widget(clean_mode)
+        scroll_layout.add_widget(network)
+        scroll_layout.add_widget(account)
         scroll_layout.add_widget(msg_center)
+        scroll_layout.add_widget(clean_mode)
+        scroll_layout.add_widget(heat_sensor)
         scroll_layout.add_widget(train)
         scroll_layout.add_widget(commission)
-        scroll_layout.add_widget(account)
-        scroll_layout.add_widget(network)
         scroll_layout.add_widget(about)
         scroll_layout.add_widget(pins)
+        scroll_layout.add_widget(logs)
         pref_scroll.add_widget(scroll_layout)
         self.add_widget(pref_scroll)
         self.add_widget(seperator_line)
@@ -4518,6 +4533,9 @@ class PreferenceScreen(Screen):
     def commission_func(self,button):
         self.parent.transition = SlideTransition(direction='left')
         self.manager.current='documents'
+    def device_logs (self,button):
+        self.parent.transition = SlideTransition(direction='left')
+        self.manager.current='devices'
     def pins_func(self,button):
         self.parent.transition = SlideTransition(direction='left')
         self.manager.current='pin'
@@ -8114,6 +8132,360 @@ class NetworkScreen(Screen):
         self.widgets['details_box'].shrink()
         return super().on_leave(*args)
 
+class AnalyticScreen(Screen):
+    def __init__(self, **kwargs):
+        super(AnalyticScreen,self).__init__(**kwargs)
+        self.cols = 2
+        self.widgets={}
+        self.scheduled_funcs=[]
+        bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
+        white_filter=Image(source=white_gradient, allow_stretch=True, keep_ratio=False)
+        white_filter.opacity=.825
+
+        back=RoundedButton(
+            text="[size=50][b][color=#cccccc]  Back [/color][/b][/size]",
+            size_hint =(.4, .1),
+            pos_hint = {'x':.06, 'y':.015},
+            background_down='',
+            background_color=(0,0,0,1),
+            markup=True)
+        self.widgets['back']=back
+        # back.ref='settings_back'
+        back.bind(on_press=self.account_back)
+
+        back_main=RoundedButton(
+            text=current_language['preferences_back_main'],
+            size_hint =(.4, .1),
+            pos_hint = {'x':.52, 'y':.015},
+            background_normal='',
+            background_color=(245/250, 216/250, 41/250,.9),
+            markup=True)
+        self.widgets['back_main']=back_main
+        back_main.ref='preferences_back_main'
+        back_main.bind(on_press=self.account_back_main)
+
+        screen_name=Label(
+            text=current_language['analytic_screen_name'],
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.15, 'center_y':.925},)
+        self.widgets['screen_name']=screen_name
+        screen_name.ref='analytic_screen_name'
+
+        details_box=RoundedColorLayout(
+            bg_color=(0,0,0,.85),
+            size_hint =(.775, .675),
+            pos_hint = {'x':.025, 'center_y':.52},)
+        self.widgets['details_box']=details_box
+
+        details_title=Label(
+            text=current_language['details_title'],
+            markup=True,
+            size_hint =(.5, .05),
+            pos_hint = {'center_x':.5, 'center_y':.925},)
+        self.widgets['details_title']=details_title
+        details_title.ref='details_title'
+
+        details_hint=ExpandableRoundedColorLayout(
+            size_hint =(.05, .1),
+            pos_hint = {'x':.05, 'y':.875},
+            expanded_size=(.98,.98),
+            expanded_pos={'x':.01,'y':.01},
+            bg_color=(1,1,1,.8))
+        details_hint.widgets={}
+        self.widgets['details_hint']=details_hint
+        details_hint.bind(state=self.bg_color_white)
+        details_hint.bind(expanded=self.details_hint_populate)
+        details_hint.bind(animating=partial(general.stripargs,details_hint.clear_widgets))
+
+        details_hint_title=Label(
+            text="[size=38][color=#000000][b]?",
+            markup=True,
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['details_hint_title']=details_hint_title
+        # details_hint_title.ref='details_hint_title'
+
+        details_hint_seperator=Image(
+            source=black_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['details_hint_seperator']=details_hint_seperator
+
+        details_hint_back=RoundedButton(
+            text="[size=18][color=#ffffff][b]Close",
+            size_hint =(.15, .1),
+            pos_hint = {'center_x':.5, 'y':.025},
+            background_down='',
+            background_color=(0,0,0,.9),
+            markup=True)
+        self.widgets['details_hint_back']=details_hint_back
+        # back.ref='settings_back'
+        details_hint_back.bind(on_release=self.details_hint_back_func)
+
+        details_custom=ExpandableRoundedColorLayout(
+            size_hint =(.15, .1),
+            pos_hint = {'x':.8, 'y':.875},
+            expanded_size=(.98,.98),
+            expanded_pos={'x':.01,'y':.01},
+            bg_color=(1,1,1,.8))
+        details_custom.widgets={}
+        self.widgets['details_custom']=details_custom
+        details_custom.bind(state=self.bg_color_white)
+        details_custom.bind(expanded=self.details_custom_populate)
+        details_custom.bind(animating=partial(general.stripargs,details_custom.clear_widgets))
+
+        details_custom_title=Label(
+            text="[size=18][color=#000000][b]Customize\n   Details",
+            markup=True,
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['details_custom_title']=details_custom_title
+        # details_custom_title.ref='details_custom_title'
+
+        details_custom_cancel=RoundedButton(
+            text="[size=18][color=#ffffff][b]Cancel",
+            size_hint =(.15, .1),
+            pos_hint = {'x':.65, 'y':.025},
+            background_down='',
+            background_color=(0,0,0,.9),
+            markup=True)
+        self.widgets['details_custom_cancel']=details_custom_cancel
+        # back.ref='settings_back'
+        details_custom_cancel.bind(on_release=self.details_custom_cancel_func)
+
+        details_custom_generate=RoundedButton(
+            text="[size=18][color=#ffffff][b]Generate Report",
+            size_hint =(.15, .1),
+            pos_hint = {'x':.825, 'y':.025},
+            background_down='',
+            background_color=(0,0,0,.9),
+            markup=True)
+        self.widgets['details_custom_generate']=details_custom_generate
+        # back.ref='settings_back'
+        details_custom_generate.bind(on_release=self.details_custom_generate_func)
+
+        details_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+
+        side_bar_box=RoundedColorLayout(
+            bg_color=(.15,.15,.15,.85),
+            size_hint =(.15, .675),
+            pos_hint = {'x':.825, 'center_y':.52},)
+        self.widgets['side_bar_box']=side_bar_box
+
+        side_bar_building=RoundedToggleButton(
+            text="[size=20][color=#ffffff][b]Building",
+            size_hint =(.9, .15),
+            pos_hint = {'center_x':.5, 'center_y':.875},
+            background_normal='',
+            background_color=(245/250, 216/250, 41/250,.25),
+            markup=True,
+            group='side',
+            allow_no_selection=False,
+            state='down')
+        self.widgets['side_bar_building']=side_bar_building
+        side_bar_building.bind(state=self.bg_color)
+        # side_bar_connect.ref='side_bar_connect'
+        # side_bar_connect.bind(on_press=self.setup_connection)
+
+        side_bar_equipment=RoundedToggleButton(
+            text="[size=20][color=#ffffff][b]Equipment",
+            size_hint =(.9, .15),
+            pos_hint = {'center_x':.5, 'center_y':.6875},
+            background_normal='',
+            background_color=(0,0,0,.9),
+            markup=True,
+            group='side',
+            allow_no_selection=False)
+        self.widgets['side_bar_equipment']=side_bar_equipment
+        side_bar_equipment.bind(state=self.bg_color)
+        # side_bar_unlink.ref='side_bar_unlink'
+        # side_bar_unlink.bind(on_press=self.remove_connection)
+
+        side_bar_remote=RoundedToggleButton(
+            text="[size=20][color=#ffffff][b]Remote-Access",
+            size_hint =(.9, .15),
+            pos_hint = {'center_x':.5, 'center_y':.5},
+            background_normal='',
+            background_color=(0,0,0,.9),
+            markup=True,
+            group='side',
+            allow_no_selection=False)
+        self.widgets['side_bar_remote']=side_bar_remote
+        side_bar_remote.bind(state=self.bg_color)
+        # side_bar_add.ref='side_bar_add'
+        # side_bar_add.bind(on_press=self.side_bar_add)
+
+        side_bar_fault=RoundedToggleButton(
+            text="[size=20][color=#ffffff][b]Faults",
+            size_hint =(.9, .15),
+            pos_hint = {'center_x':.5, 'center_y':.3125},
+            background_normal='',
+            background_color=(0,0,0,.9),
+            markup=True,
+            group='side',
+            allow_no_selection=False)
+        self.widgets['side_bar_fault']=side_bar_fault
+        side_bar_fault.bind(state=self.bg_color)
+        # side_bar_remove.ref='side_bar_remove'
+        # side_bar_remove.bind(on_press=self.side_bar_remove)
+
+        side_bar_refresh=RoundedToggleButton(
+            text="[size=20][color=#ffffff][b]Reports",
+            size_hint =(.9, .15),
+            pos_hint = {'center_x':.5, 'center_y':.125},
+            background_normal='',
+            background_color=(0,0,0,.9),
+            markup=True,
+            group='side',
+            allow_no_selection=False)
+        self.widgets['side_bar_refresh']=side_bar_refresh
+        side_bar_refresh.bind(state=self.bg_color)
+        # side_bar_refresh.ref='side_bar_refresh'
+        # side_bar_refresh.bind(on_press=self.side_bar_refresh)
+
+
+        account_admin_hint=ExactLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
+                color=(0,0,0,1),
+                pos_hint = {'center_x':.5, 'y':.14},
+                markup=True)
+        self.widgets['account_admin_hint']=account_admin_hint
+
+        seperator_line=Image(
+            source=black_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.98, .001),
+            pos_hint = {'x':.01, 'y':.13})
+
+        details_hint.add_widget(details_hint_title)
+
+        details_custom.add_widget(details_custom_title)
+
+        details_box.add_widget(details_title)
+        details_box.add_widget(details_hint)
+        details_box.add_widget(details_custom)
+        details_box.add_widget(details_seperator)
+
+        side_bar_box.add_widget(side_bar_building)
+        side_bar_box.add_widget(side_bar_equipment)
+        side_bar_box.add_widget(side_bar_remote)
+        side_bar_box.add_widget(side_bar_fault)
+        side_bar_box.add_widget(side_bar_refresh)
+
+        self.add_widget(bg_image)
+        self.add_widget(white_filter)
+        self.add_widget(screen_name)
+        self.add_widget(back)
+        self.add_widget(back_main)
+        self.add_widget(seperator_line)
+        self.add_widget(details_box)
+        self.add_widget(side_bar_box)
+
+    def details_custom_populate(self,*args):
+        details_custom=self.widgets['details_custom']
+        darken=Animation(rgba=(1,1,1,1))
+        lighten=Animation(rgba=(1,1,1,.8))
+        details_custom.clear_widgets()
+        if details_custom.expanded:
+            darken.start(details_custom.shape_color)
+            w=self.widgets
+            all_widgets=[
+                w['details_custom_cancel'],
+                w['details_custom_generate']]
+            for i in all_widgets:
+                details_custom.add_widget(i)
+        elif not details_custom.expanded:
+            lighten.start(details_custom.shape_color)
+            w=self.widgets
+            all_widgets=[
+                w['details_custom_title']]
+            for i in all_widgets:
+                details_custom.add_widget(i)
+
+    def details_hint_populate(self,*args):
+        details_hint=self.widgets['details_hint']
+        darken=Animation(rgba=(1,1,1,1))
+        lighten=Animation(rgba=(1,1,1,.8))
+        details_hint.clear_widgets()
+        if details_hint.expanded:
+            darken.start(details_hint.shape_color)
+            w=self.widgets
+            w['details_hint_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            w['details_hint_title'].size_hint=(.4, .05)
+            w['details_hint_title'].text="[size=20][color=#000000][b]Guide to Analytics"
+            all_widgets=[
+                w['details_hint_title'],
+                w['details_hint_seperator'],
+                w['details_hint_back']]
+            for i in all_widgets:
+                details_hint.add_widget(i)
+        elif not details_hint.expanded:
+            lighten.start(details_hint.shape_color)
+            w=self.widgets
+            w['details_hint_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            w['details_hint_title'].size_hint=(1,1)
+            w['details_hint_title'].text="[size=38][color=#000000][b]?"
+            all_widgets=[
+                w['details_hint_title']]
+            for i in all_widgets:
+                details_hint.add_widget(i)
+
+    def details_custom_expand_button_func(self,*args):
+        sbd=self.widgets['details_custom']
+        if sbd.expanded:
+            sbd.shrink()
+        if not sbd.expanded:
+            sbd.expand()
+
+    def details_hint_expand_button_func(self,*args):
+        sbd=self.widgets['details_hint']
+        if sbd.expanded:
+            sbd.shrink()
+        if not sbd.expanded:
+            sbd.expand()
+
+    def bg_color(self,button,*args):
+        if hasattr(button,'expanded'):
+            if button.expanded:
+                return
+        if button.state=='normal':
+            button.shape_color.rgba=(0,0,0,.9)
+        if button.state=='down':
+            button.shape_color.rgba=(245/250, 216/250, 41/250,.25)
+
+    def bg_color_white(self,button,*args):
+        if hasattr(button,'expanded'):
+            if button.expanded:
+                return
+        if button.state=='normal':
+            button.shape_color.rgba=(1,1,1,.8)
+        if button.state=='down':
+            button.shape_color.rgba=(.8,.8,.8,.5)
+
+    def details_hint_back_func(self,*args):
+        self.details_hint_expand_button_func()
+    def details_custom_cancel_func(self,*args):
+        self.details_custom_expand_button_func()
+    def details_custom_generate_func(self,*args):
+        self.details_custom_expand_button_func()
+    def account_back (self,button):
+        self.parent.transition = SlideTransition(direction='up')
+        self.manager.current='settings'
+    def account_back_main (self,button):
+        self.parent.transition = SlideTransition(direction='left')
+        self.manager.current='main'
+
+    def on_pre_enter(self,*args):
+        return super().on_pre_enter(*args)
+
 def listen(app_object,*args):
     root=App.get_running_app()
     notifications=App.get_running_app().notifications
@@ -8329,6 +8701,7 @@ class Hood_Control(App):
         self.context_screen.add_widget(MountScreen(name='mount'))
         self.context_screen.add_widget(AccountScreen(name='account'))
         self.context_screen.add_widget(NetworkScreen(name='network'))
+        self.context_screen.add_widget(AnalyticScreen(name='analytics'))
         listener_event=Clock.schedule_interval(partial(listen, self.context_screen),.75)
         Clock.schedule_interval(listen_to_UpdateService,.75)
         device_update_event=Clock.schedule_interval(partial(logic.update_devices),.75)
