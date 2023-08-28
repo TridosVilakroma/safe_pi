@@ -8605,9 +8605,9 @@ class AnalyticScreen(Screen):
             if self.widgets['building_balance_gauge'].value>1000:
                 self.widgets['building_balance_gauge'].value=0
             return
-        if _manometer.pressure==None:
+        if _manometer.D1==None:
             return
-        self.widgets['building_balance_gauge'].value=_manometer.pressure*1000
+        self.widgets['building_balance_gauge'].value=(_manometer.D1/16777216)*1000
 
     def building_balance_back_func(self,*args):
         self.building_balance_expand_button_func()
