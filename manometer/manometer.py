@@ -42,6 +42,9 @@ C4                      = None
 C5                      = None
 C6                      = None
 
+temperature             = None
+pressure                = None
+
 # reset device
 def reset():
     reset_device=run(f'{write_reg} {auto_confirm} {i2c_bus} {dev_addr} {reset_cmd}',shell=True,stdout=PIPE)
@@ -135,7 +138,7 @@ highest_pressure = -1_000_000*1_000_000 #where they will be set in loop for sure
 
 def main():
     global C1,C2,C3,C4,C5,C6
-    global lowest_pressure,highest_pressure
+    global lowest_pressure,highest_pressure,temperature,pressure
 
     #read pressure
     load_d1=run(f'{write_reg} {auto_confirm} {i2c_bus} {dev_addr} {convert_d1_2048}',shell=True,stdout=PIPE)
