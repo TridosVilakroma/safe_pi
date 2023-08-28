@@ -16,6 +16,7 @@ from device_classes.heat_sensor import HeatSensor
 from device_classes.manometer import Manometer
 
 if os.name=='posix':
+    import manometer.manometer as _manometer
     import network_L as network
 if os.name=='nt':
     import network_W as network
@@ -766,6 +767,15 @@ class ExpandableRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
 
     def set_expanded_false(self,*args):
         self.expanded=False
+
+class AnalyticExpandable(ExpandableRoundedColorLayout):
+    def __init__(self, **kwargs):
+        super(AnalyticExpandable,self).__init__(**kwargs)
+
+    def on_touch_down(self, touch):
+        if not self._expanded:
+            pass
+        return ButtonBehavior.on_touch_down(self,touch)
 
 class ClockText(ButtonBehavior,LabelColor):
     def __init__(self, **kwargs):
@@ -8179,7 +8189,7 @@ class AnalyticScreen(Screen):
         self.widgets['details_box']=details_box
 
         details_title=Label(
-            text=current_language['details_title'],
+            text="[size=28][color=#ffffff][b]Details",
             markup=True,
             size_hint =(.5, .05),
             pos_hint = {'center_x':.5, 'center_y':.925},)
@@ -8213,6 +8223,73 @@ class AnalyticScreen(Screen):
             size_hint =(.9, .005),
             pos_hint = {'x':.05, 'y':.85})
         self.widgets['details_hint_seperator']=details_hint_seperator
+
+        details_scroll=OutlineScroll(
+            size_hint =(.96,.8),
+            pos_hint = {'center_x':.5, 'center_y':.425},
+            bg_color=(1,1,1,.15),
+            bar_width=8,
+            bar_color=(245/250, 216/250, 41/250,.9),
+            bar_inactive_color=(245/250, 216/250, 41/250,.35),
+            do_scroll_y=True,
+            do_scroll_x=False)
+
+        details_scroll_layout = FloatLayout(size_hint=(1,2))
+        self.widgets['details_scroll_layout']=details_scroll_layout
+
+        details_atmosphere_box=RoundedColorLayout(##################################
+            size_hint =(.99, .3),
+            pos_hint = {'center_x':.5, 'top':.99},
+            bg_color=(0,0,0,.75))
+        self.widgets['details_atmosphere_box']=details_atmosphere_box
+
+        details_atmosphere_title=Label(
+            text=f"[size=24][color=#ffffff][u]{' '*50}Atmosphere{' '*50}",
+            markup=True,
+            size_hint=(1,.05),
+            pos_hint={'center_x':.5,'top':.925})
+        self.widgets['details_atmosphere_title']=details_atmosphere_title
+
+        building_balance=AnalyticExpandable(
+            size_hint =(.25, .75),
+            pos_hint = {'x':.125, 'y':.05},
+            expanded_size=(1,1),
+            expanded_pos={'x':0,'y':0},
+            bg_color=(1,1,1,.8))
+        building_balance.widgets={}
+        self.widgets['building_balance']=building_balance
+        building_balance.bind(state=self.bg_color_white)
+        building_balance.bind(expanded=self.building_balance_populate)
+        building_balance.bind(animating=partial(general.stripargs,building_balance.clear_widgets))
+
+
+        building_balance_title=Label(
+            text="[size=20][color=#000000][b]Air Balance",
+            markup=True,
+            size_hint=(1,.1),
+            pos_hint={'center_x':.5,'top':.95},)
+        self.widgets['building_balance_title']=building_balance_title
+        # building_balance_title.ref='building_balance_title'
+
+        building_balance_gauge=CircularProgressBar(
+            pos_hint={'x':.5,'y':.4})
+        building_balance_gauge._widget_size=125
+        building_balance_gauge._progress_colour=(0, 0, 0,1)
+        self.widgets['building_balance_gauge']=building_balance_gauge
+
+        building_balance_back=RoundedButton(
+            text="[size=18][color=#ffffff][b]Close",
+            size_hint =(.15, .2),
+            pos_hint = {'x':.825, 'y':.025},
+            background_down='',
+            background_color=(0,0,0,.9),
+            markup=True)
+        self.widgets['building_balance_back']=building_balance_back
+        # back.ref='settings_back'
+        building_balance_back.bind(on_release=self.building_balance_back_func)
+
+
+
 
         details_hint_back=RoundedButton(
             text="[size=18][color=#ffffff][b]Close",
@@ -8293,7 +8370,7 @@ class AnalyticScreen(Screen):
         self.widgets['side_bar_building']=side_bar_building
         side_bar_building.bind(state=self.bg_color)
         # side_bar_connect.ref='side_bar_connect'
-        # side_bar_connect.bind(on_press=self.setup_connection)
+        side_bar_building.bind(on_press=self.load_building)
 
         side_bar_equipment=RoundedToggleButton(
             text="[size=20][color=#ffffff][b]Equipment",
@@ -8369,10 +8446,19 @@ class AnalyticScreen(Screen):
 
         details_custom.add_widget(details_custom_title)
 
+        details_scroll.add_widget(details_scroll_layout)
+
+        details_atmosphere_box.add_widget(details_atmosphere_title)
+        details_atmosphere_box.add_widget(building_balance)
+
+        building_balance.add_widget(building_balance_title)
+        building_balance.add_widget(building_balance_gauge)
+
         details_box.add_widget(details_title)
         details_box.add_widget(details_hint)
         details_box.add_widget(details_custom)
         details_box.add_widget(details_seperator)
+        details_box.add_widget(details_scroll)
 
         side_bar_box.add_widget(side_bar_building)
         side_bar_box.add_widget(side_bar_equipment)
@@ -8388,6 +8474,42 @@ class AnalyticScreen(Screen):
         self.add_widget(seperator_line)
         self.add_widget(details_box)
         self.add_widget(side_bar_box)
+
+    def load_building(self,*args):
+        w=self.widgets
+        layout=w['details_scroll_layout']
+        w['details_title'].text="[size=28][color=#ffffff][b]Building Details"
+        layout.clear_widgets()
+        all_widgets=[
+            w['details_atmosphere_box']
+        ]
+        for i in all_widgets:
+            layout.add_widget(i)
+        Clock.schedule_interval(self.get_balance,0)
+
+
+    def building_balance_populate(self,*args):
+        balance=self.widgets['building_balance']
+        darken=Animation(rgba=(1,1,1,1))
+        lighten=Animation(rgba=(1,1,1,.8))
+        balance.clear_widgets()
+        if balance.expanded:
+            darken.start(balance.shape_color)
+            w=self.widgets
+            all_widgets=[
+                w['building_balance_back']
+                ]
+            for i in all_widgets:
+                balance.add_widget(i)
+        elif not balance.expanded:
+            lighten.start(balance.shape_color)
+            w=self.widgets
+            w['building_balance_gauge'].value+=1
+            all_widgets=[
+                w['building_balance_title'],
+                w['building_balance_gauge']]
+            for i in all_widgets:
+                balance.add_widget(i)
 
     def details_custom_populate(self,*args):
         details_custom=self.widgets['details_custom']
@@ -8452,6 +8574,13 @@ class AnalyticScreen(Screen):
         if not sbd.expanded:
             sbd.expand()
 
+    def building_balance_expand_button_func(self,*args):
+        sbd=self.widgets['building_balance']
+        if sbd.expanded:
+            sbd.shrink()
+        if not sbd.expanded:
+            sbd.expand()
+
     def bg_color(self,button,*args):
         if hasattr(button,'expanded'):
             if button.expanded:
@@ -8470,6 +8599,18 @@ class AnalyticScreen(Screen):
         if button.state=='down':
             button.shape_color.rgba=(.8,.8,.8,.5)
 
+    def  get_balance(self,*args):
+        if os.name=='nt':
+            self.widgets['building_balance_gauge'].value+=1
+            if self.widgets['building_balance_gauge'].value>1000:
+                self.widgets['building_balance_gauge'].value=0
+            return
+        if _manometer.pressure==None:
+            return
+        self.widgets['building_balance_gauge'].value=_manometer.pressure
+
+    def building_balance_back_func(self,*args):
+        self.building_balance_expand_button_func()
     def details_hint_back_func(self,*args):
         self.details_hint_expand_button_func()
     def details_custom_cancel_func(self,*args):
@@ -8484,7 +8625,13 @@ class AnalyticScreen(Screen):
         self.manager.current='main'
 
     def on_pre_enter(self,*args):
+        self.load_building()
         return super().on_pre_enter(*args)
+
+    def on_leave(self, *args):
+        self.widgets['details_custom'].shrink()
+        self.widgets['details_hint'].shrink()
+        return super().on_leave(*args)
 
 def listen(app_object,*args):
     root=App.get_running_app()
