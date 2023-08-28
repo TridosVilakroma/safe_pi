@@ -8607,7 +8607,7 @@ class AnalyticScreen(Screen):
             return
         if _manometer.pressure==None:
             return
-        self.widgets['building_balance_gauge'].value=_manometer.pressure
+        self.widgets['building_balance_gauge'].value=_manometer.pressure*1000
 
     def building_balance_back_func(self,*args):
         self.building_balance_expand_button_func()
@@ -8631,6 +8631,7 @@ class AnalyticScreen(Screen):
     def on_leave(self, *args):
         self.widgets['details_custom'].shrink()
         self.widgets['details_hint'].shrink()
+        self.widgets['building_balance'].shrink()
         return super().on_leave(*args)
 
 def listen(app_object,*args):
