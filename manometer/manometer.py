@@ -42,6 +42,9 @@ C4                      = None
 C5                      = None
 C6                      = None
 
+D1                      = None
+D2                      = None
+
 temperature             = None
 pressure                = None
 
@@ -137,7 +140,7 @@ lowest_pressure  = +1_000_000*1_000_000 #initiate high and low in extremes
 highest_pressure = -1_000_000*1_000_000 #where they will be set in loop for sure
 
 def main():
-    global C1,C2,C3,C4,C5,C6
+    global C1,C2,C3,C4,C5,C6,D1,D2
     global lowest_pressure,highest_pressure,temperature,pressure
 
     #read pressure
