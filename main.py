@@ -8864,6 +8864,7 @@ class Hood_Control(App):
         self.notifications=Notifications(pos_hint={'x':.75,'y':.135},size_hint=(.25,.8))
         Clock.schedule_once(partial(Window.add_widget,self.notifications))
         Clock.schedule_interval(self.notifications.update,.1)
+        Clock.schedule_interval(logic_supervisor,10)
         return self.context_screen
 
     def keep_notifications_on_top(self,window,children,*args):
@@ -8917,6 +8918,15 @@ def language_setter(*args,config=None):
 
 logic_control = Thread(target=logic.logic,daemon=True)
 logic_control.start()
+
+def logic_supervisor(*args):
+    global logic_control
+    if logic_control.is_alive():
+        return
+    print('main.py logic_supervisor(): logic thread restart attempted')
+    logic_control = Thread(target=logic.logic,daemon=True)
+    logic_control.start()
+
 try:
     Hood_Control().run()
 except KeyboardInterrupt:
