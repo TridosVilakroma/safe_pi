@@ -2861,11 +2861,12 @@ class SettingsScreen(Screen):
             size_hint =(.9, .18),
             pos_hint = {'x':.05, 'y':.78},
             background_down='',
-            background_color=(200/255, 200/255, 200/255,.9),
+            background_color=(100/255, 100/255, 100/255,.9),#(200/255, 200/255, 200/255,.9),
             markup=True)
         self.widgets['analytics']=analytics
         analytics.ref='analytics'
         analytics.bind(on_release=self.device_analytics)
+        analytics.disabled=True#delete this line and change button color to commented out color
 
         sys_report=RoundedButton(text=current_language['sys_report'],
                         size_hint =(.9, .18),
