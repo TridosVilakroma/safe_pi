@@ -146,7 +146,7 @@ def update_devices(*args):
 def pin_off(pin):
     try:
         func = GPIO.gpio_function(pin)
-    except RuntimeError:
+    except ValueError:
         print(f'logic.py pin_off(): {pin} not valid in BOARD mode; skipping"')
         return
 
@@ -384,10 +384,14 @@ class Logic():
         for i in available_pins:
             GPIO.setup(i,GPIO.IN,pull_up_down = GPIO.PUD_DOWN)
         for pin,state in self.pin_states.items():
-            if GPIO.gpio_function(pin)==GPIO.IN:
+            try:
+                if GPIO.gpio_function(pin)==GPIO.IN:
+                    continue
+                if GPIO.gpio_function(pin)==GPIO.OUT:
+                    GPIO.output(pin,state)
+            except (ValueError,RuntimeError):
+                print(f'logic.py set_pins(): pin: {pin},state: {state} invalid; skipping')
                 continue
-            if GPIO.gpio_function(pin)==GPIO.OUT:
-                GPIO.output(pin,state)
         self.pin_states={}
 
 
