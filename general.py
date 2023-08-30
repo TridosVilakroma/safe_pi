@@ -24,12 +24,19 @@ def file_or_dir(path):
     return ''
 
 def pin_decode(pin_number):
+    pin_number=int(pin_number)
+
     index={8:14,10:15,11:17,12:18,
            13:27,15:22,16:23,18:24,
            19:10,21:9,22:25,23:11,
            32:12,33:13,35:19,36:16,
            37:26,38:20,40:21}
-    return f'Board: {int(pin_number)} <> BCM: {int(index[pin_number])}'
+
+    if pin_number in index:
+         bcm_conversion=index[pin_number]
+    else:bcm_conversion=pin_number
+
+    return f'Board: {pin_number} <> BCM: {bcm_conversion}'
 
 def stripargs(func,*args,**kwargs):
     '''Strips `*args` and `**kwargs`
