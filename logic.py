@@ -146,7 +146,11 @@ def update_devices(*args):
 def pin_off(pin):
     func = GPIO.gpio_function(pin)
     if func==GPIO.OUT:
-        GPIO.output(pin,off)
+        try:
+            GPIO.output(pin,off)
+        except RuntimeError:
+            print('logic.py pin_off(): pin not set up as output; skipping"')
+            return
 
 dry_contact=12
 lights_pin=7
