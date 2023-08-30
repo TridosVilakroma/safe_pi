@@ -1,4 +1,4 @@
-import os
+import os,re
 def Convert_time(n):
     day = int(n // (24 * 3600))
     n = n % (24 * 3600)
@@ -30,3 +30,24 @@ def pin_decode(pin_number):
            32:12,33:13,35:19,36:16,
            37:26,38:20,40:21}
     return f'Board: {int(pin_number)} <> BCM: {int(index[pin_number])}'
+
+def stripargs(func,*args,**kwargs):
+    '''Strips `*args` and `**kwargs`
+
+    For use when a function is used as a callback
+    that does not accept any arguments.
+    Wrap `stripargs` in `partial` with `func` as
+    the argument'''
+    return func()
+
+def strip_markup(text):
+        '''Return text with all the markup split::
+
+            >>> text='[b]Hello world[/b]'
+            >>> returns ('[b]', 'Hello world', '[/b]')
+
+        '''
+        s = re.split(r'(\[.*?\])', text)
+        s = [x for x in s if x != '']
+        s = ''.join([x for x in s if '[' not in x])
+        return s

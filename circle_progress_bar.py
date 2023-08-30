@@ -27,6 +27,7 @@ _DEFAULT_MAX_PROGRESS = 1000
 _DEFAULT_MIN_PROGRESS = 0
 _DEFAULT_WIDGET_SIZE = 200
 _DEFAULT_TEXT_LABEL = Label('')#Label(text="{}%", font_size=40)
+_DEFAULT_ANGLE_START = 0
 
 # Declare the defaults for the normalisation function, these are used in the textual representation (multiplied by 100)
 _NORMALISED_MAX = 1
@@ -72,6 +73,7 @@ class CircularProgressBar(Widget):
         self._min_progress = _DEFAULT_MIN_PROGRESS
         self._widget_size = _DEFAULT_WIDGET_SIZE
         self._text_label = _DEFAULT_TEXT_LABEL
+        self._angle_start = _DEFAULT_ANGLE_START
 
         # Initialise the progress value to the minimum - gets overridden post init anyway
         self._value = _DEFAULT_MIN_PROGRESS
@@ -290,7 +292,7 @@ class CircularProgressBar(Widget):
             # Draw the progress line
             Color(*self.progress_colour)
             Line(circle=(self.pos[0], self.pos[1],
-                         self._widget_size / 2 - self._thickness, 0, self.get_normalised_progress() * 360),
+                         self._widget_size / 2 - self._thickness, self._angle_start, self.get_normalised_progress() * 360),
                  width=self._thickness, cap=self._cap_style, cap_precision=self._cap_precision)
             # Line(circle=(self.pos[0] + self._widget_size / 2, self.pos[1] + self._widget_size / 2,
             #              self._widget_size / 2 - self._thickness, 0, self.get_normalised_progress() * 360),

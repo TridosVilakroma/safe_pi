@@ -25,6 +25,8 @@ the running apps current version'''
 ##########download updates##########
 
 def update_folder_empty():
+    if not os.path.exists('version/update'):
+        os.makedirs('version/update')
     if any(os.scandir('version/update')):
         return False
     return True

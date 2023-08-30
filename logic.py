@@ -8,6 +8,9 @@ import device_classes.micro_switch as micro_switch
 import device_classes.heat_sensor as heat_sensor
 import device_classes.switch_light as switch_light
 import device_classes.switch_fans as switch_fans
+import device_classes.manometer as manometer
+if os.name == 'posix':
+    import manometer.manometer as _manometer
 from server import server
 if os.name == 'nt':
     import RPi_test.GPIO as GPIO
@@ -118,6 +121,19 @@ def gv_off(Logic_instance):
 def gv_reset_all(*args):
     for i in (i for i in devices if isinstance(i,gas_valve.GasValve)):
         i.latched=True
+
+def manometer_update():
+    if os.name=='nt':
+        return
+    m_list=(i for i in devices if isinstance(i,manometer.Manometer))
+    for i in m_list:
+        i.update()
+    if any(m_list):
+        _manometer.update()
+        m=_manometer
+        if not all(m.C1, m.C2, m.C3, m.C4,m.C5,m.C6):
+            _manometer.reset()
+
 
 def save_devices(*args):
     for i in devices:
@@ -346,13 +362,14 @@ class Logic():
             print("fired state")
         elif self.state=='Normal':
             self.normal()
-            print("normal state")
+            # print("normal state")
 
     def auxillary(self):
         self.trouble()
         if 'heat_sensor' in self.aux_state and self.state=='Normal':
             if not self.moli['maint_override']==1:
                 self.heat_sensor()
+        manometer_update()
 
     def set_pins(self):
         for i in available_pins:

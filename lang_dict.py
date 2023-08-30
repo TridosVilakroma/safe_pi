@@ -23,6 +23,7 @@ in accordance with applicable codes.
     'reset' : "[size=32][b][color=#000000] Reset [/color][/b][/size]",
     'settings_back' : "[size=50][b][color=#000000]  Back [/color][/b][/size]",
     'logs' : "[size=32][b][color=#000000]  Devices [/color][/b][/size]",
+    'analytics' : "[size=32][b][color=#000000]  Data Analytics [/color][/b][/size]",
     'sys_report' : "[size=32][b][color=#000000]  System Report [/color][/b][/size]",
     'preferences' : "[size=32][b][color=#000000]  Settings [/color][/b][/size]",
     'train' : "[size=32][b][color=#000000]  Training [/color][/b][/size]",
@@ -193,11 +194,35 @@ and diagnostics''',
 'network_details_title' : "[size=20][color=#ffffff][b]Details",
 'network_status_title' : "[size=20][color=#ffffff][b]Available Networks",
 'side_bar_scan' : "[size=20][color=#ffffff][b]Scan for networks",
-'side_bar_disconnect' : "[size=20][color=#ffffff][b]Disconnect",
-'side_bar_name' : "[size=20][color=#ffffff][b]Set device name",
-'side_bar_password' : "[size=20][color=#ffffff][b]Set device password",
-'side_bar_info' : "[size=20][color=#ffffff][b]Current network info",
+'side_bar_disconnect_title' : "[size=20][color=#ffffff][b]Wi-Fi",
+'side_bar_known_title' : "[size=20][color=#ffffff][b]Known Networks",
+'side_bar_auto_title' : "[size=20][color=#ffffff][b]Auto-Join",
+'side_bar_manual_title' : "[size=20][color=#ffffff][b]Connect Manually",
+'details_box_hint_text' : '''[size=18][color=#ffffff]Select an available network
+to see additional information and
+enter connection  credentials.''',
+'side_bar_known_network_status_title' : "[size=16][color=#ffffff][b]Network Profiles",
+'side_bar_known_instructions':'''[b][size=18][color=#ffffff]Networks that have successfully been
+connected to in the past will automatically
+be saved as a known network profile.
 
+Known networks can be connected to with a
+single button press, and their order can be
+set for auto-joing in the auto join menu.
+
+Select a known network to connect or forget it.''',
+'side_bar_auto_network_status_title' : "[size=16][color=#ffffff][b]Auto-join Priority",
+'side_bar_auto_instructions':'''[b][size=18][color=#ffffff]Networks are in order from highest
+priorty at the top of the list,
+to the lowest priorty at the bottom.
+
+Auto-join will connect to the
+highest priorty network that is
+available.
+
+Drag and drop to change order;
+Highest priority at the top.''',
+'analytic_screen_name' : "[size=50][color=#000000][b][u][i]       Analytics       ",
 }
 
 spanish={
