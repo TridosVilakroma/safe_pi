@@ -400,12 +400,16 @@ class Logic():
         manometer_update()
 
     def set_pins(self):
+        _remove=[]
         for i in available_pins:
             try:
                 GPIO.setup(i,GPIO.IN,pull_up_down = GPIO.PUD_DOWN)
             except (ValueError,RuntimeError):
-                print('logic.py <Logic> set_pins(): pin not valid; skipping"')
+                print(f'logic.py <Logic> set_pins(): {i} not valid; removing"')
+                _remove.append(i)
                 continue
+        for i in _remove:
+            available_pins.remove(i)
         for pin,state in self.pin_states.items():
             try:
                 if GPIO.gpio_function(pin)==GPIO.IN:
