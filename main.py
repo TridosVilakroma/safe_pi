@@ -3788,7 +3788,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         device.name=current_device.name
         if device.pin != current_device.pin:
             logic.available_pins.append(device.pin)
-            logic.available_pins.remove(current_device.pin)
+            # logic.available_pins.remove(current_device.pin)
             logic.available_pins.sort()
             logic.pin_off(device.pin)
             device.pin=current_device.pin
