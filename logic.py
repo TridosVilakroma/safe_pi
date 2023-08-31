@@ -46,6 +46,7 @@ def get_devices():
 
     loaded_devices=load_devices()
     for d in loaded_devices:
+
         if d != "default" and not any(j for j in devices if j.name == d):
             i=eval(f"{loaded_devices[d]}(name=\"{d}\")")
             if i.pin in available_pins:
@@ -54,6 +55,11 @@ def get_devices():
             elif i.pin==0:
                 print(f"logic.get_devices(): {i}.pin == 0")
             devices.append(i)
+
+        elif any(j for j in devices if j.name == d):
+            if i.pin in available_pins:
+                available_pins.remove(i.pin)
+                set_pin_mode(i)
 
 def set_pin_mode(device):
     try:
