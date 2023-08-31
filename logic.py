@@ -56,12 +56,15 @@ def get_devices():
             devices.append(i)
 
 def set_pin_mode(device):
-    if device.mode=="in":
-        GPIO.setup(device.pin,GPIO.IN,pull_up_down = GPIO.PUD_DOWN)
-    elif device.mode=="out":
-        GPIO.setup(device.pin, GPIO.OUT,initial=GPIO.LOW)
-    else:
-        print(f"logic.set_pin_mode(): {device}.mode is not \"in\" or \"out\"")
+    try:
+        if device.mode=="in":
+            GPIO.setup(device.pin,GPIO.IN,pull_up_down = GPIO.PUD_DOWN)
+        elif device.mode=="out":
+            GPIO.setup(device.pin, GPIO.OUT,initial=GPIO.LOW)
+        else:
+            print(f"logic.set_pin_mode(): {device}.mode is not \"in\" or \"out\"")
+    except:
+        print(f"logic.set_pin_mode(): {device.pin} not valid; skipping")
 
 def exfans_on(Logic_instance):
     for i in (i for i in devices if isinstance(i,exhaust.Exhaust)):
@@ -150,12 +153,12 @@ def pin_off(pin):
         print(f'logic.py pin_off(): {pin} not valid in BOARD mode; skipping"')
         return
 
-    if func==GPIO.OUT:
-        try:
+    try:
+        if func==GPIO.OUT:
             GPIO.output(pin,off)
-        except RuntimeError:
-            print('logic.py pin_off(): pin not set up as output; skipping"')
-            return
+    except RuntimeError:
+        print('logic.py pin_off(): pin not set up as output; skipping"')
+        return
 
 dry_contact=12
 lights_pin=7
@@ -183,23 +186,39 @@ if os.name == 'nt':
 if os.name == 'posix':
     def heat_sensor_active():
         for i in (i for i in devices if isinstance(i,heat_sensor.HeatSensor)):
-            if GPIO.input(i.pin):
-                return True
+            try:
+                if GPIO.input(i.pin):
+                    return True
+            except ValueError:
+                print('logic.py heat_sensor_active(): pin not valid; skipping"')
+                continue
         return False
     def micro_switch_active():
         for i in (i for i in devices if isinstance(i,micro_switch.MicroSwitch)):
-            if not GPIO.input(i.pin):
-                return True
+            try:
+                if not GPIO.input(i.pin):
+                    return True
+            except ValueError:
+                print('logic.py micro_switch_active(): pin not valid; skipping"')
+                continue
         return False
     def fan_switch_on():
         for i in (i for i in devices if isinstance(i,switch_fans.SwitchFans)):
-            if GPIO.input(i.pin):
-                return True
+            try:
+                if GPIO.input(i.pin):
+                    return True
+            except ValueError:
+                print('logic.py fan_switch_on(): pin not valid; skipping"')
+                continue
         return False
     def light_switch_on():
         for i in (i for i in devices if isinstance(i,switch_light.SwitchLight)):
-            if GPIO.input(i.pin):
-                return True
+            try:
+                if GPIO.input(i.pin):
+                    return True
+            except ValueError:
+                print('logic.py light_switch_on(): pin not valid; skipping"')
+                continue
         return False
 def clean_exit():
     all_pins=[8,10,11,12,13,15,16,18,19,
@@ -382,7 +401,11 @@ class Logic():
 
     def set_pins(self):
         for i in available_pins:
-            GPIO.setup(i,GPIO.IN,pull_up_down = GPIO.PUD_DOWN)
+            try:
+                GPIO.setup(i,GPIO.IN,pull_up_down = GPIO.PUD_DOWN)
+            except (ValueError,RuntimeError):
+                print('logic.py <Logic> set_pins(): pin not valid; skipping"')
+                continue
         for pin,state in self.pin_states.items():
             try:
                 if GPIO.gpio_function(pin)==GPIO.IN:
@@ -390,7 +413,7 @@ class Logic():
                 if GPIO.gpio_function(pin)==GPIO.OUT:
                     GPIO.output(pin,state)
             except (ValueError,RuntimeError):
-                print(f'logic.py set_pins(): pin: {pin},state: {state} invalid; skipping')
+                print(f'logic.py <Logic> set_pins(): pin: {pin},state: {state} invalid; skipping')
                 continue
         self.pin_states={}
 
