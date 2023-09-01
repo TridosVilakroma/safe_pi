@@ -13,16 +13,16 @@ class Banner(Label):
         self.level=level
         theme={
             'info':{
-                'color':(0,1,0,.4),
+                'color':(50/255, 200/255, 50/255,.4),
                 'time':3.5},
             'warning':{
-                'color':(1,1,0,.4),
+                'color':(245/250, 216/250, 41/250,.4),
                 'time':4.5},
             'error':{
-                'color':(1,.5,0,.4),
+                'color':(218/255, 127/255, 36/255,.4),
                 'time':5},
             'critical':{
-                'color':(1,0,0,.4),
+                'color':(218/255, 36/255, 36/255,.4),
                 'time':6}}
         self.theme=theme[level]
 
