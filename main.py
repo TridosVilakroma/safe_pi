@@ -3266,24 +3266,24 @@ class DevicesScreen(Screen):
         delete_icon.bind(state=self.delete_icon_change)
 
 
-        info_type=ExactLabel(text=f"[size=18]Device Type:                    {device.type}[/size]",
+        info_type=MinimumBoundingLabel(text=f"[size=18]Device Type:                    {device.type}[/size]",
                         color=(0,0,0,1),
-                        pos_hint = {'x':.05, 'y':.9},
+                        pos_hint = {'x':.1, 'y':.85},
                         markup=True)
 
-        info_pin=ExactLabel(text=f"[size=18]Device GPIO Pin:             {device.pin}[/size]",
+        info_pin=MinimumBoundingLabel(text=f"[size=18]Device GPIO Pin:             {device.pin}[/size]",
                         color=(0,0,0,1),
-                        pos_hint = {'x':.05, 'y':.8},
+                        pos_hint = {'x':.1, 'y':.75},
                         markup=True)
 
-        info_run_time=ExactLabel(text=f"[size=18]Device Run Time:           {general.Convert_time(device.run_time)}[/size]",
+        info_run_time=MinimumBoundingLabel(text=f"[size=18]Device Run Time:           {general.Convert_time(device.run_time)}[/size]",
                 color=(0,0,0,1),
-                pos_hint = {'x':.05, 'y':.7},
+                pos_hint = {'x':.1, 'y':.65},
                 markup=True)
 
-        info_admin_hint=ExactLabel(text=f"[size=18]Enable Admin mode to edit device[/size]",
+        info_admin_hint=MinimumBoundingLabel(text=f"[size=18]Enable Admin mode to edit device[/size]",
                 color=(0,0,0,1),
-                pos_hint = {'x':.33, 'y':.18},
+                pos_hint = {'center_x':.5, 'y':.2},
                 markup=True)
         self.widgets['info_admin_hint']=info_admin_hint
 
@@ -3348,12 +3348,12 @@ class DevicesScreen(Screen):
         delete_confirm_button.ref='about_back'
         delete_confirm_button.bind(on_press=partial(self.create_clock,device),on_touch_up=self.delete_clock)
 
-        delete_device_text=ExactLabel(text=f"""[size=18][color=#000000]Deleting device will remove all existing data and
+        delete_device_text=MinimumBoundingLabel(text=f"""[size=18][color=#000000]Deleting device will remove all existing data and
 terminate the associated GPIO pin usage immediately.
         
 Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         color=(0,0,0,1),
-                        pos_hint = {'x':.25, 'y':.7},
+                        pos_hint = {'center_x':.5, 'center_y':.7},
                         markup=True)
 
         delete_progress=CircularProgressBar()
@@ -3478,8 +3478,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         new_device_save_button.ref='save'
         new_device_save_button.bind(on_release=partial(self.new_device_save,current_device))
 
-        get_name_label=ExactLabel(text="[size=18]Device Name:[/size]",
-                        pos_hint = {'x':.05, 'y':.9},
+        get_name_label=MinimumBoundingLabel(text="[size=18]Device Name:[/size]",
+                        pos_hint = {'x':.1, 'y':.85},
                         color = (0,0,0,1),
                         markup=True)
 
@@ -3492,8 +3492,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         get_name.bind(on_text_validate=partial(self.get_name_func,current_device))
         get_name.bind(text=partial(self.get_name_func,current_device))
 
-        get_device_label=ExactLabel(text="[size=18]Device Type:[/size]",
-                        pos_hint = {'x':.05, 'y':.8},
+        get_device_label=MinimumBoundingLabel(text="[size=18]Device Type:[/size]",
+                        pos_hint = {'x':.1, 'y':.75},
                         color = (0,0,0,1),
                         markup=True)
 
@@ -3507,8 +3507,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         get_device_type.bind(text=partial(self.set_default_name))
         get_device_type.bind(text=partial(self.set_default_pin,current_device))
 
-        get_device_pin_label=ExactLabel(text="[size=18]Device I/O Pin:[/size]",
-                        pos_hint = {'x':.05, 'y':.7},
+        get_device_pin_label=MinimumBoundingLabel(text="[size=18]Device I/O Pin:[/size]",
+                        pos_hint = {'x':.1, 'y':.65},
                         color = (0,0,0,1),
                         markup=True)
 
@@ -3702,7 +3702,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         edit_device_save_button.ref='save'
         edit_device_save_button.bind(on_release=partial(self.edit_device_save,current_device,device))
 
-        get_name_label=ExactLabel(text="[size=18]Device Name:[/size]",
+        get_name_label=MinimumBoundingLabel(text="[size=18]Device Name:[/size]",
                         pos_hint = {'x':.05, 'y':.9},
                         color = (0,0,0,1),
                         markup=True)
@@ -3715,7 +3715,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         get_name.bind(on_text_validate=partial(self.edit_name_func,current_device))
         get_name.bind(text=partial(self.edit_name_func,current_device))
 
-        get_device_label=ExactLabel(text="[size=18]Device Type: (Locked)[/size]",
+        get_device_label=MinimumBoundingLabel(text="[size=18]Device Type: (Locked)[/size]",
                         pos_hint = {'x':.05, 'y':.8},
                         color = (0,0,0,1),
                         markup=True)
@@ -3728,7 +3728,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         pos_hint = {'x':.40, 'y':.8})
         get_device_type.bind(text=partial(self.edit_device_type_func,current_device))
 
-        get_device_pin_label=ExactLabel(text="[size=18]Device I/O Pin:[/size]",
+        get_device_pin_label=MinimumBoundingLabel(text="[size=18]Device I/O Pin:[/size]",
                         pos_hint = {'x':.05, 'y':.7},
                         color = (0,0,0,1),
                         markup=True)
@@ -6205,7 +6205,7 @@ class AccountScreen(Screen):
 
 
 
-        account_admin_hint=ExactLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
+        account_admin_hint=MinimumBoundingLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
                 color=(0,0,0,1),
                 pos_hint = {'center_x':.5, 'y':.14},
                 markup=True)
@@ -7133,7 +7133,7 @@ class NetworkScreen(Screen):
             side_bar_disconnect.status_lines.rounded_rectangle=(x, y, width, height, 10, 10, 10, 10, 100)
         side_bar_disconnect.bind(pos=update_lines, size=update_lines)
 
-        account_admin_hint=ExactLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
+        account_admin_hint=MinimumBoundingLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
                 color=(0,0,0,1),
                 pos_hint = {'center_x':.5, 'y':.14},
                 markup=True)
@@ -8431,9 +8431,9 @@ class AnalyticScreen(Screen):
         # side_bar_refresh.bind(on_press=self.side_bar_refresh)
 
 
-        account_admin_hint=ExactLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
+        account_admin_hint=MinimumBoundingLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
                 color=(0,0,0,1),
-                pos_hint = {'center_x':.5, 'y':.14},
+                pos_hint = {'center_x':.5, 'y':.2},
                 markup=True)
         self.widgets['account_admin_hint']=account_admin_hint
 
