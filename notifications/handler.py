@@ -177,6 +177,17 @@ class Notifications(FloatLayout):
         clear.start(active)
         clear.bind(on_complete=lambda *args: self.remove_toast(active))
         clear.bind(on_complete=lambda *args: setattr(self,'processing_toast',False))
+        _multi_clear=False
+        for _toast in self._toast_widgets:
+            if _toast is active:
+                continue
+            if _toast.text==active.text:
+                _multi_clear=True
+                _clear=self.toast_animations['clear']()
+                _clear.start(_toast)
+                _clear.bind(on_complete=lambda *args: self.remove_toast(_toast))
+        if _multi_clear:
+            return False
 
         if len(self._toast_widgets)<=1:
             return False
