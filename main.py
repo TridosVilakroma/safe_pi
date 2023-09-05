@@ -3479,7 +3479,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         new_device_save_button.bind(on_release=partial(self.new_device_save,current_device))
 
         get_name_label=MinimumBoundingLabel(text="[size=18]Device Name:[/size]",
-                        pos_hint = {'x':.1, 'y':.85},
+                        pos_hint = {'x':.1, 'y':.9},
                         color = (0,0,0,1),
                         markup=True)
 
@@ -3493,7 +3493,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         get_name.bind(text=partial(self.get_name_func,current_device))
 
         get_device_label=MinimumBoundingLabel(text="[size=18]Device Type:[/size]",
-                        pos_hint = {'x':.1, 'y':.75},
+                        pos_hint = {'x':.1, 'y':.8},
                         color = (0,0,0,1),
                         markup=True)
 
@@ -3508,7 +3508,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         get_device_type.bind(text=partial(self.set_default_pin,current_device))
 
         get_device_pin_label=MinimumBoundingLabel(text="[size=18]Device I/O Pin:[/size]",
-                        pos_hint = {'x':.1, 'y':.65},
+                        pos_hint = {'x':.1, 'y':.7},
                         color = (0,0,0,1),
                         markup=True)
 
