@@ -141,7 +141,7 @@ class Notifications(FloatLayout):
             shift.start(i)
             fade_out=self.toast_animations['fade_out']()
             fade_out.start(i)
-        if len(self._toast_widgets)>=11:
+        if len(self._toast_widgets)>=10:
             child=self._toast_widgets[-1]
             Animation.cancel_all(child)
             clear=self.toast_animations['clear']()
@@ -195,7 +195,7 @@ class Notifications(FloatLayout):
             Animation.cancel_all(i)
             shift=self.toast_animations[f'shift_{index-2}']()
             shift.start(i)
-        if len(self._toast_widgets)<=11:
+        if len(self._toast_widgets)<=10:
             if len(self.overflow)<1:
                 return False
             child=self.overflow.pop()
@@ -205,6 +205,7 @@ class Notifications(FloatLayout):
             fade_out.start(child)
             shift=self.toast_animations[f'shift_{len(self._toast_widgets)-2 }']()
             shift.start(child)
+            self._toast_widgets.append(child)
         return True
 
     def update(self,*args):
