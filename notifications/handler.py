@@ -14,12 +14,27 @@ class Notifications(FloatLayout):
         super(Notifications,self).__init__(**kwargs)
 
         #####    toast attributes    #####
-
+        self.toast_state='que'
         self._toast_widgets=[]
-        self.processing_toast_que=False
         self.processing_toast=False
+        self._multi_clear_toast=False
         self.toast_que=[]
         self.overflow=[]
+        self.toast_positions={
+            0 :{'x':-.05,'y':0},
+            1 :{'x':-.01, 'y':.15},
+            2 :{'x':-.01, 'y':.2} ,
+            3 :{'x':-.01, 'y':.25},
+            4 :{'x':-.01, 'y':.3} ,
+            5 :{'x':-.01, 'y':.35},
+            6 :{'x':-.01, 'y':.4} ,
+            7 :{'x':-.01, 'y':.45},
+            8 :{'x':-.01, 'y':.5} ,
+            9 :{'x':-.01, 'y':.55},
+            10:{'x':-.01, 'y':.6} ,
+            11:{'x':-.01, 'y':.65},
+            12:{'x':-.01, 'y':.7}
+        }
         self.toast_animations={
             'push':partial(Animation,pos_hint={'x':-.05,'y':0},d=.4,t='out_back'),
             'clear':partial(Animation,pos_hint={'x':1},d=.35,t='in_back'),
@@ -132,9 +147,12 @@ class Notifications(FloatLayout):
         self.toast_que.append(n)
 
     def process_toast_que(self):
-        if self.processing_toast_que or not self.toast_que:
+        if self.processing_toast:
             return False
-        self.processing_toast_que=True
+        if not self.toast_que:
+            self.toast_state='align'
+            return False
+        self.processing_toast=True
         for index,i in enumerate(self._toast_widgets):
             Animation.cancel_all(i)
             shift=self.toast_animations[f'shift_{index}']()
@@ -154,22 +172,74 @@ class Notifications(FloatLayout):
         self._toast_widgets.insert(0,n)
         push=self.toast_animations['push']()
         push.start(n)
-        push.bind(on_complete=lambda *args: setattr(self,'processing_toast_que',False))
+        push.bind(on_complete=lambda *args: setattr(self,'processing_toast',False))
         return True
 
     def remove_toast(self,toast,*args):
         self._toast_widgets.remove(toast)
         self.remove_widget(toast)
 
-    def process_toast(self):
-        if self.processing_toast or not self._toast_widgets:
+    def align_toast(self,*args):
+        if self.processing_toast:
             return False
+        if not self._toast_widgets:
+            self.toast_state='refill'
+            return False
+        _align=False
+        for index,i in enumerate(self._toast_widgets):
+            if i.pos_hint!=self.toast_positions[index]:
+                _align=True
+        if not _align:
+            self.toast_state='refill'
+            return False
+        self.processing_toast=True
+        for index,i in enumerate(self._toast_widgets):
+            if index==0:
+                Animation.cancel_all(i)
+                push=self.toast_animations['push']()
+                push.start(i)
+                fade_in=self.toast_animations['fade_in']()
+                fade_in.start(i)
+                i.life_time=time.time()
+                push.bind(on_complete=lambda *args: setattr(self,'processing_toast',False))
+                continue
+            Animation.cancel_all(i)
+            shift=self.toast_animations[f'shift_{index}']()
+            shift.start(i)
+            shift.bind(on_complete=lambda *args: setattr(self,'processing_toast',False))
 
+    def refill_toast(self,*args):
+        if self.processing_toast:
+            return False
+        if not self.overflow:
+            self.toast_state='process'
+            return False
+        self.processing_toast=True
+        while len(self._toast_widgets)<=10:
+            child=self.overflow.pop()
+            Animation.cancel_all(child)
+            self.add_widget(child,len(self._toast_widgets))
+            fade_out=self.toast_animations['fade_out']()
+            fade_out.start(child)
+            shift=self.toast_animations[f'shift_{len(self._toast_widgets)-2 }']()
+            shift.start(child)
+            self._toast_widgets.append(child)
+        self.toast_state='process'
+
+    def process_toast(self):
+        if self.processing_toast:
+            return False
+        if not self._toast_widgets:
+            self.toast_state='que'
+            return False
         active=self._toast_widgets[0]
         toast_duration=time.time()-active.theme['time']
         if active.life_time>toast_duration:
+            self.toast_state='que'
             return False
-
+        if not self._toast_widgets:
+            self.toast_state='que'
+            return False
         self.processing_toast=True
 
         Animation.cancel_all(active)
@@ -177,19 +247,20 @@ class Notifications(FloatLayout):
         clear.start(active)
         clear.bind(on_complete=lambda *args: self.remove_toast(active))
         clear.bind(on_complete=lambda *args: setattr(self,'processing_toast',False))
-        _multi_clear=False
         for _toast in self._toast_widgets:
             if _toast is active:
                 continue
             if _toast.text==active.text:
-                _multi_clear=True
+                self._multi_clear_toast=True
                 _clear=self.toast_animations['clear']()
                 _clear.start(_toast)
                 _clear.bind(on_complete=lambda *args: self.remove_toast(_toast))
-        if _multi_clear:
+        if self._multi_clear_toast:
+            self.toast_state='align'
             return False
 
         if len(self._toast_widgets)<=1:
+            self.toast_state='que'
             return False
 
         for index,i in enumerate(self._toast_widgets):
@@ -206,20 +277,35 @@ class Notifications(FloatLayout):
             Animation.cancel_all(i)
             shift=self.toast_animations[f'shift_{index-2}']()
             shift.start(i)
-        if len(self._toast_widgets)<=10:
-            if len(self.overflow)<1:
-                return False
-            child=self.overflow.pop()
-            Animation.cancel_all(child)
-            self.add_widget(child,len(self._toast_widgets))
-            fade_out=self.toast_animations['fade_out']()
-            fade_out.start(child)
-            shift=self.toast_animations[f'shift_{len(self._toast_widgets)-2 }']()
-            shift.start(child)
-            self._toast_widgets.append(child)
+        # if len(self._toast_widgets)<=10:
+        #     if len(self.overflow)<1:
+        #         return False
+        #     child=self.overflow.pop()
+        #     Animation.cancel_all(child)
+        #     self.add_widget(child,len(self._toast_widgets))
+        #     fade_out=self.toast_animations['fade_out']()
+        #     fade_out.start(child)
+        #     shift=self.toast_animations[f'shift_{len(self._toast_widgets)-2 }']()
+        #     shift.start(child)
+        #     self._toast_widgets.append(child)
+        self.toast_state='que'
         return True
 
-    def update(self,*args):
-        if not self.process_toast_que():
+    def toast_state_machine(self,*args):
+        state=self.toast_state
+        if state=='que':
+            print('que')
+            self.process_toast_que()
+        elif state=='process':
+            print('process')
             self.process_toast()
+        elif state=='align':
+            print('align')
+            self.align_toast()
+        elif state=='refill':
+            print('refill')
+            self.refill_toast()
+
+    def update(self,*args):
+        self.toast_state_machine()
         self.process_banner()
