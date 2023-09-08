@@ -132,12 +132,15 @@ class Notifications(FloatLayout):
 
         Element will be removed via index or value.
         '''
-
-        if type(target) == int:
-            self.current_banners[target].remove_flag=True
-        else:
-            if target in self.current_banners:
-                target.remove_flag=True
+        try:
+            if type(target) == int:
+                self.current_banners[target].remove_flag=True
+            else:
+                if target in self.current_banners:
+                    target.remove_flag=True
+        except IndexError as e:
+            print(e)
+            pass
 
     #####    toast handling    #####
 

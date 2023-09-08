@@ -4868,7 +4868,10 @@ class PinScreen(Screen):
         admin_cancel.ref='admin_cancel'
 
         def admin_confirm_func(button):
-            App.get_running_app().admin_mode_start=time.time()+900#admin mode lasts 15 minutes
+            app=App.get_running_app()
+            admin_banner=app.notifications.banner('[i][size=20]Admin Mode Enabled','info')
+            Clock.schedule_once(partial(app.notifications.remove_banner,admin_banner),900)
+            app.admin_mode_start=time.time()+900#admin mode lasts 15 minutes
             self.widgets['admin_overlay'].dismiss()
         admin_confirm.bind(on_release=admin_confirm_func)
 
@@ -8676,6 +8679,13 @@ def listen(app_object,*args):
             pass
     #micro switch
         if event_log['micro_switch']==1:
+            if app_object.current!='alert':
+                if not hasattr(root,'system_banner'):
+                    root.system_banner=notifications.banner('[i][size=20]Fire System Actuated','critical',100)
+            elif app_object.current=='alert':
+                if hasattr(root,'system_banner'):
+                    notifications.remove_banner(root.system_banner)
+                    del root.system_banner
             if App.get_running_app().service_pin_entered:
                 pass
             elif app_object.current!='alert':
@@ -8692,6 +8702,9 @@ def listen(app_object,*args):
 
             logic.fs.moli['maint_override']=0
         elif event_log['micro_switch']==0:
+            if hasattr(root,'system_banner'):
+                notifications.remove_banner(target=root.system_banner)
+                del root.system_banner
             if app_object.current=='alert':
                 app_object.transition = SlideTransition(direction='right')
                 app_object.current='main'
