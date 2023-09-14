@@ -11,7 +11,7 @@ import device_classes.switch_fans as switch_fans
 import device_classes.manometer as manometer
 if os.name == 'posix':
     import manometer.manometer as _manometer
-from server import server
+from server.server import server
 if os.name == 'nt':
     import RPi_test.GPIO as GPIO
 else:
