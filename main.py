@@ -21,7 +21,7 @@ if os.name=='posix':
 if os.name=='nt':
     import network_W as network
 from messages import messages
-# from server import server
+from server.server import server
 import version.updater as UpdateService
 from version.version import version as VERSION
 UpdateService.current_version=VERSION
@@ -4050,7 +4050,7 @@ class PreferenceScreen(Screen):
         self.widgets['account']=account
         account.ref='account'
         account.bind(on_release=self.account_func)
-        account.disabled=True
+        # account.disabled=True
 
         network=RoundedButton(text=current_language['network'],
                         size_hint =(1, 1),
@@ -6315,45 +6315,42 @@ class AccountScreen(Screen):
         return super().on_pre_enter(*args)
 
     def auth_server(self,*args):
-        return
-        # config=App.get_running_app().config_
-        # account_email=config['account']['email']
-        # account_password=config['account']['password']
-        # if not (account_email and account_password):
-        #     return
-        # if hasattr(server,'user'):
-        #     return
-        # server.device_requests=server._device_requests.copy()
-        # server.authUser(f'{account_email}', f'{account_password}')
-        # self._keep_ref(self.listen_to_server,.75)
-        # self._keep_ref(server.refresh_token,45*60)#45 minutes; token expires every hour.
+        config=App.get_running_app().config_
+        account_email=config['account']['email']
+        account_password=config['account']['password']
+        if not (account_email and account_password):
+            return
+        if hasattr(server,'user'):
+            return
+        server.device_requests=server._device_requests.copy()
+        server.authUser(f'{account_email}', f'{account_password}')
+        self._keep_ref(self.listen_to_server,.75)
+        self._keep_ref(server.refresh_token,45*60)#45 minutes; token expires every hour.
 
     def listen_to_server(*args):
-        pass
-        # if 1 not in server.device_requests.values():
-        #     return
+        if 1 not in server.device_requests.values():
+            return
 
-        # main_screen=App.get_running_app().context_screen.get_screen('main')
-        # for i in server.device_requests.items():
-        #     if not i[1]:
-        #         continue
-        #     if i[0] in main_screen.widgets:
-        #         main_screen.widgets[i[0]].trigger_action()
+        main_screen=App.get_running_app().context_screen.get_screen('main')
+        for i in server.device_requests.items():
+            if not i[1]:
+                continue
+            if i[0] in main_screen.widgets:
+                main_screen.widgets[i[0]].trigger_action()
 
-        # server.reset_reqs()
+        server.reset_reqs()
 
     def _keep_ref(self,func_to_sched,interval,*args):
         log=self.scheduled_funcs
         log.append(Clock.schedule_interval(func_to_sched,interval))
 
     def unlink_server(self,*args):
-        pass
-        # if not hasattr(server,'user'):
-        #     return
-        # for i in self.scheduled_funcs:
-        #     i.cancel()
-        # self.scheduled_funcs=[]
-        # delattr(server,'user')
+        if not hasattr(server,'user'):
+            return
+        for i in self.scheduled_funcs:
+            i.cancel()
+        self.scheduled_funcs=[]
+        delattr(server,'user')
 
 class NetworkScreen(Screen):
     def __init__(self, **kwargs):
@@ -8954,6 +8951,6 @@ finally:
     print("devices saved")
     logic.clean_exit()
     print("pins set as inputs")
-    # server.clean_exit()
-    # print("streams closed")
+    server.clean_exit()
+    print("streams closed")
     quit()
