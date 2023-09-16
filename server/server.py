@@ -3,7 +3,7 @@ import kivy.uix.filechooser as FileChooser
 import threading as th
 import os,random
 import version.updater as UpdateService
-
+import firestore
 
 
 #   TODO: 
@@ -72,6 +72,9 @@ class Db_service():
 
         # Init auth service
         self.auth = firebase.auth()
+
+        # Init firestore service
+        self.fs = firestore.database_url()
 
         self._device_requests={
             'fans':0,
