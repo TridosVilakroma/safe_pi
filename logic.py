@@ -425,7 +425,7 @@ class Logic():
     def update(self):
         self.state_manager()
         self.auxillary()
-        self.server_update()
+        # self.server_update()
         self.set_pins()
 
 get_devices()

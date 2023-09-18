@@ -3,7 +3,10 @@ import kivy.uix.filechooser as FileChooser
 import threading as th
 import os,random
 import version.updater as UpdateService
-import firestore
+try:
+    import firestore
+except:
+    import server.firestore as firestore
 
 
 #   TODO: 
@@ -73,9 +76,6 @@ class Db_service():
         # Init auth service
         self.auth = firebase.auth()
 
-        # Init firestore service
-        self.fs = firestore.database_url()
-
         self._device_requests={
             'fans':0,
             'lights':0,
@@ -94,8 +94,8 @@ class Db_service():
         '''
         try:
             self.user = self.auth.sign_in_with_email_and_password(email, password)
-            # print(self.user)
-            
+            self.firestore = firestore.firestore_init(self.user)
+
 
         except Exception as e:
             # Assumption is that any exception is from email not being found
@@ -103,22 +103,22 @@ class Db_service():
             print(f'server.py authUser(): {e}')
             self.user = self.auth.create_user_with_email_and_password(email, password)
             # print(self.user)
-            
-            
+
+
         finally:
             self.email = self.user["email"]
             self.path = "users/" + self.user["localId"]
             self.token = self.user["idToken"]
             self.uid = self.user["localId"]
-            self.db_version_stream = self.db.child('version').stream(self.version_stream_handler,self.token)
-            self.db_req_fans_stream = self.db.child(self.path).child(self.devices.req_fans).stream(self.req_fans_stream_handler,self.token)
-            self.db_req_lights_stream = self.db.child(self.path).child(self.devices.req_lights).stream(self.req_lights_stream_handler,self.token)
-            self.toggleDevice(self.devices.req_lights,0)
-            #add streams to a list for easy closing
-            self.active_streams.extend((self.db_version_stream,self.db_req_fans_stream,self.db_req_lights_stream))
-            # self.toggleDevice(self.db_exhaust_stream,0)
-            self.db.child(self.path).update({"email": self.email}, self.token)
-            self.set_version_info()
+            # self.db_version_stream = self.db.child('version').stream(self.version_stream_handler,self.token)
+            # self.db_req_fans_stream = self.db.child(self.path).child(self.devices.req_fans).stream(self.req_fans_stream_handler,self.token)
+            # self.db_req_lights_stream = self.db.child(self.path).child(self.devices.req_lights).stream(self.req_lights_stream_handler,self.token)
+            # self.toggleDevice(self.devices.req_lights,0)
+            # #add streams to a list for easy closing
+            # self.active_streams.extend((self.db_version_stream,self.db_req_fans_stream,self.db_req_lights_stream))
+            # # self.toggleDevice(self.db_exhaust_stream,0)
+            # self.db.child(self.path).update({"email": self.email}, self.token)
+            # self.set_version_info()
 
             ''' TODO Token expires after 1 hour.
             Add recurring timer or interval to refresh token every 45-55 min.
