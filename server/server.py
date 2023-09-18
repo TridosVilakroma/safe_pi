@@ -76,6 +76,9 @@ class Db_service():
         # Init auth service
         self.auth = firebase.auth()
 
+        # Init null firestore service
+        self.firestore=False
+
         self._device_requests={
             'fans':0,
             'lights':0,
@@ -94,7 +97,10 @@ class Db_service():
         '''
         try:
             self.user = self.auth.sign_in_with_email_and_password(email, password)
-            self.firestore = firestore.firestore_init(self.user)
+            try:
+                self.firestore = firestore.firestore_init(self.user)
+            except:
+                self.firestore=False
 
 
         except Exception as e:
