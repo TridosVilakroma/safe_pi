@@ -66,7 +66,6 @@ from kivy.uix.scrollview import ScrollView
 from kivy.graphics import Rectangle, Color, Line, Bezier
 from kivy.properties import ListProperty,StringProperty,NumericProperty,ColorProperty,OptionProperty,BooleanProperty,ObjectProperty
 import configparser
-import logs.configurations.preferences as preferences
 from kivy.uix.settings import SettingsWithNoMenu
 from kivy.uix.settings import SettingsWithSidebar
 from kivy.effects.scroll import ScrollEffect
