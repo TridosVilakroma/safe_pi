@@ -706,6 +706,21 @@ class RoundedColorLayout(FloatLayout):
         self.shape.pos = self.pos
         self.shape.size = self.size
 
+class RoundedColorLayoutModal(FloatLayout):
+    bg_color=ColorProperty()
+    def __init__(self,bg_color= (.1,.1,.1,.95),**kwargs):
+        super(RoundedColorLayoutModal,self).__init__(**kwargs)
+        self.bg_color=bg_color
+
+        with self.canvas:
+            self.shape_color = Color(*self.bg_color)
+            self.shape = RoundedRectangle(pos=self.pos, size=self.size, radius=[20])
+            self.bind(pos=self.update_shape, size=self.update_shape)
+
+    def update_shape(self, *args):
+        self.shape.pos = self.pos
+        self.shape.size = self.size
+
 class ExpandableRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
 
     expanded=BooleanProperty(defaultvalue=False)
@@ -1993,6 +2008,337 @@ class ScrollMenuBubble(Bubble):
             super(ScrollMenuBubble,self).on_touch_down(touch)
             return True
         return super(ScrollMenuBubble,self).on_touch_down(touch)
+
+class PinLock(RoundedColorLayoutModal):
+    end_point_one=ListProperty([])
+    end_point_two=ListProperty([])
+    def __init__(self,callback, **kwargs):
+        super(PinLock,self).__init__(bg_color=(.15,.15,.15,1),**kwargs)
+        self.widgets={}
+        self.pin=[]
+        self.entry_slots={
+            1:None,
+            2:None,
+            3:None,
+            4:None,
+            5:None,
+            6:None}
+        self.size_hint=(.5,.6)
+        self.pos_hint={'center_x':.5,'center_y':.5}
+        self.callback=callback
+        with self.canvas.before:
+            Color(0,0,0,.65)
+            Rectangle(size=Window.size)
+        # with self.canvas:
+        #     self.outline_color=Color(1,1,1,.85)
+        #     self.outline=Line(rectangle=(100, 100, 200, 200))
+
+        title=Label(
+            text='[size=20][color=#ffffff][b]Admin Pin Entry',
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.925},)
+        self.widgets['title']=title
+        title.ref='title'
+
+        seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['seperator']=seperator
+
+        entry_one=MinimumBoundingLabel(
+            text='[size=35][b]-',
+            markup=True,
+            size_hint =(.15, .15),
+            pos_hint = {'center_x':.25, 'center_y':.7},)
+        self.widgets['entry_one']=entry_one
+        self.entry_slots[1]=entry_one
+
+        entry_two=MinimumBoundingLabel(
+            text='[size=35][b]-',
+            markup=True,
+            size_hint =(.15, .15),
+            pos_hint = {'center_x':.35, 'center_y':.7},)
+        self.widgets['entry_two']=entry_two
+        self.entry_slots[2]=entry_two
+
+        entry_three=MinimumBoundingLabel(
+            text='[size=35][b]-',
+            markup=True,
+            size_hint =(.15, .15),
+            pos_hint = {'center_x':.45, 'center_y':.7},)
+        self.widgets['entry_three']=entry_three
+        self.entry_slots[3]=entry_three
+
+        entry_four=MinimumBoundingLabel(
+            text='[size=35][b]-',
+            markup=True,
+            size_hint =(.15, .15),
+            pos_hint = {'center_x':.55, 'center_y':.7},)
+        self.widgets['entry_four']=entry_four
+        self.entry_slots[4]=entry_four
+
+        entry_five=MinimumBoundingLabel(
+            text='[size=35][b]-',
+            markup=True,
+            size_hint =(.15, .15),
+            pos_hint = {'center_x':.65, 'center_y':.7},)
+        self.widgets['entry_five']=entry_five
+        self.entry_slots[5]=entry_five
+
+        entry_six=MinimumBoundingLabel(
+            text='[size=35][b]-',
+            markup=True,
+            size_hint =(.15, .15),
+            pos_hint = {'center_x':.75, 'center_y':.7},)
+        self.widgets['entry_six']=entry_six
+        self.entry_slots[6]=entry_six
+
+        num_pad=RelativeLayout(size_hint =(.75, .65),
+            pos_hint = {'center_x':.5, 'y':0})
+        self.widgets['num_pad']=num_pad
+
+        one=RoundedButton(text="[size=35][b][color=#000000] 1 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.05, 'y':.65},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        one.value=1
+        self.widgets['one']=one
+        one.bind(on_release=self.entry_func)
+
+        two=RoundedButton(text="[size=35][b][color=#000000] 2 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.3, 'y':.65},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        two.value=2
+        self.widgets['two']=two
+        two.bind(on_release=self.entry_func)
+
+        three=RoundedButton(text="[size=35][b][color=#000000] 3 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.55, 'y':.65},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        three.value=3
+        self.widgets['three']=three
+        three.bind(on_release=self.entry_func)
+
+        four=RoundedButton(text="[size=35][b][color=#000000] 4 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.05, 'y':.45},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        four.value=4
+        self.widgets['four']=four
+        four.bind(on_release=self.entry_func)
+
+        five=RoundedButton(text="[size=35][b][color=#000000] 5 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.3, 'y':.45},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        five.value=5
+        self.widgets['five']=five
+        five.bind(on_release=self.entry_func)
+
+        six=RoundedButton(text="[size=35][b][color=#000000] 6 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.55, 'y':.45},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        six.value=6
+        self.widgets['six']=six
+        six.bind(on_release=self.entry_func)
+
+        seven=RoundedButton(text="[size=35][b][color=#000000] 7 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.05, 'y':.25},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        seven.value=7
+        self.widgets['seven']=seven
+        seven.bind(on_release=self.entry_func)
+
+        eight=RoundedButton(text="[size=35][b][color=#000000] 8 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.3, 'y':.25},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        eight.value=8
+        self.widgets['eight']=eight
+        eight.bind(on_release=self.entry_func)
+
+        nine=RoundedButton(text="[size=35][b][color=#000000] 9 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.55, 'y':.25},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        nine.value=9
+        self.widgets['nine']=nine
+        nine.bind(on_release=self.entry_func)
+
+        zero=RoundedButton(text="[size=35][b][color=#000000] 0 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.05, 'y':.05},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        zero.value=0
+        self.widgets['zero']=zero
+        zero.bind(on_release=self.entry_func)
+
+        backspace=RoundedButton(text="[size=35][b][color=#000000] <- [/color][/b][/size]",
+            size_hint =(.4, .15),
+            pos_hint = {'x':.3, 'y':.05},
+            background_down='',
+            background_color=(255/255, 100/255, 100/255,.85),
+            markup=True)
+        self.widgets['backspace']=backspace
+        backspace.bind(on_release=self.backspace_func)
+
+        enter=RoundedButton(text="[size=35][b][color=#000000] -> [/color][/b][/size]",
+            size_hint =(.15, .75),
+            pos_hint = {'right':.95, 'y':.05},
+            background_down='',
+            background_color=(100/255, 255/255, 100/255,.85),
+            markup=True)
+        self.widgets['enter']=enter
+        enter.bind(on_release=self.enter_func)
+
+        self.add_widget(title)
+        self.add_widget(seperator)
+        self.add_widget(entry_one)
+        self.add_widget(entry_two)
+        self.add_widget(entry_three)
+        self.add_widget(entry_four)
+        self.add_widget(entry_five)
+        self.add_widget(entry_six)
+        self.add_widget(num_pad)
+        num_pad.add_widget(one)
+        num_pad.add_widget(two)
+        num_pad.add_widget(three)
+        num_pad.add_widget(four)
+        num_pad.add_widget(five)
+        num_pad.add_widget(six)
+        num_pad.add_widget(seven)
+        num_pad.add_widget(eight)
+        num_pad.add_widget(nine)
+        num_pad.add_widget(zero)
+        num_pad.add_widget(backspace)
+        num_pad.add_widget(enter)
+
+    def entry_func(self,button):
+        if len(self.pin)>=6:
+            return
+        val=button.value
+        self.pin.append(val)
+        for i,v in enumerate(self.pin):
+            self.entry_slots[i+1].text=f'[size=35][b]{v}'
+
+    def backspace_func(self,button):
+        if len(self.pin)<1:
+            return
+        del self.pin[-1]
+        self.entry_slots[len(self.pin)+1].text='[size=35][b]-'
+
+    def enter_func(self,button):
+        if len(self.pin)<1:
+            return
+        pin=''.join(str(x) for x in self.pin)
+        self.pin=[]
+        for i in self.entry_slots.values():
+            i.text='[size=35][b]-'
+        if pin==App.get_running_app().config_.get('account','admin_pin',fallback='000000'):
+            self.clear_with_success()
+
+    def clear_with_success(self,*args):
+        self.check_one_start=[self.center_x-100,self.center_y-50]
+        self.check_one_end  =[self.center_x,self.center_y-125]
+        self.check_two_start=[self.center_x,self.center_y-125]
+        self.check_two_end  =[self.center_x+100,self.center_y+75]
+        fade=Animation(opacity=0,d=.25)
+        fade.start(self.widgets['num_pad'])
+        for i in self.entry_slots.values():
+            fade.start(i)
+        with self.canvas.after:
+            Color(0,1,0)
+            self.check_one=Line(width=3)
+            self.check_two=Line(width=3)
+        self.end_point_one=self.check_one_start
+        self.end_point_two=self.check_two_start
+        down=Animation(end_point_one=self.check_one_end,d=.25,t='out_sine')
+        down+=Animation(end_point_two=self.check_two_end,d=.25,t='in_cubic')
+        down.start(self)
+        self.schedule_clear()
+
+    def on_end_point_one(self,*args):
+        points = self.check_one_start
+        points.extend(self.end_point_one)
+
+        # remove the old line
+        self.canvas.after.remove(self.check_one)
+
+        # draw the updated line
+        with self.canvas.after:
+            self.check_one = Line(points=points, width=3)
+
+    def on_end_point_two(self,*args):
+        if self.end_point_one!=self.check_one_end:
+            return
+        points = self.check_two_start
+        points.extend(self.end_point_two)
+
+        # remove the old line
+        self.canvas.after.remove(self.check_two)
+
+        # draw the updated line
+        with self.canvas.after:
+            self.check_two = Line(points=points, width=3)
+
+    def schedule_clear(self,*args):
+        Clock.schedule_once(self.clear,.85)
+        Clock.schedule_once(self.unlock,.85)
+
+    def unlock(self,*args):
+        #TODO narrow exception capture scope
+        try:
+            self.callback()
+        except Exception as e:
+            print(e)
+
+    def clear(self,*args):
+        if hasattr(self,'parent'):
+            if self.parent is None:
+                return
+            self.parent.remove_widget(self)
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            touch.grab(self)
+        super(PinLock, self).on_touch_down(touch)
+        return True
+
+    def on_touch_up(self, touch):
+        if not self.collide_point(*touch.pos):
+            if touch.grab_current is self:
+                touch.ungrab(self)
+            self.clear()
+        super(PinLock, self).on_touch_up(touch)
+        return True
 
 #<<<<<<<<<<>>>>>>>>>>#
 
@@ -5993,6 +6339,7 @@ class AccountScreen(Screen):
         self.widgets={}
         self.scheduled_funcs=[]
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
+        self.unlocked=False
 
         back=RoundedButton(
             text=current_language['settings_back'],
@@ -6029,6 +6376,7 @@ class AccountScreen(Screen):
             size_hint =(.35, .25),
             pos_hint = {'center_x':.225, 'center_y':.75},)
         self.widgets['information_box']=information_box
+        information_box.bind(on_touch_up=self.prompt_unlock)
 
         information_title=Label(
             text=current_language['information_title'],
@@ -6148,7 +6496,8 @@ class AccountScreen(Screen):
             bg_color=(.5,.5,.5,.85),
             size_hint =(.175, .675),
             pos_hint = {'center_x':.9, 'center_y':.5375},)
-        self.widgets['status_box']=status_box
+        self.widgets['side_bar_box']=side_bar_box
+        side_bar_box.bind(on_touch_up=self.prompt_unlock)
 
         side_bar_connect=RoundedButton(
             text=current_language['side_bar_connect'],
@@ -6172,16 +6521,53 @@ class AccountScreen(Screen):
         side_bar_unlink.ref='side_bar_unlink'
         side_bar_unlink.bind(on_press=self.remove_connection)
 
-        side_bar_add=RoundedButton(
-            text=current_language['side_bar_add'],
+        side_bar_add=ExpandableRoundedColorLayout(
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.5},
-            background_normal='',
-            background_color=(0,0,0,.9),
-            markup=True)
+            expanded_size=(5.143,1.185),
+            expanded_pos = {'center_x':-1.785, 'center_y':.52},
+            bg_color=(0,0,0,.9))
         self.widgets['side_bar_add']=side_bar_add
         side_bar_add.ref='side_bar_add'
-        # side_bar_add.bind(on_press=self.side_bar_add)
+        side_bar_add.bind(on_press=self.side_bar_add)
+        side_bar_add.widgets={}
+        side_bar_add.bind(state=self.bg_color)
+        side_bar_add.bind(expanded=self.side_bar_add_populate)
+        side_bar_add.bind(animating=partial(general.stripargs,side_bar_add.clear_widgets))
+
+        side_bar_add_title=Label(
+            text=current_language['side_bar_add_title'],
+            markup=True,
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['side_bar_add_title']=side_bar_add_title
+        side_bar_add_title.ref='side_bar_add_title'
+
+        side_bar_add_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['side_bar_add_seperator']=side_bar_add_seperator
+
+        side_bar_add_expand_button=RoundedButton(
+            size_hint =(.5, .075),
+            pos_hint = {'center_x':.5, 'center_y':.075},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
+            markup=True)
+        self.widgets['side_bar_add_expand_button']=side_bar_add_expand_button
+        side_bar_add_expand_button.bind(on_release=self.side_bar_add_expand_button_func)
+
+        side_bar_add_expand_lines=Image(
+            source=settings_icon,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.4, .035),
+            pos_hint = {'center_x':.5, 'center_y':.075})
+        side_bar_add_expand_lines.center=side_bar_add_expand_button.center
+        self.widgets['side_bar_add_expand_lines']=side_bar_add_expand_lines
 
         side_bar_remove=RoundedButton(
             text=current_language['side_bar_remove'],
@@ -6236,6 +6622,8 @@ class AccountScreen(Screen):
         status_box.add_widget(status_scroll)
         status_scroll.add_widget(status_scroll_layout)
 
+        side_bar_add.add_widget(side_bar_add_title)
+
         side_bar_box.add_widget(side_bar_connect)
         side_bar_box.add_widget(side_bar_unlink)
         side_bar_box.add_widget(side_bar_add)
@@ -6273,9 +6661,73 @@ class AccountScreen(Screen):
         config.set('account','password',f'{button.text}')
         with open(preferences_path,'w') as configfile:
             config.write(configfile)
+    def side_bar_add(self,*args):
+        pass
+
+    def side_bar_add_populate(self,*args):
+        sbm_parent=self.widgets['side_bar_box']
+        darken=Animation(rgba=(0,0,0,.95))
+        lighten=Animation(rgba=(0,0,0,.85))
+        side_bar_add=self.widgets['side_bar_add']
+        side_bar_add.clear_widgets()
+        if side_bar_add.expanded:
+            self.remove_widget(sbm_parent)
+            self.add_widget(sbm_parent)#needed to draw children on top
+            darken.start(side_bar_add.shape_color)
+            w=self.widgets
+            w['side_bar_add_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            w['side_bar_add_title'].size_hint=(.4, .05)
+            all_widgets=[
+                w['side_bar_add_title'],
+                w['side_bar_add_seperator'],
+                w['side_bar_add_expand_button'],
+                w['side_bar_add_expand_lines']]
+            for i in all_widgets:
+                side_bar_add.add_widget(i)
+        elif not side_bar_add.expanded:
+            lighten.start(side_bar_add.shape_color)
+            w=self.widgets
+            w['side_bar_add_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            w['side_bar_add_title'].size_hint=(1,1)
+            all_widgets=[
+                w['side_bar_add_title']]
+            for i in all_widgets:
+                side_bar_add.add_widget(i)
+
+    def side_bar_add_expand_button_func(self,*args):
+        sba=self.widgets['side_bar_add']
+        if sba.expanded:
+            sba.shrink()
+        if not sba.expanded:
+            sba.expand()
+
+    def bg_color(self,button,*args):
+        if hasattr(button,'expanded'):
+            if button.expanded:
+                return
+        if button.state=='normal':
+            button.shape_color.rgba=(0,0,0,.9)
+        if button.state=='down':
+            button.shape_color.rgba=(.05,.05,0,.7)
+
+    def prompt_unlock(self,button,touch,*args):
+        if not button.collide_point(*touch.pos):
+            return
+        if self.unlocked:
+            return
+        for widget in self.children:
+            if type(widget)==PinLock:
+                return
+        self.add_widget(PinLock(self.unlock))
+
+    def unlock(self,*args):
+        self.unlocked=True
+        self.check_admin_mode()
 
     def check_admin_mode(self,*args):
-        if App.get_running_app().admin_mode_start>time.time():
+        # App.get_running_app().admin_mode_start=time.time()+1000
+        if App.get_running_app().admin_mode_start>time.time() or self.unlocked:
+            self.unlocked=True
             if self.widgets['account_admin_hint'].parent:
                 self.remove_widget(self.widgets['account_admin_hint'])
             self.widgets['information_email'].disabled=False
@@ -6291,6 +6743,7 @@ class AccountScreen(Screen):
             self.widgets['side_bar_refresh'].disabled=False
             self.widgets['side_bar_refresh'].shape_color.rgba=(0,0,0,.9)
         else:
+            self.unlocked=False
             if not self.widgets['account_admin_hint'].parent:
                 self.add_widget(self.widgets['account_admin_hint'])
             self.widgets['information_email'].disabled=True
@@ -6308,6 +6761,7 @@ class AccountScreen(Screen):
 
 
     def on_pre_enter(self, *args):
+        self.unlocked=False
         self.check_admin_mode()
         if App.get_running_app().config_['account']['email']:
             self.widgets['information_email'].text=App.get_running_app().config_['account']['email']
