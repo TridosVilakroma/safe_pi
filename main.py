@@ -2317,7 +2317,9 @@ class PinLock(RoundedColorLayoutModal):
         try:
             self.callback()
         except Exception as e:
-            print(e)
+            print(f'main.py PinLock unlock(): callback {self.callback} failed to execute')
+            print('error: ',repr(e))
+            raise
 
     def clear(self,*args):
         if hasattr(self,'parent'):
@@ -3509,6 +3511,7 @@ class DevicesScreen(Screen):
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
         self.widgets={}
         self.ud={}
+        self.unlocked=False
 
         back=RoundedButton(text=current_language['report_back'],
                     size_hint =(.4, .1),
@@ -3758,10 +3761,17 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         self.widgets['overlay_menu'].dismiss()
 
     def info_add_icon_func(self,device,button):
-        self.edit_device_overlay(device)
+        if App.get_running_app().admin_mode_start>time.time() or self.unlocked:
+            self.edit_device_overlay(device)
+        else:
+            Window.add_widget(PinLock(partial(self.unlock_callback,partial(self.edit_device_overlay,device))))
+
 
     def delete_icon_func(self,device,button):
-        self.delete_device_overlay(device,open=False)
+        if App.get_running_app().admin_mode_start>time.time() or self.unlocked:
+            self.delete_device_overlay(device,open=False)
+        else:
+            Window.add_widget(PinLock(partial(self.unlock_callback,partial(self.delete_device_overlay,device,open=False))))
 
     def icon_change(self,button,state):
         if state=='down':
@@ -4205,24 +4215,47 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         new_device.bind(on_release=self.new_device_func)
 
     def new_device_func(self,button):
-        self.new_device_overlay()
+        if App.get_running_app().admin_mode_start>time.time() or self.unlocked:
+            self.new_device_overlay()
+        else:
+            self.add_widget(PinLock(partial(self.unlock_callback,self.new_device_overlay)))
+
+    def prompt_unlock(self,button,touch,*args):
+        if not button.collide_point(*touch.pos):
+            return
+        if self.unlocked:
+            return
+        for widget in self.children:
+            if type(widget)==PinLock:
+                return
+        self.add_widget(PinLock(self.unlock))
+
+    def unlock(self,*args):
+        self.unlocked=True
+        self.check_admin_mode()
+
+    def unlock_callback(self,callback,*args):
+        self.unlock()
+        callback()
 
     def check_admin_mode(self):
-        if App.get_running_app().admin_mode_start>time.time():
-            self.widgets['info_add_icon'].disabled=False
-            self.widgets['delete_icon'].disabled=False
-            self.widgets['info_add_icon'].color=(1,1,1,.5)
-            self.widgets['delete_icon'].color=(1,1,1,.8)
-            self.widgets['overlay_layout'].remove_widget(self.widgets['info_admin_hint'])
-
+        if App.get_running_app().admin_mode_start>time.time() or self.unlocked:
+            if 'info_add_icon' in  self.widgets:
+                self.widgets['info_add_icon'].color=(1,1,1,.5)
+            if 'delete_icon' in self.widgets:
+                self.widgets['delete_icon'].color=(1,1,1,.8)
+            if 'info_admin_hint' in self.widgets:
+                self.widgets['overlay_layout'].remove_widget(self.widgets['info_admin_hint'])
         else:
-            self.widgets['overlay_layout'].add_widget(self.widgets['info_admin_hint'])
-            self.widgets['info_add_icon'].disabled=True
-            self.widgets['delete_icon'].disabled=True
-            self.widgets['info_add_icon'].color=(1,1,1,.15)
-            self.widgets['delete_icon'].color=(1,1,1,.15)
+            if 'info_admin_hint' in self.widgets:
+                self.widgets['overlay_layout'].add_widget(self.widgets['info_admin_hint'])
+            if 'info_add_icon' in  self.widgets:
+                self.widgets['info_add_icon'].color=(1,1,1,.15)
+            if 'delete_icon' in self.widgets:
+                self.widgets['delete_icon'].color=(1,1,1,.15)
 
     def on_pre_enter(self):
+        self.unlocked=False
         self.aggregate_devices()
 
 class TrainScreen(Screen):
