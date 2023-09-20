@@ -187,6 +187,12 @@ and diagnostics''',
 'side_bar_unlink' : "[size=20][color=#ffffff][b]Unlink Account",
 'side_bar_connect' : "[size=20][color=#ffffff][b]Connect Account",
 'side_bar_add_title' : "[size=20][color=#ffffff][b]Add Device",
+'side_bar_add_title_expanded' : "[size=20][color=#ffffff][b]Add Remote Access Device",
+'side_bar_add_body' : '''[size=16][color=#ffffff]Adding a device allows remote access
+to this hood control system.
+Install the [size=18][u][i][b]Hood Control Admin[/u][/i][/b][size=16]
+app on a supported device and scan
+the qr link code''',
 'side_bar_remove' : "[size=20][color=#ffffff][b]Remove Device",
 'side_bar_refresh' : "[size=20][color=#ffffff][b]Refresh From Server",
 'network_screen_name' : "[size=50][color=#ffffff][b][u][i]       Network       ",
