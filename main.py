@@ -6882,8 +6882,7 @@ class AccountScreen(Screen):
             if server.uid:
                 if self.generate_link_timer>time.time():
                     return
-                Clock.schedule_interval(self.update_valid_time,.1)
-                self.generate_uid_qr(server.uid)
+                self.uvt_event=Clock.schedule_interval(self.update_valid_time,.1)
                 self.generate_link_timer=time.time()+15#900
                 w['side_bar_add_qr_image'].source=uid_qr
                 w['side_bar_add_qr_image'].opacity=1
@@ -6894,6 +6893,16 @@ class AccountScreen(Screen):
                 w['side_bar_add_uuid_display'].text=f'[size=16]{_uuid}'
                 self._link_code='    '.join(random.choices(string.ascii_uppercase+string.digits+string.digits,k=6))
                 w['side_bar_add_link_code_display'].text='[size=16]'+self._link_code
+                stripped_link_code=self._link_code.replace(' ','')
+                config=App.get_running_app().config_
+                config.set('account','uuid',server.uid)
+                config.set('account','link_code',stripped_link_code)
+                with open(preferences_path,'w') as configfile:
+                    config.write(configfile)
+                qr_data=server.uid+stripped_link_code
+                print(qr_data)
+                self.generate_uid_qr(qr_data)
+                w['side_bar_add_qr_image'].reload()
                 return
         w['side_bar_add_qr_image'].opacity=0
         w['side_bar_add_uuid_display'].text=''
@@ -6971,15 +6980,25 @@ class AccountScreen(Screen):
         box=w['side_bar_add_valid_box']
         valid_time=w['side_bar_add_valid_time']
         valid_text=w['side_bar_add_valid_text']
+        gen=w['side_bar_add_qr_generate']
         if _dt>0:
             _time=str(timedelta(seconds=int(_dt)))[2:]
             box.shape_color.rgba=(100/255, 255/255, 100/255,.75)
             valid_text.text='[size=16][b][color=#000000]Valid'
             valid_time.text=f'[size=28][color=#000000]{_time}'
+            gen.disabled=True
+            gen.shape_color.rgba=(.0, .2, .4,.5)
         else:
+            self.uvt_event.cancel()
             box.shape_color.rgba=(255/255, 100/255, 100/255,.85)
             valid_text.text='[size=16][b][color=#000000]Expired'
             valid_time.text='[size=28][color=#000000]00:00'
+            gen.disabled=False
+            gen.shape_color.rgba=(.0, .5, .7,.85)
+            config=App.get_running_app().config_
+            config.set('account','link_code','')
+            with open(preferences_path,'w') as configfile:
+                config.write(configfile)
 
     def on_pre_enter(self, *args):
         self.unlocked=False
@@ -6990,6 +7009,7 @@ class AccountScreen(Screen):
         return super().on_pre_enter(*args)
 
     def auth_server(self,*args):
+        self.clear_link_code()
         config=App.get_running_app().config_
         account_email=config['account']['email']
         account_password=config['account']['password']
@@ -7026,6 +7046,12 @@ class AccountScreen(Screen):
             i.cancel()
         self.scheduled_funcs=[]
         delattr(server,'user')
+
+    def clear_link_code(self,*args):
+        config=App.get_running_app().config_
+        config.set('account','link_code','')
+        with open(preferences_path,'w') as configfile:
+            config.write(configfile)
 
 class NetworkScreen(Screen):
     def __init__(self, **kwargs):
