@@ -1,8 +1,9 @@
-import os,json,time,shutil,math,random,subprocess,re
+import os,json,time,shutil,math,random,subprocess,re,string
 import traceback,errno
-from datetime import datetime
+from datetime import datetime,timedelta
 from kivy.config import Config
 from copy import deepcopy
+import segno
 
 from device_classes.exhaust import Exhaust
 from device_classes.mau import Mau
@@ -117,6 +118,7 @@ black_seperator_line=r'media/line_black.png'
 settings_icon=r'media/menu_lines.png'
 red_dot=r'media/red_dot.png'
 opaque_bubble=r'media/opaque_bubble.png'
+uid_qr=r'logs/configurations/uid_qr.png'
 
 
 class MarkupSpinnerOption(SpinnerOption):
@@ -6372,6 +6374,8 @@ class AccountScreen(Screen):
         self.scheduled_funcs=[]
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
         self.unlocked=False
+        self._link_code=''
+        self.generate_link_timer=time.time()
 
         back=RoundedButton(
             text=current_language['settings_back'],
@@ -6561,7 +6565,6 @@ class AccountScreen(Screen):
             bg_color=(0,0,0,.9))
         self.widgets['side_bar_add']=side_bar_add
         side_bar_add.ref='side_bar_add'
-        side_bar_add.bind(on_press=self.side_bar_add)
         side_bar_add.widgets={}
         side_bar_add.bind(state=self.bg_color)
         side_bar_add.bind(expanded=self.side_bar_add_populate)
@@ -6582,6 +6585,127 @@ class AccountScreen(Screen):
             size_hint =(.9, .005),
             pos_hint = {'x':.05, 'y':.85})
         self.widgets['side_bar_add_seperator']=side_bar_add_seperator
+
+        side_bar_add_body=MinimumBoundingLabel(
+            text=current_language['side_bar_add_body'],
+            markup=True,
+            pos_hint = {'center_x':.2, 'center_y':.5})
+        self.widgets['side_bar_add_body']=side_bar_add_body
+        side_bar_add_body.ref='side_bar_add_body'
+
+        with side_bar_add_body.canvas.after:
+           side_bar_add_body.status_lines=Line(rounded_rectangle=(100, 100, 200, 200, 10, 10, 10, 10, 100))
+
+        def side_bar_add_body_update_lines(*args):
+            offset=5
+            x=int(side_bar_add_body.x)-offset
+            y=int(side_bar_add_body.y)-offset
+            width=int(side_bar_add_body.width*1)+offset*2
+            height=int(side_bar_add_body.height*1)+offset*2
+            side_bar_add_body.status_lines.rounded_rectangle=(x, y, width, height, 10, 10, 10, 10, 100)
+        side_bar_add_body.bind(pos=side_bar_add_body_update_lines, size=side_bar_add_body_update_lines)
+
+        side_bar_add_vertical_seperator=Image(
+            source=gray_seperator_line_vertical,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.0005, .4),
+            pos_hint = {'center_x':.5, 'center_y':.55})
+        self.widgets['side_bar_add_vertical_seperator']=side_bar_add_vertical_seperator
+
+        side_bar_add_uuid=MinimumBoundingLabel(
+            text='[b][size=16]UUID:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'right':.48, 'center_y':.675},)
+        self.widgets['side_bar_add_uuid']=side_bar_add_uuid
+
+        side_bar_add_uuid_display=MinimumBoundingLabel(
+            text='',
+            markup=True,
+            halign='center',
+            pos_hint = {'x':.55, 'center_y':.675})
+        self.widgets['side_bar_add_uuid_display']=side_bar_add_uuid_display
+
+        side_bar_add_link_code=MinimumBoundingLabel(
+            text='[b][size=16]Link Code:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'right':.48, 'center_y':.425},)
+        self.widgets['side_bar_add_link_code']=side_bar_add_link_code
+
+        side_bar_add_link_code_display=MinimumBoundingLabel(
+            text='',
+            markup=True,
+            pos_hint = {'x':.53, 'center_y':.425})
+        self.widgets['side_bar_add_link_code_display']=side_bar_add_link_code_display
+
+        side_bar_add_valid_box=RoundedColorLayout(
+            bg_color=(100/255, 255/255, 100/255,.75),
+            size_hint=(.1, .115),
+            pos_hint={'center_x':.5875, 'center_y':.3})
+        self.widgets['side_bar_add_valid_box']=side_bar_add_valid_box
+
+        side_bar_add_valid_text=MinimumBoundingLabel(
+            text='[size=16][b][color=#000000]Valid',
+            markup=True,
+            pos_hint = {'center_x':.5, 'center_y':.8})
+        self.widgets['side_bar_add_valid_text']=side_bar_add_valid_text
+
+        side_bar_add_valid_time=MinimumBoundingLabel(
+            text='[size=28][color=#000000]15:00',
+            markup=True,
+            pos_hint = {'center_x':.5, 'center_y':.35})
+        self.widgets['side_bar_add_valid_time']=side_bar_add_valid_time
+
+        side_bar_add_qr_missing=MinimumBoundingLabel(
+            text='[size=16][color=#ffffff]No User ID Found.\nConfirm Your Account\nstatus and generate\na new link above.',
+            markup=True,
+            # size_hint =(1, 1),
+            pos_hint = {'center_x':.8, 'center_y':.45},)
+        self.widgets['side_bar_add_qr_missing']=side_bar_add_qr_missing
+        # side_bar_add_qr_missing.ref='side_bar_add_qr_missing'
+
+        side_bar_add_qr_frame=FloatLayout(
+            size_hint =(None, .5),
+            pos_hint = {'center_x':.8, 'center_y':.45})
+        self.widgets['side_bar_add_qr_frame']=side_bar_add_qr_frame
+
+        with side_bar_add_qr_frame.canvas.before:
+            qrf=side_bar_add_qr_frame
+            length=qrf.width*.3
+            qrf.frame_color=Color(1,1,1)
+            qrf.bl_line=Line(points=[qrf.x,qrf.y+length,qrf.x,qrf.y,qrf.x+length,qrf.y],width=2)
+            qrf.tl_line=Line(points=[qrf.x,qrf.top-length,qrf.x,qrf.top,qrf.x+length,qrf.top],width=2)
+            qrf.tr_line=Line(points=[qrf.right-length,qrf.top,qrf.right,qrf.top,qrf.right,qrf.top-length],width=2)
+            qrf.br_line=Line(points=[qrf.right,qrf.y+length,qrf.right,qrf.y,qrf.right-length,qrf.y],width=2)
+
+        def side_bar_add_qr_frame_align(self,*args):
+            qrf=side_bar_add_qr_frame
+            qrf.width=qrf.height
+            qrf.bl_line.points=[qrf.x,qrf.y+length,qrf.x,qrf.y,qrf.x+length,qrf.y]
+            qrf.tl_line.points=[qrf.x,qrf.top-length,qrf.x,qrf.top,qrf.x+length,qrf.top]
+            qrf.tr_line.points=[qrf.right-length,qrf.top,qrf.right,qrf.top,qrf.right,qrf.top-length]
+            qrf.br_line.points=[qrf.right,qrf.y+length,qrf.right,qrf.y,qrf.right-length,qrf.y]
+        side_bar_add_qr_frame.bind(pos=side_bar_add_qr_frame_align,size=side_bar_add_qr_frame_align)
+
+        side_bar_add_qr_image=Image(
+            allow_stretch=True,
+            keep_ratio=True,
+            size_hint =(.95, .95),
+            pos_hint = {'center_x':.5, 'center_y':.5})
+        self.widgets['side_bar_add_qr_image']=side_bar_add_qr_image
+        side_bar_add_qr_image.opacity=0
+
+        side_bar_add_qr_generate=RoundedButton(
+            text='[size=20][color=#000000]Generate Link',
+            size_hint =(.15, .075),
+            pos_hint = {'center_x':.8, 'y':.725},
+            background_normal='',
+            background_color=(.0, .5, .7,.85),
+            markup=True)
+        self.widgets['side_bar_add_qr_generate']=side_bar_add_qr_generate
+        side_bar_add_qr_generate.bind(on_release=self.side_bar_add_qr_generate_func)
 
         side_bar_add_expand_button=RoundedButton(
             size_hint =(.5, .075),
@@ -6655,6 +6779,9 @@ class AccountScreen(Screen):
         status_scroll.add_widget(status_scroll_layout)
 
         side_bar_add.add_widget(side_bar_add_title)
+        side_bar_add_qr_frame.add_widget(side_bar_add_qr_image)
+        side_bar_add_valid_box.add_widget(side_bar_add_valid_text)
+        side_bar_add_valid_box.add_widget(side_bar_add_valid_time)
 
         side_bar_box.add_widget(side_bar_connect)
         side_bar_box.add_widget(side_bar_unlink)
@@ -6693,8 +6820,6 @@ class AccountScreen(Screen):
         config.set('account','password',f'{button.text}')
         with open(preferences_path,'w') as configfile:
             config.write(configfile)
-    def side_bar_add(self,*args):
-        pass
 
     def side_bar_add_populate(self,*args):
         sbm_parent=self.widgets['side_bar_box']
@@ -6707,20 +6832,38 @@ class AccountScreen(Screen):
             self.add_widget(sbm_parent)#needed to draw children on top
             darken.start(side_bar_add.shape_color)
             w=self.widgets
+            if os.path.exists(uid_qr):
+                qr=w['side_bar_add_qr_image']
+                qr.source=uid_qr
+                qr.opacity=1
+            else:w['side_bar_add_qr_image'].opacity=0
             w['side_bar_add_title'].pos_hint={'center_x':.5, 'center_y':.925}
             w['side_bar_add_title'].size_hint=(.4, .05)
+            w['side_bar_add_title'].text=current_language['side_bar_add_title_expanded']
             all_widgets=[
                 w['side_bar_add_title'],
                 w['side_bar_add_seperator'],
+                w['side_bar_add_body'],
+                w['side_bar_add_vertical_seperator'],
+                w['side_bar_add_uuid'],
+                w['side_bar_add_uuid_display'],
+                w['side_bar_add_link_code'],
+                w['side_bar_add_link_code_display'],
+                w['side_bar_add_valid_box'],
+                w['side_bar_add_qr_missing'],
+                w['side_bar_add_qr_frame'],
+                w['side_bar_add_qr_generate'],
                 w['side_bar_add_expand_button'],
                 w['side_bar_add_expand_lines']]
             for i in all_widgets:
                 side_bar_add.add_widget(i)
+            self.side_bar_add_qr_generate_func()
         elif not side_bar_add.expanded:
             lighten.start(side_bar_add.shape_color)
             w=self.widgets
             w['side_bar_add_title'].pos_hint={'center_x':.5, 'center_y':.5}
             w['side_bar_add_title'].size_hint=(1,1)
+            w['side_bar_add_title'].text=current_language['side_bar_add_title']
             all_widgets=[
                 w['side_bar_add_title']]
             for i in all_widgets:
@@ -6732,6 +6875,29 @@ class AccountScreen(Screen):
             sba.shrink()
         if not sba.expanded:
             sba.expand()
+
+    def side_bar_add_qr_generate_func(self,*args):
+        w=self.widgets
+        if hasattr(server,'uid'):
+            if server.uid:
+                if self.generate_link_timer>time.time():
+                    return
+                Clock.schedule_interval(self.update_valid_time,.1)
+                self.generate_uid_qr(server.uid)
+                self.generate_link_timer=time.time()+15#900
+                w['side_bar_add_qr_image'].source=uid_qr
+                w['side_bar_add_qr_image'].opacity=1
+                _quarterPoint = len(server.uid)//4
+                _midPoint = len(server.uid)//2
+                _endquarterPoint = int(len(server.uid)//1.3)
+                _uuid=server.uid[:_quarterPoint]+'\n'+server.uid[_quarterPoint:_midPoint]+'\n'+server.uid[_midPoint:_endquarterPoint]+'\n'+server.uid[_endquarterPoint:]
+                w['side_bar_add_uuid_display'].text=f'[size=16]{_uuid}'
+                self._link_code='    '.join(random.choices(string.ascii_uppercase+string.digits+string.digits,k=6))
+                w['side_bar_add_link_code_display'].text='[size=16]'+self._link_code
+                return
+        w['side_bar_add_qr_image'].opacity=0
+        w['side_bar_add_uuid_display'].text=''
+        w['side_bar_add_link_code_display'].text=''
 
     def bg_color(self,button,*args):
         if hasattr(button,'expanded'):
@@ -6791,6 +6957,29 @@ class AccountScreen(Screen):
             self.widgets['side_bar_refresh'].disabled=True
             self.widgets['side_bar_refresh'].shape_color.rgba=(.1,.1,.1,.8)
 
+    def generate_uid_qr(self,data,*args):
+        qr=segno.make_qr(data)
+        qr.save(
+            uid_qr,
+            'png',
+            scale=5,
+            border=1)
+
+    def update_valid_time(self,*args):
+        _dt=self.generate_link_timer-time.time()
+        w=self.widgets
+        box=w['side_bar_add_valid_box']
+        valid_time=w['side_bar_add_valid_time']
+        valid_text=w['side_bar_add_valid_text']
+        if _dt>0:
+            _time=str(timedelta(seconds=int(_dt)))[2:]
+            box.shape_color.rgba=(100/255, 255/255, 100/255,.75)
+            valid_text.text='[size=16][b][color=#000000]Valid'
+            valid_time.text=f'[size=28][color=#000000]{_time}'
+        else:
+            box.shape_color.rgba=(255/255, 100/255, 100/255,.85)
+            valid_text.text='[size=16][b][color=#000000]Expired'
+            valid_time.text='[size=28][color=#000000]00:00'
 
     def on_pre_enter(self, *args):
         self.unlocked=False
@@ -9334,6 +9523,7 @@ class Hood_Control(App):
         settings_setter(self.config_)
         Clock.schedule_once(partial(language_setter,config=self.config_))
         self.context_screen=ScreenManager()
+        self.context_screen.add_widget(AccountScreen(name='account'))
         self.context_screen.add_widget(ControlGrid(name='main'))
         self.context_screen.add_widget(ActuationScreen(name='alert'))
         self.context_screen.add_widget(SettingsScreen(name='settings'))
@@ -9345,7 +9535,7 @@ class Hood_Control(App):
         self.context_screen.add_widget(DocumentScreen(name='documents'))
         self.context_screen.add_widget(TroubleScreen(name='trouble'))
         self.context_screen.add_widget(MountScreen(name='mount'))
-        self.context_screen.add_widget(AccountScreen(name='account'))
+        # self.context_screen.add_widget(AccountScreen(name='account'))
         self.context_screen.add_widget(NetworkScreen(name='network'))
         self.context_screen.add_widget(AnalyticScreen(name='analytics'))
         listener_event=Clock.schedule_interval(partial(listen, self.context_screen),.75)
