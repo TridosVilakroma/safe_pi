@@ -1,28 +1,22 @@
 from google.oauth2.credentials import Credentials
 from google.cloud.firestore import Client
 
+'''fire store python service
 
-def firestore_init(user):
+This module expects a user object that has been authenticated already.
+No python sdk is provided by google for the fire store database, so this will
+load an admin level account from their sdk, yet with only user
+level access'''
+
+def firestore_init(user,projectId=None):
     # Use google.oauth2.credentials and the response object to create the correct user credentials
     creds = Credentials(user['idToken'], user['refreshToken'])
 
     # Use the raw firestore grpc client instead of building one through firebase_admin
-    db = Client("hood-control-67b78", creds)
-    docs = db.collection('users').get()
-    for doc in docs:
-        print(doc.to_dict())
+    db = Client(project=projectId,credentials=creds)
     return db
 
+# def 
+#     users_ref = db.collection('users')
+#     users_listener=users_ref.on_snapshot(lambda *docs:print(docs))
 
-
-# Et voila! 
-# You are now connected to your firestore database and authenticated with the selected firebase user.
-# All your firestore security rules now apply on this connection and it will behave like a normal client
-
-# doc_ref = db.collection(u'cities').document(u'SF')
-
-# doc = doc_ref.get()
-# if doc.exists:
-#     print(u'Document data: {}'.format(doc.to_dict()))
-# else:
-#     print(u'No such document!')

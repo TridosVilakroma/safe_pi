@@ -119,6 +119,7 @@ settings_icon=r'media/menu_lines.png'
 red_dot=r'media/red_dot.png'
 opaque_bubble=r'media/opaque_bubble.png'
 uid_qr=r'logs/configurations/uid_qr.png'
+app_icon_source=r'logs/configurations/uid_qr.png'
 
 
 class MarkupSpinnerOption(SpinnerOption):
@@ -2342,6 +2343,9 @@ class PinLock(RoundedColorLayoutModal):
             self.clear()
         super(PinLock, self).on_touch_up(touch)
         return True
+
+class ExpandableIcon(ExpandableRoundedColorLayout,Image):
+    pass
 
 #<<<<<<<<<<>>>>>>>>>>#
 
@@ -6593,8 +6597,12 @@ class AccountScreen(Screen):
         self.widgets['side_bar_add_body']=side_bar_add_body
         side_bar_add_body.ref='side_bar_add_body'
 
-        with side_bar_add_body.canvas.after:
-           side_bar_add_body.status_lines=Line(rounded_rectangle=(100, 100, 200, 200, 10, 10, 10, 10, 100))
+        with side_bar_add_body.canvas.before:
+            Color(0,0,0,1)
+            side_bar_add_body.rect=Rectangle()
+
+        # with side_bar_add_body.canvas.after:
+        #    side_bar_add_body.status_lines=Line(rounded_rectangle=(100, 100, 200, 200, 10, 10, 10, 10, 100))
 
         def side_bar_add_body_update_lines(*args):
             offset=5
@@ -6602,7 +6610,9 @@ class AccountScreen(Screen):
             y=int(side_bar_add_body.y)-offset
             width=int(side_bar_add_body.width*1)+offset*2
             height=int(side_bar_add_body.height*1)+offset*2
-            side_bar_add_body.status_lines.rounded_rectangle=(x, y, width, height, 10, 10, 10, 10, 100)
+            # side_bar_add_body.status_lines.rounded_rectangle=(x, y, width, height, 10, 10, 10, 10, 100)
+            side_bar_add_body.rect.pos=(x,y)
+            side_bar_add_body.rect.size=(width,height)
         side_bar_add_body.bind(pos=side_bar_add_body_update_lines, size=side_bar_add_body_update_lines)
 
         side_bar_add_vertical_seperator=Image(
@@ -6707,6 +6717,25 @@ class AccountScreen(Screen):
         self.widgets['side_bar_add_qr_generate']=side_bar_add_qr_generate
         side_bar_add_qr_generate.bind(on_release=self.side_bar_add_qr_generate_func)
 
+        side_bar_add_app_icon_layout=ExpandableRoundedColorLayout(
+            size_hint =(.1, .1),
+            pos_hint = {'center_x':.06, 'center_y':.125},
+            expanded_size=(.45,.65),
+            expanded_pos = {'center_x':.25, 'center_y':.45},
+            bg_color=(1,1,1,0))
+        self.widgets['side_bar_add_app_icon_layout']=side_bar_add_app_icon_layout
+        side_bar_add_app_icon_layout.widgets={}
+        side_bar_add_app_icon_layout.bind(on_release=self.side_bar_add_app_icon_layout_func)
+        side_bar_add_app_icon_layout.bind(expanded=self.side_bar_add_app_icon_layout_populate)
+        side_bar_add_app_icon_layout.bind(animating=partial(general.stripargs,side_bar_add_app_icon_layout.clear_widgets))
+
+        side_bar_add_app_icon_image=Image(
+            source=app_icon_source,
+            allow_stretch=False,
+            keep_ratio=True,
+            pos_hint = {'center_x':.5, 'center_y':.5})
+        self.widgets['side_bar_add_app_icon_image']=side_bar_add_app_icon_image
+
         side_bar_add_expand_button=RoundedButton(
             size_hint =(.5, .075),
             pos_hint = {'center_x':.5, 'center_y':.075},
@@ -6777,6 +6806,8 @@ class AccountScreen(Screen):
         status_box.add_widget(status_seperator)
         status_box.add_widget(status_scroll)
         status_scroll.add_widget(status_scroll_layout)
+
+        side_bar_add_app_icon_layout.add_widget(side_bar_add_app_icon_image)
 
         side_bar_add.add_widget(side_bar_add_title)
         side_bar_add_qr_frame.add_widget(side_bar_add_qr_image)
@@ -6853,6 +6884,7 @@ class AccountScreen(Screen):
                 w['side_bar_add_qr_missing'],
                 w['side_bar_add_qr_frame'],
                 w['side_bar_add_qr_generate'],
+                w['side_bar_add_app_icon_layout'],
                 w['side_bar_add_expand_button'],
                 w['side_bar_add_expand_lines']]
             for i in all_widgets:
@@ -6861,6 +6893,8 @@ class AccountScreen(Screen):
         elif not side_bar_add.expanded:
             lighten.start(side_bar_add.shape_color)
             w=self.widgets
+            if w['side_bar_add_app_icon_layout'].expanded:
+                w['side_bar_add_app_icon_layout'].shrink()
             w['side_bar_add_title'].pos_hint={'center_x':.5, 'center_y':.5}
             w['side_bar_add_title'].size_hint=(1,1)
             w['side_bar_add_title'].text=current_language['side_bar_add_title']
@@ -6869,12 +6903,65 @@ class AccountScreen(Screen):
             for i in all_widgets:
                 side_bar_add.add_widget(i)
 
+    def side_bar_add_app_icon_layout_populate(self,*args):
+        sba_icon=self.widgets['side_bar_add_app_icon_layout']
+        sba_parent=self.widgets['side_bar_add']
+        darken=Animation(rgba=(1,1,1,1))
+        lighten=Animation(rgba=(1,1,1,0))
+        side_bar_add_app_icon=self.widgets['side_bar_add_app_icon_layout']
+        side_bar_add_app_icon.clear_widgets()
+        if side_bar_add_app_icon.expanded:
+            sba_parent.remove_widget(sba_icon)
+            sba_parent.add_widget(sba_icon)#needed to draw children on top
+            darken.start(side_bar_add_app_icon.shape_color)
+            w=self.widgets
+            # w['side_bar_add_app_icon_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            # w['side_bar_add_app_icon_title'].size_hint=(.4, .05)
+            # w['side_bar_add_app_icon_title'].text=current_language['side_bar_add_app_icon_title_expanded']
+            # all_widgets=[
+            #     w['side_bar_add_app_icon_title'],
+            #     w['side_bar_add_app_icon_seperator'],
+            #     w['side_bar_add_app_icon_body'],
+            #     w['side_bar_add_app_icon_vertical_seperator'],
+            #     w['side_bar_add_app_icon_uuid'],
+            #     w['side_bar_add_app_icon_uuid_display'],
+            #     w['side_bar_add_app_icon_link_code'],
+            #     w['side_bar_add_app_icon_link_code_display'],
+            #     w['side_bar_add_app_icon_valid_box'],
+            #     w['side_bar_add_app_icon_qr_missing'],
+            #     w['side_bar_add_app_icon_qr_frame'],
+            #     w['side_bar_add_app_icon_qr_generate'],
+            #     w['side_bar_add_app_icon_app_icon'],
+            #     w['side_bar_add_app_icon_expand_button'],
+            #     w['side_bar_add_app_icon_expand_lines']]
+            # for i in all_widgets:
+            #     side_bar_add_app_icon.add_widget(i)
+        elif not side_bar_add_app_icon.expanded:
+            lighten.start(side_bar_add_app_icon.shape_color)
+            w=self.widgets
+            w['side_bar_add_app_icon_image'].opacity=0
+            Animation(opacity=1,d=1.5).start(w['side_bar_add_app_icon_image'])
+            all_widgets=[
+                w['side_bar_add_app_icon_image']]
+            for i in all_widgets:
+                side_bar_add_app_icon.add_widget(i)
+
     def side_bar_add_expand_button_func(self,*args):
         sba=self.widgets['side_bar_add']
         if sba.expanded:
             sba.shrink()
         if not sba.expanded:
             sba.expand()
+
+    def side_bar_add_app_icon_layout_func(self,*args):
+        sba=self.widgets['side_bar_add_app_icon_layout']
+        def shrink(*args):
+            if sba.expanded:
+                sba.shrink()
+        if sba.expanded:
+            Clock.schedule_once(shrink,0)
+        else:
+            sba.shape_color.rgba=(1,1,1,.2)
 
     def side_bar_add_qr_generate_func(self,*args):
         w=self.widgets
@@ -6886,6 +6973,7 @@ class AccountScreen(Screen):
                 self.generate_link_timer=time.time()+15#900
                 w['side_bar_add_qr_image'].source=uid_qr
                 w['side_bar_add_qr_image'].opacity=1
+                w['side_bar_add_valid_box'].opacity=1
                 _quarterPoint = len(server.uid)//4
                 _midPoint = len(server.uid)//2
                 _endquarterPoint = int(len(server.uid)//1.3)
@@ -6905,6 +6993,7 @@ class AccountScreen(Screen):
                 w['side_bar_add_qr_image'].reload()
                 return
         w['side_bar_add_qr_image'].opacity=0
+        w['side_bar_add_valid_box'].opacity=0
         w['side_bar_add_uuid_display'].text=''
         w['side_bar_add_link_code_display'].text=''
 
@@ -9571,7 +9660,7 @@ class Hood_Control(App):
         Clock.schedule_interval(self.context_screen.get_screen('main').widgets['clock_label'].update, 1)
         Clock.schedule_once(messages.refresh_active_messages)
         Clock.schedule_interval(messages.refresh_active_messages,10)
-        Clock.schedule_once(self.context_screen.get_screen('account').auth_server)
+        # Clock.schedule_once(self.context_screen.get_screen('account').auth_server)
         # Clock.schedule_interval(UpdateService.update,10)
         Window.bind(on_request_close=self.exit_check)
         Window.bind(children=self.keep_notifications_on_top)

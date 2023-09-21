@@ -98,7 +98,7 @@ class Db_service():
         try:
             self.user = self.auth.sign_in_with_email_and_password(email, password)
             try:
-                self.firestore = firestore.firestore_init(self.user)
+                self.firestore = firestore.firestore_init(self.user,config['projectId'])
             except:
                 self.firestore=False
 
@@ -130,8 +130,7 @@ class Db_service():
             Add recurring timer or interval to refresh token every 45-55 min.
             self.auth.refresh(self.token)
             '''
-            
-            
+
     def refresh_token(self,*args):
         self.user=self.auth.refresh(self.user['refreshToken'])
 

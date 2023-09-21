@@ -187,12 +187,24 @@ and diagnostics''',
 'side_bar_unlink' : "[size=20][color=#ffffff][b]Unlink Account",
 'side_bar_connect' : "[size=20][color=#ffffff][b]Connect Account",
 'side_bar_add_title' : "[size=20][color=#ffffff][b]Add Device",
-'side_bar_add_title_expanded' : "[size=20][color=#ffffff][b]Add Remote Access Device",
-'side_bar_add_body' : '''[size=16][color=#ffffff]Adding a device allows remote access
-to this hood control system.
-Install the [size=18][u][i][b]Hood Control Admin[/u][/i][/b][size=16]
-app on a supported device and scan
-the qr link code''',
+'side_bar_add_title_expanded' : "[size=20][color=#ffffff][b]Add Remote Access to a Device",
+'side_bar_add_body' : '''[size=18][u][color=#ffffff][b]Setting Up Remote Access to the Hood Control System[/b][/u][size=16]
+
+[b]1[/b]: Install the [i][b]Hood Control Admin[/i][/b] app on a supported device.
+
+[b]2[/b]: Verify that the Link Code is still valid, if
+    it has expired, generate a fresh Link Code.
+
+[b]3[/b]: Open the [i][b]Hood Control Admin[/i][/b] App on your device.
+
+[b]4[/b]: Select "Add Account" within the App.
+    Follow the on-screen prompts to either scan
+    the QR code or enter the Link Code manually.
+    You may need to grant camera access to scan the QR code.
+
+[b]5[/b]: A prompt will appear on this screen.
+    Confirm the device and grant remote access.
+''',
 'side_bar_remove' : "[size=20][color=#ffffff][b]Remove Device",
 'side_bar_refresh' : "[size=20][color=#ffffff][b]Refresh From Server",
 'network_screen_name' : "[size=50][color=#ffffff][b][u][i]       Network       ",
