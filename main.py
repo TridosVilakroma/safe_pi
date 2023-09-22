@@ -119,7 +119,8 @@ settings_icon=r'media/menu_lines.png'
 red_dot=r'media/red_dot.png'
 opaque_bubble=r'media/opaque_bubble.png'
 uid_qr=r'logs/configurations/uid_qr.png'
-app_icon_source=r'logs/configurations/uid_qr.png'
+app_icon_source=r'media/app_icon.png'
+square_bubble=r'media/square_bubble_.png'
 
 
 class MarkupSpinnerOption(SpinnerOption):
@@ -699,7 +700,7 @@ class RoundedColorLayout(FloatLayout):
         super(RoundedColorLayout,self).__init__(**kwargs)
         self.bg_color=bg_color
 
-        with self.canvas.before:
+        with self.canvas:#.before:
             self.shape_color = Color(*self.bg_color)
             self.shape = RoundedRectangle(pos=self.pos, size=self.size, radius=[20])
             self.bind(pos=self.update_shape, size=self.update_shape)
@@ -736,6 +737,11 @@ class ExpandableRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
             self.expanded_pos=kwargs.pop('expanded_pos')
         if 'expanded_size' in kwargs:
             self.expanded_size=kwargs.pop('expanded_size')
+        if 'modal_dim' in kwargs:
+            self.modal_dim=kwargs.pop('modal_dim')
+            Clock.schedule_once(self._set_modal_dim)
+            self._apply_dim=Animation(rgba=self.modal_dim)
+            self._remove_dim=Animation(rgba=(0,0,0,0),d=.2)
         self.move_anim=Animation(pos_hint=self.expanded_pos,d=.15,t='in_out_quad')
         self.move_anim.bind(on_complete=self.set_expanded_true)
         self.return_anim=Animation(pos_hint=self.original_pos,d=.15,t='out_back')
@@ -745,6 +751,11 @@ class ExpandableRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
         self.shrink_anim=Animation(size_hint=self.original_size,d=.15,t='out_back')
         self.shrink_anim.bind(on_complete=self.set_expanded_false)
         super(ExpandableRoundedColorLayout,self).__init__(**kwargs)
+
+    def _set_modal_dim(self,*args):
+        with self.canvas.before:
+            self._dim=Color(0,0,0,0)
+            self._dim_rect=Rectangle(size=Window.size)
 
     def on_touch_down(self, touch):
         if not self._expanded:
@@ -781,9 +792,16 @@ class ExpandableRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
 
     def set_expanded_true(self,*args):
         self.expanded=True
+        if hasattr(self,'modal_dim'):
+            self._remove_dim.cancel_all(self._dim)
+            self._apply_dim.start(self._dim)
+            self._dim_rect.size=Window.size
 
     def set_expanded_false(self,*args):
         self.expanded=False
+        if hasattr(self,'modal_dim'):
+            self._apply_dim.cancel_all(self._dim)
+            self._remove_dim.start(self._dim)
 
 class AnalyticExpandable(ExpandableRoundedColorLayout):
     def __init__(self, **kwargs):
@@ -6720,9 +6738,12 @@ class AccountScreen(Screen):
         side_bar_add_app_icon_layout=ExpandableRoundedColorLayout(
             size_hint =(.1, .1),
             pos_hint = {'center_x':.06, 'center_y':.125},
-            expanded_size=(.45,.65),
-            expanded_pos = {'center_x':.25, 'center_y':.45},
-            bg_color=(1,1,1,0))
+            expanded_size=(.75,.8),
+            expanded_pos = {'center_x':.5, 'center_y':.5},
+            bg_color=(1,1,1,0),
+            modal_dim=(0,0,0,.75))
+        # side_bar_add_app_icon_layout.shrink_anim=Animation(size_hint=side_bar_add_app_icon_layout.original_size,d=.15,t='in_sine')
+        # side_bar_add_app_icon_layout.return_anim=Animation(pos_hint=side_bar_add_app_icon_layout.original_pos,d=.15,t='in_sine')
         self.widgets['side_bar_add_app_icon_layout']=side_bar_add_app_icon_layout
         side_bar_add_app_icon_layout.widgets={}
         side_bar_add_app_icon_layout.bind(on_release=self.side_bar_add_app_icon_layout_func)
@@ -6733,8 +6754,17 @@ class AccountScreen(Screen):
             source=app_icon_source,
             allow_stretch=False,
             keep_ratio=True,
+            # size_hint=(1.5,1.5),
             pos_hint = {'center_x':.5, 'center_y':.5})
         self.widgets['side_bar_add_app_icon_image']=side_bar_add_app_icon_image
+
+        side_bar_add_app_bubble_image=Image(
+            source=square_bubble,
+            allow_stretch=False,
+            keep_ratio=True,
+            size_hint=(1.5,1.5),
+            pos_hint = {'center_x':1.5, 'center_y':.25})
+        self.widgets['side_bar_add_app_bubble_image']=side_bar_add_app_bubble_image
 
         side_bar_add_expand_button=RoundedButton(
             size_hint =(.5, .075),
@@ -6854,7 +6884,7 @@ class AccountScreen(Screen):
 
     def side_bar_add_populate(self,*args):
         sbm_parent=self.widgets['side_bar_box']
-        darken=Animation(rgba=(0,0,0,.95))
+        darken=Animation(rgba=(0,0,0,1))
         lighten=Animation(rgba=(0,0,0,.85))
         side_bar_add=self.widgets['side_bar_add']
         side_bar_add.clear_widgets()
@@ -6871,6 +6901,7 @@ class AccountScreen(Screen):
             w['side_bar_add_title'].pos_hint={'center_x':.5, 'center_y':.925}
             w['side_bar_add_title'].size_hint=(.4, .05)
             w['side_bar_add_title'].text=current_language['side_bar_add_title_expanded']
+            w['side_bar_add_app_icon_layout'].add_widget(w['side_bar_add_app_bubble_image'])
             all_widgets=[
                 w['side_bar_add_title'],
                 w['side_bar_add_seperator'],
@@ -6907,7 +6938,7 @@ class AccountScreen(Screen):
         sba_icon=self.widgets['side_bar_add_app_icon_layout']
         sba_parent=self.widgets['side_bar_add']
         darken=Animation(rgba=(1,1,1,1))
-        lighten=Animation(rgba=(1,1,1,0))
+        lighten=Animation(rgba=(1,1,1,0),d=.75)
         side_bar_add_app_icon=self.widgets['side_bar_add_app_icon_layout']
         side_bar_add_app_icon.clear_widgets()
         if side_bar_add_app_icon.expanded:
