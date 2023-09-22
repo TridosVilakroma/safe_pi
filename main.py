@@ -6901,7 +6901,9 @@ class AccountScreen(Screen):
             w['side_bar_add_title'].pos_hint={'center_x':.5, 'center_y':.925}
             w['side_bar_add_title'].size_hint=(.4, .05)
             w['side_bar_add_title'].text=current_language['side_bar_add_title_expanded']
-            w['side_bar_add_app_icon_layout'].add_widget(w['side_bar_add_app_bubble_image'])
+            if hasattr(w['side_bar_add_app_bubble_image'],'parent'):
+                if w['side_bar_add_app_bubble_image'].parent==None:
+                    w['side_bar_add_app_icon_layout'].add_widget(w['side_bar_add_app_bubble_image'])
             all_widgets=[
                 w['side_bar_add_title'],
                 w['side_bar_add_seperator'],
@@ -6946,25 +6948,9 @@ class AccountScreen(Screen):
             sba_parent.add_widget(sba_icon)#needed to draw children on top
             darken.start(side_bar_add_app_icon.shape_color)
             w=self.widgets
-            # w['side_bar_add_app_icon_title'].pos_hint={'center_x':.5, 'center_y':.925}
-            # w['side_bar_add_app_icon_title'].size_hint=(.4, .05)
-            # w['side_bar_add_app_icon_title'].text=current_language['side_bar_add_app_icon_title_expanded']
             # all_widgets=[
-            #     w['side_bar_add_app_icon_title'],
-            #     w['side_bar_add_app_icon_seperator'],
-            #     w['side_bar_add_app_icon_body'],
-            #     w['side_bar_add_app_icon_vertical_seperator'],
-            #     w['side_bar_add_app_icon_uuid'],
-            #     w['side_bar_add_app_icon_uuid_display'],
-            #     w['side_bar_add_app_icon_link_code'],
-            #     w['side_bar_add_app_icon_link_code_display'],
-            #     w['side_bar_add_app_icon_valid_box'],
-            #     w['side_bar_add_app_icon_qr_missing'],
-            #     w['side_bar_add_app_icon_qr_frame'],
-            #     w['side_bar_add_app_icon_qr_generate'],
-            #     w['side_bar_add_app_icon_app_icon'],
-            #     w['side_bar_add_app_icon_expand_button'],
-            #     w['side_bar_add_app_icon_expand_lines']]
+            # 
+            # ]
             # for i in all_widgets:
             #     side_bar_add_app_icon.add_widget(i)
         elif not side_bar_add_app_icon.expanded:
