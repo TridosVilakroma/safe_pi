@@ -121,6 +121,7 @@ opaque_bubble=r'media/opaque_bubble.png'
 uid_qr=r'logs/configurations/uid_qr.png'
 app_icon_source=r'media/app_icon.png'
 square_bubble=r'media/square_bubble_.png'
+hc_mockup=r'media/hc_admin_mockup.png'
 
 
 class MarkupSpinnerOption(SpinnerOption):
@@ -6766,6 +6767,37 @@ class AccountScreen(Screen):
             pos_hint = {'center_x':1.5, 'center_y':.25})
         self.widgets['side_bar_add_app_bubble_image']=side_bar_add_app_bubble_image
 
+        side_bar_add_app_title=Label(
+            text='[size=24][color=#000000][b]Hood Control Admin',
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.925},)
+        self.widgets['side_bar_add_app_title']=side_bar_add_app_title
+        # side_bar_add_app_title.ref='side_bar_add_app_title'
+
+        side_bar_add_app_seperator_line=Image(
+            source=black_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.98, .004),
+            pos_hint = {'x':.01, 'y':.85})
+        self.widgets['side_bar_add_app_seperator_line']=side_bar_add_app_seperator_line
+
+        side_bar_add_app_mock_image=Image(
+            source=hc_mockup,
+            allow_stretch=False,
+            keep_ratio=True,
+            pos_hint = {'center_x':.25, 'center_y':.45})
+        self.widgets['side_bar_add_app_mock_image']=side_bar_add_app_mock_image
+
+        side_bar_add_app_qr_image=Image(
+            source=qr_link,
+            allow_stretch=True,
+            keep_ratio=True,
+            size_hint=(.6,.6),
+            pos_hint = {'center_x':.75, 'center_y':.5})
+        self.widgets['side_bar_add_app_qr_image']=side_bar_add_app_qr_image
+
         side_bar_add_expand_button=RoundedButton(
             size_hint =(.5, .075),
             pos_hint = {'center_x':.5, 'center_y':.075},
@@ -6948,11 +6980,13 @@ class AccountScreen(Screen):
             sba_parent.add_widget(sba_icon)#needed to draw children on top
             darken.start(side_bar_add_app_icon.shape_color)
             w=self.widgets
-            # all_widgets=[
-            # 
-            # ]
-            # for i in all_widgets:
-            #     side_bar_add_app_icon.add_widget(i)
+            all_widgets=[
+                w['side_bar_add_app_title'],
+                w['side_bar_add_app_seperator_line'],
+                w['side_bar_add_app_mock_image'],
+                w['side_bar_add_app_qr_image']]
+            for i in all_widgets:
+                side_bar_add_app_icon.add_widget(i)
         elif not side_bar_add_app_icon.expanded:
             lighten.start(side_bar_add_app_icon.shape_color)
             w=self.widgets
