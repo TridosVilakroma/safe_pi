@@ -6493,11 +6493,11 @@ class AccountScreen(Screen):
             size_hint =(.9, .005),
             pos_hint = {'x':.05, 'y':.85})
 
-        details_body=Label(
+        details_body=MinimumBoundingLabel(
             text=current_language['details_body'],
             markup=True,
-            size_hint =(.9, .75),
-            pos_hint = {'center_x':.5, 'center_y':.5},)
+            halign='center',
+            pos_hint = {'center_x':.5, 'center_y':.425},)
         self.widgets['details_body']=details_body
         details_body.ref='details_body'
 
@@ -6856,14 +6856,16 @@ class AccountScreen(Screen):
         side_bar_refresh.ref='side_bar_refresh'
         # side_bar_refresh.bind(on_press=self.side_bar_refresh)
 
-
-
-
-        account_admin_hint=MinimumBoundingLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
-                color=(0,0,0,1),
-                pos_hint = {'center_x':.5, 'y':.14},
-                markup=True)
+        account_admin_hint=RoundedButton(
+            text=f"[size=16][b][color=#ffffff]Enable Admin mode to edit fields[/size]",
+            color=(0,0,0,1),
+            size_hint=(.2,.05),
+            pos_hint = {'center_x':.5, 'y':.14},
+            markup=True,
+            background_normal='',
+            background_color=(0,0,0,.9))
         self.widgets['account_admin_hint']=account_admin_hint
+        account_admin_hint.bind(on_touch_up=self.prompt_unlock)
 
         seperator_line=Image(
             source=gray_seperator_line,
@@ -7083,7 +7085,7 @@ class AccountScreen(Screen):
         if self.unlocked:
             return
         for widget in self.children:
-            if type(widget)==PinLock:
+            if isinstance(widget,PinLock):
                 return
         self.add_widget(PinLock(self.unlock))
 
