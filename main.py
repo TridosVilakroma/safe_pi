@@ -122,6 +122,7 @@ uid_qr=r'logs/configurations/uid_qr.png'
 app_icon_source=r'media/app_icon.png'
 square_bubble=r'media/square_bubble_.png'
 hc_mockup=r'media/hc_admin_mockup.png'
+store_badges=r'media/store_badges.png'
 
 
 class MarkupSpinnerOption(SpinnerOption):
@@ -6787,15 +6788,32 @@ class AccountScreen(Screen):
             source=hc_mockup,
             allow_stretch=False,
             keep_ratio=True,
-            pos_hint = {'center_x':.25, 'center_y':.45})
+            size_hint=(.7,.7),
+            pos_hint = {'center_x':.225, 'y':.1})
         self.widgets['side_bar_add_app_mock_image']=side_bar_add_app_mock_image
 
-        side_bar_add_app_qr_image=Image(
-            source=qr_link,
+        side_bar_add_app_body=MinimumBoundingLabel(
+            text=current_language['side_bar_add_app_body'],
+            markup=True,
+            halign='center',
+            pos_hint = {'center_x':.625, 'top':.75},)
+        self.widgets['side_bar_add_app_body']=side_bar_add_app_body
+        side_bar_add_app_body.ref='side_bar_add_app_body'
+
+        side_bar_add_app_store_badges_image=Image(
+            source=store_badges,
             allow_stretch=True,
             keep_ratio=True,
-            size_hint=(.6,.6),
-            pos_hint = {'center_x':.75, 'center_y':.5})
+            size_hint=(.325,.325),
+            pos_hint = {'center_x':.5, 'y':.1})
+        self.widgets['side_bar_add_app_store_badges_image']=side_bar_add_app_store_badges_image
+
+        side_bar_add_app_qr_image=Image(
+            source=uid_qr,
+            allow_stretch=True,
+            keep_ratio=True,
+            size_hint=(.325,.325),
+            pos_hint = {'center_x':.775, 'y':.1})
         self.widgets['side_bar_add_app_qr_image']=side_bar_add_app_qr_image
 
         side_bar_add_expand_button=RoundedButton(
@@ -6984,6 +7002,8 @@ class AccountScreen(Screen):
                 w['side_bar_add_app_title'],
                 w['side_bar_add_app_seperator_line'],
                 w['side_bar_add_app_mock_image'],
+                w['side_bar_add_app_body'],
+                w['side_bar_add_app_store_badges_image'],
                 w['side_bar_add_app_qr_image']]
             for i in all_widgets:
                 side_bar_add_app_icon.add_widget(i)
