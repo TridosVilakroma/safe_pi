@@ -203,8 +203,11 @@ and diagnostics''',
     You may need to grant camera access to scan the QR code.
 
 [b]5[/b]: A prompt will appear on this screen.
-    Confirm the device and grant remote access.
-''',
+    Confirm the device and grant remote access.''',
+'side_bar_add_app_body' : '''[size=20][b][color=#000000]You can access Hood Control Admin on the
+Apple App Store or on Google Play. Simply scan the
+QR code provided below, and it will direct you to
+the respective app store on your device.''',
 'side_bar_remove' : "[size=20][color=#ffffff][b]Remove Device",
 'side_bar_refresh' : "[size=20][color=#ffffff][b]Refresh From Server",
 'network_screen_name' : "[size=50][color=#ffffff][b][u][i]       Network       ",
