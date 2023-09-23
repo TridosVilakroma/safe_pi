@@ -180,9 +180,17 @@ already, than it will overwrite it)\n\n[/color][/size]''',
 'account_screen_name' : "[size=50][color=#ffffff][b][u][i]       Account       ",
 'information_title' : "[size=20][color=#ffffff][b]Credentials",
 'details_title' : "[size=20][color=#ffffff][b]Details",
-'details_body' : '''[size=18][color=#ffffff]Connecting your Hood Control device
-with an account allows remote monitoring
-and diagnostics''',
+'details_body' : '''[size=18][color=#ffffff][b]Linking your Hood Control device to an account
+unlocks server access with several benefits[/b]
+
+[size=18][b][i]-Automatic updates[/b][/i][size=16]
+    Ensure the latest features and improvements.
+
+[size=18][b][i]-Remote access[/b][/i][size=16]
+    Providing convenience and flexibility.
+
+[size=18][b][i]-Comprehensive monitoring and diagnostics[/b][/i][size=16]
+    Reduce downtime and increase uptime!''',
 'status_title' : "[size=20][color=#ffffff][b]Status",
 'side_bar_unlink' : "[size=20][color=#ffffff][b]Unlink Account",
 'side_bar_connect' : "[size=20][color=#ffffff][b]Connect Account",
