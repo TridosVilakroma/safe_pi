@@ -217,7 +217,7 @@ Apple App Store or on Google Play. Simply scan the
 QR code provided below, and it will direct you to
 the respective app store on your device.''',
 'side_bar_remove' : "[size=20][color=#ffffff][b]Remove Device",
-'side_bar_refresh' : "[size=20][color=#ffffff][b]Refresh From Server",
+'side_bar_set_pin' : "[size=20][color=#ffffff][b]Change Pin",
 'network_screen_name' : "[size=50][color=#ffffff][b][u][i]       Network       ",
 'network_information_title' : "[size=20][color=#ffffff][b]Current Network",
 'network_details_title' : "[size=20][color=#ffffff][b]Details",
