@@ -2034,7 +2034,11 @@ class ScrollMenuBubble(Bubble):
 class PinLock(RoundedColorLayoutModal):
     end_point_one=ListProperty([])
     end_point_two=ListProperty([])
-    def __init__(self,callback, **kwargs):
+    def __init__(self,callback=None, **kwargs):
+        if 'set_pin' in kwargs:
+            self.set_pin=kwargs.pop('set_pin')
+        if 'alt_pin' in kwargs:
+            self.alt_pin=kwargs.pop('alt_pin')
         super(PinLock,self).__init__(bg_color=(.15,.15,.15,1),**kwargs)
         self.widgets={}
         self.pin=[]
@@ -2051,9 +2055,6 @@ class PinLock(RoundedColorLayoutModal):
         with self.canvas.before:
             Color(0,0,0,.65)
             Rectangle(size=Window.size)
-        # with self.canvas:
-        #     self.outline_color=Color(1,1,1,.85)
-        #     self.outline=Line(rectangle=(100, 100, 200, 200))
 
         title=Label(
             text='[size=20][color=#ffffff][b]Admin Pin Entry',
@@ -2281,9 +2282,22 @@ class PinLock(RoundedColorLayoutModal):
         if len(self.pin)<1:
             return
         pin=''.join(str(x) for x in self.pin)
+        self.pin_to_set=pin
         self.pin=[]
         for i in self.entry_slots.values():
             i.text='[size=35][b]-'
+        if hasattr(self,'set_pin'):
+            if self.set_pin:
+                self.clear_with_success()
+                return
+            else: return
+        if hasattr(self,'alt_pin'):
+            if self.alt_pin:
+                if pin==self.alt_pin:
+                    self.clear_with_success()
+                else:
+                    App.get_running_app().notifications.toast('[b][size=20]Pins do not match','error')
+                    return
         if pin==App.get_running_app().config_.get('account','admin_pin',fallback='000000'):
             self.clear_with_success()
 
@@ -2336,13 +2350,17 @@ class PinLock(RoundedColorLayoutModal):
         Clock.schedule_once(self.unlock,.85)
 
     def unlock(self,*args):
-        #TODO narrow exception capture scope
         try:
+            if hasattr(self,'set_pin'):
+                self.callback(alt_pin=self.pin_to_set)
+                return
+            if hasattr(self,'alt_pin'):
+                self.callback(self.pin_to_set)
+                return
             self.callback()
-        except Exception as e:
+        except TypeError as e:
             print(f'main.py PinLock unlock(): callback {self.callback} failed to execute')
             print('error: ',repr(e))
-            raise
 
     def clear(self,*args):
         if hasattr(self,'parent'):
@@ -2366,6 +2384,15 @@ class PinLock(RoundedColorLayoutModal):
 
 class ExpandableIcon(ExpandableRoundedColorLayout,Image):
     pass
+
+class EmailInput(TextInput):
+    minumum_email_req=re.compile('.*[@].*')
+
+    def __init__(self, **kwargs):
+        super(EmailInput,self).__init__(**kwargs)
+
+    def insert_text(self, substring, from_undo=False):
+        return super(EmailInput,self).insert_text(substring, from_undo)
 
 #<<<<<<<<<<>>>>>>>>>>#
 
@@ -6453,7 +6480,7 @@ class AccountScreen(Screen):
             size_hint =(.9, .005),
             pos_hint = {'x':.05, 'y':.85})
 
-        information_email=TextInput(
+        information_email=EmailInput(
             disabled=True,
             multiline=False,
             hint_text='Enter account email',
@@ -6845,16 +6872,16 @@ class AccountScreen(Screen):
         side_bar_remove.ref='side_bar_remove'
         # side_bar_remove.bind(on_press=self.side_bar_remove)
 
-        side_bar_refresh=RoundedButton(
-            text=current_language['side_bar_refresh'],
+        side_bar_set_pin=RoundedButton(
+            text=current_language['side_bar_set_pin'],
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.125},
             background_normal='',
-            background_color=(0,0,0,.9),
+            background_color=(.1,.1,0,.9),
             markup=True)
-        self.widgets['side_bar_refresh']=side_bar_refresh
-        side_bar_refresh.ref='side_bar_refresh'
-        # side_bar_refresh.bind(on_press=self.side_bar_refresh)
+        self.widgets['side_bar_set_pin']=side_bar_set_pin
+        side_bar_set_pin.ref='side_bar_set_pin'
+        side_bar_set_pin.bind(on_release=self.side_bar_set_pin_func)
 
         account_admin_hint=RoundedButton(
             text=f"[size=16][b][color=#ffffff]Enable Admin mode to edit fields[/size]",
@@ -6900,7 +6927,7 @@ class AccountScreen(Screen):
         side_bar_box.add_widget(side_bar_unlink)
         side_bar_box.add_widget(side_bar_add)
         side_bar_box.add_widget(side_bar_remove)
-        side_bar_box.add_widget(side_bar_refresh)
+        side_bar_box.add_widget(side_bar_set_pin)
 
         self.add_widget(bg_image)
         self.add_widget(screen_name)
@@ -6923,7 +6950,6 @@ class AccountScreen(Screen):
     def remove_connection(self,*args):
         self.unlink_server()
     def email_validate(self,button,*args):
-        print(button)
         config=App.get_running_app().config_
         config.set('account','email',f'{button.text}')
         with open(preferences_path,'w') as configfile:
@@ -7070,6 +7096,31 @@ class AccountScreen(Screen):
         w['side_bar_add_uuid_display'].text=''
         w['side_bar_add_link_code_display'].text=''
 
+    def side_bar_set_pin_func(self,*args):
+        def set_pin(*args):
+            pl=PinLock(set_pin=True,callback=confirm_pin)
+            pl.widgets['title'].text='[size=20][color=#ffffff][b]Enter New Pin'
+            self.add_widget(pl)
+
+        def confirm_pin(**kwargs):
+            if not 'alt_pin' in kwargs:
+                App.get_running_app().notifications.toast('Error','warning')
+                return
+            pin=kwargs.pop('alt_pin')
+            pl=PinLock(alt_pin=pin,callback=save_pin)
+            pl.widgets['title'].text='[size=20][color=#ffffff][b]Confirm New Pin'
+            self.add_widget(pl)
+
+        def save_pin(pin,*args):
+            root=App.get_running_app()
+            config=root.config_
+            config['account']['admin_pin']=pin
+            with open(preferences_path,'w') as configfile:
+                config.write(configfile)
+            root.notifications.toast('[b][size=20]Pin Saved')
+
+        self.add_widget(PinLock(set_pin))
+
     def bg_color(self,button,*args):
         if hasattr(button,'expanded'):
             if button.expanded:
@@ -7099,8 +7150,9 @@ class AccountScreen(Screen):
             self.unlocked=True
             if self.widgets['account_admin_hint'].parent:
                 self.remove_widget(self.widgets['account_admin_hint'])
-            self.widgets['information_email'].disabled=False
-            self.widgets['information_password'].disabled=False
+            if self.widgets['information_email'].text=='':
+                self.widgets['information_email'].disabled=False
+                self.widgets['information_password'].disabled=False
             self.widgets['side_bar_connect'].disabled=False
             self.widgets['side_bar_connect'].shape_color.rgba=(0,0,0,.9)
             self.widgets['side_bar_unlink'].disabled=False
@@ -7109,8 +7161,8 @@ class AccountScreen(Screen):
             self.widgets['side_bar_add'].shape_color.rgba=(0,0,0,.9)
             self.widgets['side_bar_remove'].disabled=False
             self.widgets['side_bar_remove'].shape_color.rgba=(0,0,0,.9)
-            self.widgets['side_bar_refresh'].disabled=False
-            self.widgets['side_bar_refresh'].shape_color.rgba=(0,0,0,.9)
+            self.widgets['side_bar_set_pin'].disabled=False
+            self.widgets['side_bar_set_pin'].shape_color.rgba=(0,0,0,.9)
         else:
             self.unlocked=False
             if not self.widgets['account_admin_hint'].parent:
@@ -7125,8 +7177,8 @@ class AccountScreen(Screen):
             self.widgets['side_bar_add'].shape_color.rgba=(.1,.1,.1,.8)
             self.widgets['side_bar_remove'].disabled=True
             self.widgets['side_bar_remove'].shape_color.rgba=(.1,.1,.1,.8)
-            self.widgets['side_bar_refresh'].disabled=True
-            self.widgets['side_bar_refresh'].shape_color.rgba=(.1,.1,.1,.8)
+            self.widgets['side_bar_set_pin'].disabled=True
+            self.widgets['side_bar_set_pin'].shape_color.rgba=(.1,.1,.1,.8)
 
     def generate_uid_qr(self,data,*args):
         qr=segno.make_qr(data)
@@ -7164,10 +7216,10 @@ class AccountScreen(Screen):
 
     def on_pre_enter(self, *args):
         self.unlocked=False
-        self.check_admin_mode()
-        if App.get_running_app().config_['account']['email']:
+        if App.get_running_app().config_.get('account','email',fallback=False):
             self.widgets['information_email'].text=App.get_running_app().config_['account']['email']
             self.widgets['information_password'].text=App.get_running_app().config_['account']['password']
+        self.check_admin_mode()
         return super().on_pre_enter(*args)
 
     def auth_server(self,*args):
