@@ -7425,27 +7425,41 @@ class AccountScreen(Screen):
 
     def check_admin_mode(self,*args):
         # App.get_running_app().admin_mode_start=time.time()+1000
+        w=self.widgets
         if App.get_running_app().admin_mode_start>time.time() or self.unlocked:
             self.unlocked=True
-            if self.widgets['account_admin_hint'].parent:
-                self.remove_widget(self.widgets['account_admin_hint'])
-            # if self.widgets['information_email'].text=='':
-            #     self.widgets['information_email'].disabled=False
-            #     self.widgets['information_password'].disabled=False
-            self.widgets['side_bar_connect'].unlock()
-            self.widgets['side_bar_unlink'].unlock()
-            self.widgets['side_bar_add'].unlock()
-            self.widgets['side_bar_remove'].unlock()
+            if w['account_admin_hint'].parent:
+                self.remove_widget(w['account_admin_hint'])
+            w['side_bar_connect'].unlock()
+            w['side_bar_unlink'].unlock()
+            w['side_bar_add'].unlock()
+            w['side_bar_remove'].unlock()
         else:
             self.unlocked=False
-            if not self.widgets['account_admin_hint'].parent:
-                self.add_widget(self.widgets['account_admin_hint'])
-            self.widgets['information_email'].disabled=True
-            self.widgets['information_password'].disabled=True
-            self.widgets['side_bar_connect'].lock()
-            self.widgets['side_bar_unlink'].lock()
-            self.widgets['side_bar_add'].lock()
-            self.widgets['side_bar_remove'].lock()
+            if not w['account_admin_hint'].parent:
+                self.add_widget(w['account_admin_hint'])
+            w['information_email'].disabled=True
+            w['information_password'].disabled=True
+            w['side_bar_connect'].lock()
+            w['side_bar_unlink'].lock()
+            w['side_bar_add'].lock()
+            w['side_bar_remove'].lock()
+
+        #check for presence of email
+        if w['information_email'].text:
+            w['side_bar_unlink'].disabled=False
+            w['side_bar_add'].disabled=False
+            w['side_bar_remove'].disabled=False
+            w['side_bar_unlink'].shape_color.rgba=(0,0,0,.9)
+            w['side_bar_add'].shape_color.rgba=(0,0,0,.9)
+            w['side_bar_remove'].shape_color.rgba=(0,0,0,.9)
+        else:
+            w['side_bar_unlink'].disabled=True
+            w['side_bar_add'].disabled=True
+            w['side_bar_remove'].disabled=True
+            w['side_bar_unlink'].shape_color.rgba=(.1,.1,.1,.8)
+            w['side_bar_add'].   shape_color.rgba=(.1,.1,.1,.8)
+            w['side_bar_remove'].shape_color.rgba=(.1,.1,.1,.8)
 
     def generate_uid_qr(self,data,*args):
         qr=segno.make_qr(data)
