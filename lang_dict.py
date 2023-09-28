@@ -192,8 +192,9 @@ unlocks server access with several benefits[/b]
 [size=18][b][i]-Comprehensive monitoring and diagnostics[/b][/i][size=16]
     Reduce downtime and increase uptime!''',
 'status_title' : "[size=20][color=#ffffff][b]Status",
-'side_bar_unlink' : "[size=20][color=#ffffff][b]Unlink Account",
-'side_bar_connect' : "[size=20][color=#ffffff][b]Connect Account",
+'side_bar_unlink_title' : "[size=20][color=#ffffff][b]Unlink Account",
+'side_bar_connect_title' : "[size=20][color=#ffffff][b]Connect Account",
+'side_bar_create_title' : "[size=20][color=#ffffff][b]Create Account",
 'side_bar_add_title' : "[size=20][color=#ffffff][b]Add Device",
 'side_bar_add_title_expanded' : "[size=20][color=#ffffff][b]Add Remote Access to a Device",
 'side_bar_add_body' : '''[size=18][u][color=#ffffff][b]Setting Up Remote Access to the Hood Control System[/b][/u][size=16]
@@ -216,7 +217,7 @@ unlocks server access with several benefits[/b]
 Apple App Store or on Google Play. Simply scan the
 QR code provided below, and it will direct you to
 the respective app store on your device.''',
-'side_bar_remove' : "[size=20][color=#ffffff][b]Remove Device",
+'side_bar_remove_title' : "[size=20][color=#ffffff][b]Remove Device",
 'side_bar_set_pin' : "[size=20][color=#ffffff][b]Change Pin",
 'network_screen_name' : "[size=50][color=#ffffff][b][u][i]       Network       ",
 'network_information_title' : "[size=20][color=#ffffff][b]Current Network",
