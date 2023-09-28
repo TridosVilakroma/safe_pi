@@ -123,6 +123,8 @@ app_icon_source=r'media/app_icon.png'
 square_bubble=r'media/square_bubble_.png'
 hc_mockup=r'media/hc_admin_mockup.png'
 store_badges=r'media/store_badges.png'
+visible_black=r'media/visible_black.png'
+hidden_black=r'media/hidden_black.png'
 
 
 class MarkupSpinnerOption(SpinnerOption):
@@ -2046,12 +2048,13 @@ class ScrollMenuBubble(Bubble):
 class PinLock(RoundedColorLayoutModal):
     end_point_one=ListProperty([])
     end_point_two=ListProperty([])
-    def __init__(self,callback=None, **kwargs):
+    def __init__(self,callback=None,hidden=True,**kwargs):
         if 'set_pin' in kwargs:
             self.set_pin=kwargs.pop('set_pin')
         if 'alt_pin' in kwargs:
             self.alt_pin=kwargs.pop('alt_pin')
         super(PinLock,self).__init__(bg_color=(.15,.15,.15,1),**kwargs)
+        self.hidden=hidden
         self.widgets={}
         self.pin=[]
         self.entry_slots={
@@ -2131,6 +2134,13 @@ class PinLock(RoundedColorLayoutModal):
             pos_hint = {'center_x':.75, 'center_y':.7},)
         self.widgets['entry_six']=entry_six
         self.entry_slots[6]=entry_six
+
+        hidden_button=IconButton(
+            source=hidden_black,
+            size_hint =(.1, .1),
+            pos_hint = {'center_x':.9, 'center_y':.7})
+        self.widgets['hidden_button']=hidden_button
+        hidden_button.bind(on_release=self.visibility)
 
         num_pad=RelativeLayout(size_hint =(.75, .65),
             pos_hint = {'center_x':.5, 'y':0})
@@ -2262,6 +2272,7 @@ class PinLock(RoundedColorLayoutModal):
         self.add_widget(entry_four)
         self.add_widget(entry_five)
         self.add_widget(entry_six)
+        self.add_widget(hidden_button)
         self.add_widget(num_pad)
         num_pad.add_widget(one)
         num_pad.add_widget(two)
@@ -2276,13 +2287,28 @@ class PinLock(RoundedColorLayoutModal):
         num_pad.add_widget(backspace)
         num_pad.add_widget(enter)
 
+    def visibility(self,*args):
+        self.hidden = not self.hidden
+        if self.hidden:
+            self.widgets['hidden_button'].source=hidden_black
+        elif not self.hidden:
+            self.widgets['hidden_button'].source=visible_black
+        for i,v in enumerate(self.pin):
+            if self.hidden:
+                self.entry_slots[i+1].text='[size=35][b]*'
+            else:
+                self.entry_slots[i+1].text=f'[size=35][b]{v}'
+
     def entry_func(self,button):
         if len(self.pin)>=6:
             return
         val=button.value
         self.pin.append(val)
         for i,v in enumerate(self.pin):
-            self.entry_slots[i+1].text=f'[size=35][b]{v}'
+            if self.hidden:
+                self.entry_slots[i+1].text='[size=35][b]*'
+            else:
+                self.entry_slots[i+1].text=f'[size=35][b]{v}'
 
     def backspace_func(self,button):
         if len(self.pin)<1:
