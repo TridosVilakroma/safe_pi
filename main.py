@@ -2348,6 +2348,7 @@ class PinLock(RoundedColorLayoutModal):
         fade.start(self.widgets['num_pad'])
         for i in self.entry_slots.values():
             fade.start(i)
+        fade.start(self.widgets['hidden_button'])
         with self.canvas.after:
             Color(0,1,0)
             self.check_one=Line(width=3)
@@ -2424,7 +2425,7 @@ class ExpandableIcon(ExpandableRoundedColorLayout,Image):
     pass
 
 class EmailInput(TextInput):
-    minumum_email_req=re.compile('.*[@].*')
+    minumum_email_req=re.compile(r'\S+[@]\S+[.]\S+')
 
     def __init__(self, **kwargs):
         super(EmailInput,self).__init__(**kwargs)
@@ -6652,6 +6653,85 @@ class AccountScreen(Screen):
             pos_hint = {'x':.05, 'y':.85})
         self.widgets['side_bar_connect_seperator']=side_bar_connect_seperator
 
+        side_bar_connect_vertical_seperator=Image(
+            source=gray_seperator_line_vertical,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.0005, .4),
+            pos_hint = {'center_x':.37, 'center_y':.55})
+        self.widgets['side_bar_connect_vertical_seperator']=side_bar_connect_vertical_seperator
+
+        side_bar_connect_email=MinimumBoundingLabel(
+            text='[b][size=16]Email:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'right':.35, 'center_y':.7},)
+        self.widgets['side_bar_connect_email']=side_bar_connect_email
+
+        side_bar_connect_email_input=TextInput(
+            disabled=False,
+            multiline=False,
+            hint_text='Enter Email Address',
+            size_hint =(.3, .05),
+            pos_hint = {'x':.4, 'center_y':.7})
+        self.widgets['side_bar_connect_email_input']=side_bar_connect_email_input
+        side_bar_connect_email_input.bind(focus=self.side_bar_connect_email_input_clear)
+
+        side_bar_connect_password=MinimumBoundingLabel(
+            text='[b][size=16]Password:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'right':.35, 'center_y':.55},)
+        self.widgets['side_bar_connect_password']=side_bar_connect_password
+
+        side_bar_connect_password_input=TextInput(
+            disabled=False,
+            multiline=False,
+            password=True,
+            hint_text='Enter New Password',
+            size_hint =(.3, .05),
+            pos_hint = {'x':.4, 'center_y':.55})
+        self.widgets['side_bar_connect_password_input']=side_bar_connect_password_input
+        side_bar_connect_password_input.bind(focus=self.side_bar_connect_password_input_clear)
+
+        # side_bar_connect_password=MinimumBoundingLabel(
+        #     text='[b][size=16]Password:',
+        #     markup=True,
+        #     size_hint=(None,None),
+        #     pos_hint = {'right':.35, 'center_y':.4},)
+        # self.widgets['side_bar_connect_password']=side_bar_connect_password
+
+        # side_bar_connect_password_input=TextInput(
+        #     disabled=False,
+        #     multiline=False,
+        #     password=True,
+        #     hint_text='Enter Network Password',
+        #     size_hint =(.3, .05),
+        #     pos_hint = {'x':.4, 'center_y':.4})
+        # self.widgets['side_bar_connect_password_input']=side_bar_connect_password_input
+        # side_bar_connect_password_input.bind(focus=self.side_bar_connect_password_input_clear)
+
+        side_bar_connect_send=RoundedButton(
+            text='[b][size=16]All Fields Required',
+            size_hint =(.425, .075),
+            pos_hint = {'center_x':.5, 'center_y':.25},
+            background_normal='',
+            background_color=(.1,.1,.1,1),
+            disabled=True,
+            disabled_color=(1,1,1,1),
+            markup=True)
+        self.widgets['side_bar_connect_send']=side_bar_connect_send
+        side_bar_connect_send.bind(on_release=self.side_bar_connect_send_func)
+        side_bar_connect_send.bind(disabled=self.side_bar_connect_send_disabled)
+
+
+
+
+
+
+
+
+
         side_bar_connect_expand_button=RoundedButton(
             size_hint =(.5, .075),
             pos_hint = {'center_x':.5, 'center_y':.075},
@@ -7128,6 +7208,12 @@ class AccountScreen(Screen):
             all_widgets=[
                 w['side_bar_connect_title'],
                 w['side_bar_connect_seperator'],
+                w['side_bar_connect_vertical_seperator'],
+                w['side_bar_connect_email'],
+                w['side_bar_connect_email_input'],
+                w['side_bar_connect_password'],
+                w['side_bar_connect_password_input'],
+                w['side_bar_connect_send'],
                 w['side_bar_connect_expand_button'],
                 w['side_bar_connect_expand_lines']]
             for i in all_widgets:
@@ -7384,6 +7470,38 @@ class AccountScreen(Screen):
 
         self.add_widget(PinLock(set_pin))
 
+    def side_bar_connect_email_input_clear(self,button,focused,*args):
+        si=self.widgets['side_bar_connect_email_input']
+        p=si.parent
+        p.remove_widget(si)
+        p.add_widget(si)
+        if focused:
+            si.text=''
+            si.font_size=32
+            si.pos_hint={'center_x':.5, 'center_y':.6}
+            si.size_hint=(.8, .1)
+        else:
+            si.font_size=15
+            si.pos_hint={'x':.4, 'center_y':.7}
+            si.size_hint=(.3, .05)
+        self.connect_send_disable_func()
+
+    def side_bar_connect_password_input_clear(self,button,focused,*args):
+        pi=self.widgets['side_bar_connect_password_input']
+        p=pi.parent
+        p.remove_widget(pi)
+        p.add_widget(pi)
+        if focused:
+            pi.text=''
+            pi.font_size=32
+            pi.pos_hint={'center_x':.5, 'center_y':.6}
+            pi.size_hint=(.8, .1)
+        else:
+            pi.font_size=15
+            pi.pos_hint={'x':.4, 'center_y':.55}
+            pi.size_hint=(.3, .05)
+        self.connect_send_disable_func()
+
     def bg_color(self,button,*args):
         if hasattr(button,'expanded'):
             if button.expanded:
@@ -7583,6 +7701,71 @@ class AccountScreen(Screen):
         config.set('account','link_code','')
         with open(preferences_path,'w') as configfile:
             config.write(configfile)
+
+    def side_bar_connect_send_disabled(self,button,disabled,*args):
+        if  button.disabled:
+            button.text='[b][size=16]All Fields Required'
+        elif not button.disabled:
+            button.text='[b][size=16]Send Verification Email'
+        button.color_swap()
+
+    def connect_send_disable_func(self,*args):
+        con_btn=self.widgets['side_bar_connect_send']
+        si=self.widgets['side_bar_connect_email_input']
+        pi=self.widgets['side_bar_connect_password_input']
+        if (si.text!='' and pi.text!=''):
+            con_btn.disabled=False
+            con_btn.bg_color=(.0, .7, .9,1)
+            con_btn.color_swap()
+        else:
+            con_btn.disabled=True
+            con_btn.bg_color=(.1,.1,.1,1)
+            con_btn.color_swap()
+
+    def side_bar_connect_send_func(self,*args):
+        if self._manual_connecting.is_alive():
+            return
+
+        @mainthread
+        def add_spinners():
+            sbm=self.widgets['side_bar_manual']
+            sbm.add_widget(PreLoader(rel_size=.3,ref='1',speed=500))
+            sbm.add_widget(PreLoader(rel_size=.25,ref='2',speed=850))
+            sbm.add_widget(PreLoader(rel_size=.2,ref='3',speed=600))
+            sbm.add_widget(PreLoader(rel_size=.15,ref='4',speed=950))
+            sbm.add_widget(PreLoader(rel_size=.1,ref='5',speed=700))
+            sbm.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050))
+
+        @mainthread
+        def remove_spinners():
+            sbm=self.widgets['side_bar_manual']
+            for i in range(6):
+                if str(i+1) in sbm.widgets:
+                    sbm.remove_widget(sbm.widgets[str(i+1)])
+
+        @mainthread
+        def set_toast_msg(text,level):
+            App.get_running_app().notifications.toast(text,level)
+
+        def _connect():
+            sbm=self.widgets['side_bar_manual']
+            add_spinners()
+            success=network.connect_to(self.widgets['side_bar_manual_ssid_input'].text,self.widgets['side_bar_manual_password_input'].text)
+            remove_spinners()
+            self.refresh_ap_data()
+            self.side_bar_scan_func()
+            if success:
+                set_toast_msg('[b][size=20]Connection Successful','info')
+                sbm.shrink()
+            else:
+                set_toast_msg('[b][size=20]Connection Failed','error')
+                w=self.widgets
+                w['side_bar_manual_ssid_input'].text=''
+                w['side_bar_manual_security_input'].text='[b][size=16]Enter Security Type'
+                w['side_bar_manual_password_input'].text=''
+
+        self._manual_connecting=Thread(target=_connect,daemon=True)
+        self._manual_connecting.start()
 
 class NetworkScreen(Screen):
     def __init__(self, **kwargs):
