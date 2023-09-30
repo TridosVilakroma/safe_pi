@@ -713,6 +713,10 @@ class RoundedColorLayout(FloatLayout):
         self.shape.pos = self.pos
         self.shape.size = self.size
 
+class RoundedColorLayoutButton(ButtonBehavior,RoundedColorLayout):
+    def __init__(self, bg_color=(0.1, 0.1, 0.1, 0.95), **kwargs):
+        super(RoundedColorLayoutButton,self).__init__(bg_color=bg_color, **kwargs)
+
 class RoundedColorLayoutModal(FloatLayout):
     bg_color=ColorProperty()
     def __init__(self,bg_color= (.1,.1,.1,.95),**kwargs):
@@ -6497,12 +6501,12 @@ class AccountScreen(Screen):
         self.widgets['screen_name']=screen_name
         screen_name.ref='account_screen_name'
 
-        information_box=RoundedColorLayout(
+        information_box=RoundedColorLayoutButton(
             bg_color=(0,0,0,.85),
             size_hint =(.35, .25),
             pos_hint = {'center_x':.225, 'center_y':.75},)
         self.widgets['information_box']=information_box
-        information_box.bind(on_touch_up=self.account_prompt)
+        information_box.bind(on_release=self.account_prompt)
 
         information_title=Label(
             text=current_language['information_title'],
@@ -6653,12 +6657,123 @@ class AccountScreen(Screen):
             pos_hint = {'x':.05, 'y':.85})
         self.widgets['side_bar_connect_seperator']=side_bar_connect_seperator
 
+        side_bar_connect_login=AnalyticExpandable(
+            size_hint =(.1, .075),
+            pos_hint = {'center_x':.9, 'center_y':.75},
+            expanded_size=(1,1),
+            expanded_pos = {'center_x':.5, 'center_y':.5},
+            bg_color=(0,0,0,0))
+        self.widgets['side_bar_connect_login']=side_bar_connect_login
+        side_bar_connect_login.widgets={}
+        side_bar_connect_login.bind(expanded=self.side_bar_connect_login_populate)
+        side_bar_connect_login.bind(animating=partial(general.stripargs,side_bar_connect_login.clear_widgets))
+
+        side_bar_connect_login_title=MinimumBoundingLabel(
+            text='[color=#ffffff][b][size=12]Already have an account?\n[u][size=16]Login',
+            markup=True,
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.5},
+            halign='center')
+        self.widgets['side_bar_connect_login_title']=side_bar_connect_login_title
+
+        side_bar_connect_login_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['side_bar_connect_login_seperator']=side_bar_connect_login_seperator
+
+        side_bar_connect_login_back=RoundedButton(
+            text='[color=#ffffff][b][size=12]Don\'t have an account yet?\n[u][size=16]Create Account',
+            size_hint =(.1, .075),
+            pos_hint = {'center_x':.1, 'center_y':.75},
+            background_down='',
+            background_color=(200/255, 200/255, 200/255,0),
+            markup=True,
+            halign='center')
+        self.widgets['side_bar_connect_login_back']=side_bar_connect_login_back
+        side_bar_connect_login_back.bind(on_release=side_bar_connect_login.shrink)
+
+        side_bar_connect_login_vertical_seperator=Image(
+            source=gray_seperator_line_vertical,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.0005, .3),
+            pos_hint = {'center_x':.37, 'center_y':.60})
+        self.widgets['side_bar_connect_login_vertical_seperator']=side_bar_connect_login_vertical_seperator
+
+        side_bar_connect_login_email=MinimumBoundingLabel(
+            text='[b][size=16]Email:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'right':.35, 'center_y':.7},)
+        self.widgets['side_bar_connect_login_email']=side_bar_connect_login_email
+
+        side_bar_connect_login_email_input=TextInput(
+            disabled=False,
+            multiline=False,
+            hint_text='Enter Account Email Address',
+            size_hint =(.3, .05),
+            pos_hint = {'x':.4, 'center_y':.7})
+        self.widgets['side_bar_connect_login_email_input']=side_bar_connect_login_email_input
+        side_bar_connect_login_email_input.bind(focus=self.side_bar_connect_login_email_input_clear)
+
+        side_bar_connect_login_password=MinimumBoundingLabel(
+            text='[b][size=16]Password:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'right':.35, 'center_y':.55},)
+        self.widgets['side_bar_connect_login_password']=side_bar_connect_login_password
+
+        side_bar_connect_login_password_input=TextInput(
+            disabled=False,
+            multiline=False,
+            password=True,
+            hint_text='Enter Account Password',
+            size_hint =(.3, .05),
+            pos_hint = {'x':.4, 'center_y':.55})
+        self.widgets['side_bar_connect_login_password_input']=side_bar_connect_login_password_input
+        side_bar_connect_login_password_input.bind(focus=self.side_bar_connect_login_password_input_clear)
+
+        side_bar_connect_login_send=RoundedButton(
+            text='[b][size=16]All Fields Required',
+            size_hint =(.425, .075),
+            pos_hint = {'center_x':.5, 'center_y':.3},
+            background_normal='',
+            background_color=(.1,.1,.1,1),
+            disabled=True,
+            disabled_color=(1,1,1,1),
+            markup=True)
+        self.widgets['side_bar_connect_login_send']=side_bar_connect_login_send
+        side_bar_connect_login_send.bind(on_release=self.side_bar_connect_login_send_func)
+        side_bar_connect_login_send.bind(disabled=self.side_bar_connect_login_send_disabled)
+
+        side_bar_connect_login_expand_button=RoundedButton(
+            size_hint =(.5, .075),
+            pos_hint = {'center_x':.5, 'center_y':.075},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
+            markup=True)
+        self.widgets['side_bar_connect_login_expand_button']=side_bar_connect_login_expand_button
+        side_bar_connect_login_expand_button.bind(on_release=self.side_bar_connect_login_expand_button_func)
+
+        side_bar_connect_login_expand_lines=Image(
+            source=settings_icon,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.4, .035),
+            pos_hint = {'center_x':.5, 'center_y':.075})
+        side_bar_connect_login_expand_lines.center=side_bar_connect_login_expand_button.center
+        self.widgets['side_bar_connect_login_expand_lines']=side_bar_connect_login_expand_lines
+
+
         side_bar_connect_vertical_seperator=Image(
             source=gray_seperator_line_vertical,
             allow_stretch=True,
             keep_ratio=False,
-            size_hint =(.0005, .4),
-            pos_hint = {'center_x':.37, 'center_y':.55})
+            size_hint =(.0005, .3),
+            pos_hint = {'center_x':.37, 'center_y':.60})
         self.widgets['side_bar_connect_vertical_seperator']=side_bar_connect_vertical_seperator
 
         side_bar_connect_email=MinimumBoundingLabel(
@@ -6694,27 +6809,10 @@ class AccountScreen(Screen):
         self.widgets['side_bar_connect_password_input']=side_bar_connect_password_input
         side_bar_connect_password_input.bind(focus=self.side_bar_connect_password_input_clear)
 
-        # side_bar_connect_password=MinimumBoundingLabel(
-        #     text='[b][size=16]Password:',
-        #     markup=True,
-        #     size_hint=(None,None),
-        #     pos_hint = {'right':.35, 'center_y':.4},)
-        # self.widgets['side_bar_connect_password']=side_bar_connect_password
-
-        # side_bar_connect_password_input=TextInput(
-        #     disabled=False,
-        #     multiline=False,
-        #     password=True,
-        #     hint_text='Enter Network Password',
-        #     size_hint =(.3, .05),
-        #     pos_hint = {'x':.4, 'center_y':.4})
-        # self.widgets['side_bar_connect_password_input']=side_bar_connect_password_input
-        # side_bar_connect_password_input.bind(focus=self.side_bar_connect_password_input_clear)
-
         side_bar_connect_send=RoundedButton(
             text='[b][size=16]All Fields Required',
             size_hint =(.425, .075),
-            pos_hint = {'center_x':.5, 'center_y':.25},
+            pos_hint = {'center_x':.5, 'center_y':.3},
             background_normal='',
             background_color=(.1,.1,.1,1),
             disabled=True,
@@ -7142,6 +7240,8 @@ class AccountScreen(Screen):
         status_box.add_widget(status_scroll)
         status_scroll.add_widget(status_scroll_layout)
 
+        side_bar_connect_login.add_widget(side_bar_connect_login_title)
+
         side_bar_connect.add_widget(side_bar_connect_title)
 
         side_bar_unlink.add_widget(side_bar_unlink_title)
@@ -7208,6 +7308,7 @@ class AccountScreen(Screen):
             all_widgets=[
                 w['side_bar_connect_title'],
                 w['side_bar_connect_seperator'],
+                w['side_bar_connect_login'],
                 w['side_bar_connect_vertical_seperator'],
                 w['side_bar_connect_email'],
                 w['side_bar_connect_email_input'],
@@ -7223,10 +7324,47 @@ class AccountScreen(Screen):
             w=self.widgets
             w['side_bar_connect_title'].pos_hint={'center_x':.5, 'center_y':.5}
             w['side_bar_connect_title'].size_hint=(1,1)
+            w['side_bar_connect_login'].shrink()
             all_widgets=[
                 w['side_bar_connect_title']]
             for i in all_widgets:
                 side_bar_connect.add_widget(i)
+
+    def side_bar_connect_login_populate(self,*args):
+        darken=Animation(rgba=(0,0,0,1),d=.25)
+        lighten=Animation(rgba=(0,0,0,0))
+        side_bar_connect_login=self.widgets['side_bar_connect_login']
+        side_bar_connect_login.clear_widgets()
+        if side_bar_connect_login.expanded:
+            darken.start(side_bar_connect_login.shape_color)
+            w=self.widgets
+            w['side_bar_connect_login_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            w['side_bar_connect_login_title'].size_hint=(.4, .05)
+            w['side_bar_connect_login_title'].text='[color=#ffffff][b][size=20]Account Login'
+            all_widgets=[
+                w['side_bar_connect_login_title'],
+                w['side_bar_connect_login_seperator'],
+                w['side_bar_connect_login_back'],
+                w['side_bar_connect_login_vertical_seperator'],
+                w['side_bar_connect_login_email'],
+                w['side_bar_connect_login_email_input'],
+                w['side_bar_connect_login_password'],
+                w['side_bar_connect_login_password_input'],
+                w['side_bar_connect_login_send'],
+                w['side_bar_connect_login_expand_button'],
+                w['side_bar_connect_login_expand_lines']]
+            for i in all_widgets:
+                side_bar_connect_login.add_widget(i)
+        elif not side_bar_connect_login.expanded:
+            lighten.start(side_bar_connect_login.shape_color)
+            w=self.widgets
+            w['side_bar_connect_login_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            w['side_bar_connect_login_title'].size_hint=(1,1)
+            w['side_bar_connect_login_title'].text='[color=#ffffff][b][size=12]Already have an account?\n[u][size=16]Login'
+            all_widgets=[
+                w['side_bar_connect_login_title']]
+            for i in all_widgets:
+                side_bar_connect_login.add_widget(i)
 
     def side_bar_unlink_populate(self,*args):
         sbu_parent=self.widgets['side_bar_box']
@@ -7373,6 +7511,13 @@ class AccountScreen(Screen):
             for i in all_widgets:
                 side_bar_remove.add_widget(i)
 
+    def side_bar_connect_login_expand_button_func(self,*args):
+        sba=self.widgets['side_bar_connect_login']
+        if sba.expanded:
+            sba.shrink()
+        if not sba.expanded:
+            sba.expand()
+
     def side_bar_connect_expand_button_func(self,*args):
         sba=self.widgets['side_bar_connect']
         if sba.expanded:
@@ -7470,6 +7615,38 @@ class AccountScreen(Screen):
 
         self.add_widget(PinLock(set_pin))
 
+    def side_bar_connect_login_email_input_clear(self,button,focused,*args):
+        si=self.widgets['side_bar_connect_login_email_input']
+        p=si.parent
+        p.remove_widget(si)
+        p.add_widget(si)
+        if focused:
+            si.text=''
+            si.font_size=32
+            si.pos_hint={'center_x':.5, 'center_y':.6}
+            si.size_hint=(.8, .1)
+        else:
+            si.font_size=15
+            si.pos_hint={'x':.4, 'center_y':.7}
+            si.size_hint=(.3, .05)
+        self.connect_login_send_disable_func()
+
+    def side_bar_connect_login_password_input_clear(self,button,focused,*args):
+        pi=self.widgets['side_bar_connect_login_password_input']
+        p=pi.parent
+        p.remove_widget(pi)
+        p.add_widget(pi)
+        if focused:
+            pi.text=''
+            pi.font_size=32
+            pi.pos_hint={'center_x':.5, 'center_y':.6}
+            pi.size_hint=(.8, .1)
+        else:
+            pi.font_size=15
+            pi.pos_hint={'x':.4, 'center_y':.55}
+            pi.size_hint=(.3, .05)
+        self.connect_login_send_disable_func()
+
     def side_bar_connect_email_input_clear(self,button,focused,*args):
         si=self.widgets['side_bar_connect_email_input']
         p=si.parent
@@ -7525,9 +7702,7 @@ class AccountScreen(Screen):
         self.unlocked=True
         self.check_admin_mode()
 
-    def account_prompt(self,button,touch,*args):
-        if not button.collide_point(*touch.pos):
-            return
+    def account_prompt(self,*args):
         if hasattr(self,'prompt_fade'):
             return
         if App.get_running_app().config_.get('account','email',fallback=False):
@@ -7702,6 +7877,26 @@ class AccountScreen(Screen):
         with open(preferences_path,'w') as configfile:
             config.write(configfile)
 
+    def side_bar_connect_login_send_disabled(self,button,disabled,*args):
+        if  button.disabled:
+            button.text='[b][size=16]All Fields Required'
+        elif not button.disabled:
+            button.text='[b][size=16]Send Verification Email'
+        button.color_swap()
+
+    def connect_login_send_disable_func(self,*args):
+        con_btn=self.widgets['side_bar_connect_login_send']
+        si=self.widgets['side_bar_connect_login_email_input']
+        pi=self.widgets['side_bar_connect_login_password_input']
+        if (si.text!='' and pi.text!=''):
+            con_btn.disabled=False
+            con_btn.bg_color=(.0, .7, .9,1)
+            con_btn.color_swap()
+        else:
+            con_btn.disabled=True
+            con_btn.bg_color=(.1,.1,.1,1)
+            con_btn.color_swap()
+
     def side_bar_connect_send_disabled(self,button,disabled,*args):
         if  button.disabled:
             button.text='[b][size=16]All Fields Required'
@@ -7721,6 +7916,9 @@ class AccountScreen(Screen):
             con_btn.disabled=True
             con_btn.bg_color=(.1,.1,.1,1)
             con_btn.color_swap()
+
+    def side_bar_connect_login_send_func(self,*args):
+        pass
 
     def side_bar_connect_send_func(self,*args):
         if self._manual_connecting.is_alive():
