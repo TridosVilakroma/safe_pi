@@ -6693,7 +6693,7 @@ class AccountScreen(Screen):
             markup=True,
             halign='center')
         self.widgets['side_bar_connect_login_back']=side_bar_connect_login_back
-        side_bar_connect_login_back.bind(on_release=side_bar_connect_login.shrink)
+        side_bar_connect_login_back.bind(on_release=self.side_bar_connect_login_expand_button_func)
 
         side_bar_connect_login_vertical_seperator=Image(
             source=gray_seperator_line_vertical,
@@ -7514,7 +7514,9 @@ class AccountScreen(Screen):
     def side_bar_connect_login_expand_button_func(self,*args):
         sba=self.widgets['side_bar_connect_login']
         if sba.expanded:
-            sba.shrink()
+            a=Animation(rgba=(0,0,0,0),d=.25)
+            a.start(sba.shape_color)
+            a.bind(on_complete=sba.shrink)
         if not sba.expanded:
             sba.expand()
 
@@ -7618,8 +7620,9 @@ class AccountScreen(Screen):
     def side_bar_connect_login_email_input_clear(self,button,focused,*args):
         si=self.widgets['side_bar_connect_login_email_input']
         p=si.parent
-        p.remove_widget(si)
-        p.add_widget(si)
+        if p:
+            p.remove_widget(si)
+            p.add_widget(si)
         if focused:
             si.text=''
             si.font_size=32
@@ -7634,8 +7637,9 @@ class AccountScreen(Screen):
     def side_bar_connect_login_password_input_clear(self,button,focused,*args):
         pi=self.widgets['side_bar_connect_login_password_input']
         p=pi.parent
-        p.remove_widget(pi)
-        p.add_widget(pi)
+        if p:
+            p.remove_widget(pi)
+            p.add_widget(pi)
         if focused:
             pi.text=''
             pi.font_size=32
@@ -7666,8 +7670,9 @@ class AccountScreen(Screen):
     def side_bar_connect_password_input_clear(self,button,focused,*args):
         pi=self.widgets['side_bar_connect_password_input']
         p=pi.parent
-        p.remove_widget(pi)
-        p.add_widget(pi)
+        if p:
+            p.remove_widget(pi)
+            p.add_widget(pi)
         if focused:
             pi.text=''
             pi.font_size=32
@@ -7881,7 +7886,7 @@ class AccountScreen(Screen):
         if  button.disabled:
             button.text='[b][size=16]All Fields Required'
         elif not button.disabled:
-            button.text='[b][size=16]Send Verification Email'
+            button.text='[b][size=16]Connect Account'
         button.color_swap()
 
     def connect_login_send_disable_func(self,*args):
@@ -9712,8 +9717,9 @@ class NetworkScreen(Screen):
     def side_bar_manual_password_input_clear(self,button,focused,*args):
         pi=self.widgets['side_bar_manual_password_input']
         p=pi.parent
-        p.remove_widget(pi)
-        p.add_widget(pi)
+        if p:
+            p.remove_widget(pi)
+            p.add_widget(pi)
         if focused:
             pi.text=''
             pi.font_size=32
