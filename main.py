@@ -2429,13 +2429,27 @@ class ExpandableIcon(ExpandableRoundedColorLayout,Image):
     pass
 
 class EmailInput(TextInput):
-    minumum_email_req=re.compile(r'\S+[@]\S+[.]\S+')
+    minimum_email_req=re.compile(r'\S+[@]\S+[.]\S+')
 
     def __init__(self, **kwargs):
         super(EmailInput,self).__init__(**kwargs)
+        self.bind(focus=self._text_validation)
+        self.contains_valid_email=False
 
     def insert_text(self, substring, from_undo=False):
         return super(EmailInput,self).insert_text(substring, from_undo)
+
+    def _text_validation(self,button,focused,*args):
+        if focused:
+            self.foreground_color=(0,0,0,1)
+            return
+        t=self.minimum_email_req.match(self.text)
+        if t:
+            self.contains_valid_email=True
+            self.foreground_color=(0,0,0,1)
+        else:
+            self.contains_valid_email=False
+            self.foreground_color=(1,0,0,1)
 
 #<<<<<<<<<<>>>>>>>>>>#
 
@@ -6710,7 +6724,15 @@ class AccountScreen(Screen):
             pos_hint = {'right':.35, 'center_y':.7},)
         self.widgets['side_bar_connect_login_email']=side_bar_connect_login_email
 
-        side_bar_connect_login_email_input=TextInput(
+        side_bar_connect_login_email_invalid_hint=MinimumBoundingLabel(
+            text='[b][size=16][color=#aa0000]Email is not in a valid format.\nEnter valid email format',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'center_x':.55, 'center_y':.63},
+            halign='center')
+        self.widgets['side_bar_connect_login_email_invalid_hint']=side_bar_connect_login_email_invalid_hint
+
+        side_bar_connect_login_email_input=EmailInput(
             disabled=False,
             multiline=False,
             hint_text='Enter Account Email Address',
@@ -6783,7 +6805,15 @@ class AccountScreen(Screen):
             pos_hint = {'right':.35, 'center_y':.7},)
         self.widgets['side_bar_connect_email']=side_bar_connect_email
 
-        side_bar_connect_email_input=TextInput(
+        side_bar_connect_email_invalid_hint=MinimumBoundingLabel(
+            text='[b][size=16][color=#aa0000]Email is not in a valid format.\nEnter valid email format',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'center_x':.55, 'center_y':.63},
+            halign='center')
+        self.widgets['side_bar_connect_email_invalid_hint']=side_bar_connect_email_invalid_hint
+
+        side_bar_connect_email_input=EmailInput(
             disabled=False,
             multiline=False,
             hint_text='Enter Email Address',
@@ -6791,6 +6821,8 @@ class AccountScreen(Screen):
             pos_hint = {'x':.4, 'center_y':.7})
         self.widgets['side_bar_connect_email_input']=side_bar_connect_email_input
         side_bar_connect_email_input.bind(focus=self.side_bar_connect_email_input_clear)
+
+
 
         side_bar_connect_password=MinimumBoundingLabel(
             text='[b][size=16]Password:',
@@ -7293,6 +7325,7 @@ class AccountScreen(Screen):
             config.write(configfile)
 
     def side_bar_connect_populate(self,*args):
+        self.clear_hints()
         sbc_parent=self.widgets['side_bar_box']
         darken=Animation(rgba=(0,0,0,1))
         lighten=Animation(rgba=(0,0,0,.85))
@@ -7305,6 +7338,8 @@ class AccountScreen(Screen):
             w=self.widgets
             w['side_bar_connect_title'].pos_hint={'center_x':.5, 'center_y':.925}
             w['side_bar_connect_title'].size_hint=(.4, .05)
+            w['side_bar_connect_email_input'].text=''
+            w['side_bar_connect_password_input'].text=''
             all_widgets=[
                 w['side_bar_connect_title'],
                 w['side_bar_connect_seperator'],
@@ -7331,6 +7366,7 @@ class AccountScreen(Screen):
                 side_bar_connect.add_widget(i)
 
     def side_bar_connect_login_populate(self,*args):
+        self.clear_hints()
         darken=Animation(rgba=(0,0,0,1),d=.25)
         lighten=Animation(rgba=(0,0,0,0))
         side_bar_connect_login=self.widgets['side_bar_connect_login']
@@ -7341,6 +7377,10 @@ class AccountScreen(Screen):
             w['side_bar_connect_login_title'].pos_hint={'center_x':.5, 'center_y':.925}
             w['side_bar_connect_login_title'].size_hint=(.4, .05)
             w['side_bar_connect_login_title'].text='[color=#ffffff][b][size=20]Account Login'
+            w['side_bar_connect_login_email_input'].text=''
+            w['side_bar_connect_login_password_input'].text=''
+            w['side_bar_connect_email_input'].text=''
+            w['side_bar_connect_password_input'].text=''
             all_widgets=[
                 w['side_bar_connect_login_title'],
                 w['side_bar_connect_login_seperator'],
@@ -7624,7 +7664,6 @@ class AccountScreen(Screen):
             p.remove_widget(si)
             p.add_widget(si)
         if focused:
-            si.text=''
             si.font_size=32
             si.pos_hint={'center_x':.5, 'center_y':.6}
             si.size_hint=(.8, .1)
@@ -7632,7 +7671,7 @@ class AccountScreen(Screen):
             si.font_size=15
             si.pos_hint={'x':.4, 'center_y':.7}
             si.size_hint=(.3, .05)
-        self.connect_login_send_disable_func()
+        self.connect_login_send_disable_func(focused)
 
     def side_bar_connect_login_password_input_clear(self,button,focused,*args):
         pi=self.widgets['side_bar_connect_login_password_input']
@@ -7649,7 +7688,7 @@ class AccountScreen(Screen):
             pi.font_size=15
             pi.pos_hint={'x':.4, 'center_y':.55}
             pi.size_hint=(.3, .05)
-        self.connect_login_send_disable_func()
+        self.connect_login_send_disable_func(focused)
 
     def side_bar_connect_email_input_clear(self,button,focused,*args):
         si=self.widgets['side_bar_connect_email_input']
@@ -7657,7 +7696,6 @@ class AccountScreen(Screen):
         p.remove_widget(si)
         p.add_widget(si)
         if focused:
-            si.text=''
             si.font_size=32
             si.pos_hint={'center_x':.5, 'center_y':.6}
             si.size_hint=(.8, .1)
@@ -7665,7 +7703,7 @@ class AccountScreen(Screen):
             si.font_size=15
             si.pos_hint={'x':.4, 'center_y':.7}
             si.size_hint=(.3, .05)
-        self.connect_send_disable_func()
+        self.connect_send_disable_func(focused)
 
     def side_bar_connect_password_input_clear(self,button,focused,*args):
         pi=self.widgets['side_bar_connect_password_input']
@@ -7682,7 +7720,7 @@ class AccountScreen(Screen):
             pi.font_size=15
             pi.pos_hint={'x':.4, 'center_y':.55}
             pi.size_hint=(.3, .05)
-        self.connect_send_disable_func()
+        self.connect_send_disable_func(focused)
 
     def bg_color(self,button,*args):
         if hasattr(button,'expanded'):
@@ -7889,11 +7927,12 @@ class AccountScreen(Screen):
             button.text='[b][size=16]Connect Account'
         button.color_swap()
 
-    def connect_login_send_disable_func(self,*args):
+    def connect_login_send_disable_func(self,focused,*args):
         con_btn=self.widgets['side_bar_connect_login_send']
         si=self.widgets['side_bar_connect_login_email_input']
         pi=self.widgets['side_bar_connect_login_password_input']
-        if (si.text!='' and pi.text!=''):
+        self.clear_hints()
+        if (si.contains_valid_email and pi.text!=''):
             con_btn.disabled=False
             con_btn.bg_color=(.0, .7, .9,1)
             con_btn.color_swap()
@@ -7901,6 +7940,24 @@ class AccountScreen(Screen):
             con_btn.disabled=True
             con_btn.bg_color=(.1,.1,.1,1)
             con_btn.color_swap()
+            if not focused and si.text!='' and not si.contains_valid_email:
+                if hasattr(self,'login_email_hint_icon'):
+                    return
+                self.login_email_hint_icon=h=RoundedLabelColor(
+                    text='[b][size=20]!',
+                    markup=True,
+                    bg_color=(1,0,0,.25),
+                    size_hint =(.025, .05),
+                    pos_hint = {'center_x':.725, 'center_y':.7})
+                if hasattr(h,'parent'):
+                    if h.parent:
+                        return
+                self.widgets['side_bar_connect_login'].add_widget(h)
+                eih=self.widgets['side_bar_connect_login_email_invalid_hint']
+                if hasattr(eih,'parent'):
+                    if eih.parent:
+                        return
+                self.widgets['side_bar_connect_login'].add_widget(eih)
 
     def side_bar_connect_send_disabled(self,button,disabled,*args):
         if  button.disabled:
@@ -7909,11 +7966,12 @@ class AccountScreen(Screen):
             button.text='[b][size=16]Send Verification Email'
         button.color_swap()
 
-    def connect_send_disable_func(self,*args):
+    def connect_send_disable_func(self,focused,*args):
         con_btn=self.widgets['side_bar_connect_send']
         si=self.widgets['side_bar_connect_email_input']
         pi=self.widgets['side_bar_connect_password_input']
-        if (si.text!='' and pi.text!=''):
+        self.clear_hints()
+        if (si.contains_valid_email and pi.text!=''):
             con_btn.disabled=False
             con_btn.bg_color=(.0, .7, .9,1)
             con_btn.color_swap()
@@ -7921,6 +7979,44 @@ class AccountScreen(Screen):
             con_btn.disabled=True
             con_btn.bg_color=(.1,.1,.1,1)
             con_btn.color_swap()
+            if not focused and si.text!='' and not si.contains_valid_email:
+                if hasattr(self,'email_hint_icon'):
+                    return
+                self.email_hint_icon=h=RoundedLabelColor(
+                    text='[b][size=20]!',
+                    markup=True,
+                    bg_color=(1,0,0,.25),
+                    size_hint =(.025, .05),
+                    pos_hint = {'center_x':.725, 'center_y':.7})
+                if hasattr(h,'parent'):
+                    if h.parent:
+                        return
+                self.widgets['side_bar_connect'].add_widget(h)
+                eih=self.widgets['side_bar_connect_email_invalid_hint']
+                if hasattr(eih,'parent'):
+                    if eih.parent:
+                        return
+                self.widgets['side_bar_connect'].add_widget(eih)
+
+    def clear_hints(self,*args):
+        if hasattr(self,'email_hint_icon'):
+            if hasattr(self.email_hint_icon, 'parent'):
+                if self.email_hint_icon.parent:
+                    self.email_hint_icon.parent.remove_widget(self.email_hint_icon)
+            del self.email_hint_icon
+        if hasattr(self,'login_email_hint_icon'):
+            if hasattr(self.login_email_hint_icon, 'parent'):
+                if self.login_email_hint_icon.parent:
+                    self.login_email_hint_icon.parent.remove_widget(self.login_email_hint_icon)
+            del self.login_email_hint_icon
+        eih=self.widgets['side_bar_connect_email_invalid_hint']
+        if hasattr(eih,'parent'):
+            if eih.parent:
+                eih.parent.remove_widget(eih)
+        leih=self.widgets['side_bar_connect_login_email_invalid_hint']
+        if hasattr(leih,'parent'):
+            if leih.parent:
+                leih.parent.remove_widget(leih)
 
     def side_bar_connect_login_send_func(self,*args):
         pass
