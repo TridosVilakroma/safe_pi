@@ -7364,6 +7364,7 @@ class AccountScreen(Screen):
                 w['side_bar_connect_title']]
             for i in all_widgets:
                 side_bar_connect.add_widget(i)
+        self.connect_send_disable_func(False)
 
     def side_bar_connect_login_populate(self,*args):
         self.clear_hints()
@@ -7405,6 +7406,8 @@ class AccountScreen(Screen):
                 w['side_bar_connect_login_title']]
             for i in all_widgets:
                 side_bar_connect_login.add_widget(i)
+        self.connect_login_send_disable_func(False)
+        self.connect_send_disable_func(False)
 
     def side_bar_unlink_populate(self,*args):
         sbu_parent=self.widgets['side_bar_box']
