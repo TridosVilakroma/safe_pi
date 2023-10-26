@@ -33,26 +33,26 @@ schema = {
 }
 
 #####test config
-# config = {
-#   'apiKey': "AIzaSyCwsQ6EHLZ4XcnM65ef3-Q42oiwnwZWoSY",
-#   'authDomain': "hood-control.firebaseapp.com",
-#   'databaseURL': "https://hood-control-default-rtdb.firebaseio.com",
-#   'projectId': "hood-control",
-#   'storageBucket': "hood-control.appspot.com",
-#   'messagingSenderId': "501458540776",
-#   'appId': "1:501458540776:web:b60a1d59d2d313753b515d"
-# }
-
 config = {
-  'apiKey': "AIzaSyDYLaE0PMm3yddp6spml8ANCZT-rpEotNs",
-  'authDomain': "hood-control-67b78.firebaseapp.com",
-  'databaseURL': "https://hood-control-67b78-default-rtdb.firebaseio.com",
-  'projectId': "hood-control-67b78",
-  'storageBucket': "hood-control-67b78.appspot.com",
-  'messagingSenderId': "19231970603",
-  'appId': "1:19231970603:web:a11433f93fdb9c1ce6216e",
-  'measurementId': "G-5JCVCD9G1K"
+  'apiKey': "AIzaSyCwsQ6EHLZ4XcnM65ef3-Q42oiwnwZWoSY",
+  'authDomain': "hood-control.firebaseapp.com",
+  'databaseURL': "https://hood-control-default-rtdb.firebaseio.com",
+  'projectId': "hood-control",
+  'storageBucket': "hood-control.appspot.com",
+  'messagingSenderId': "501458540776",
+  'appId': "1:501458540776:web:b60a1d59d2d313753b515d"
 }
+
+# config = {
+#   'apiKey': "AIzaSyDYLaE0PMm3yddp6spml8ANCZT-rpEotNs",
+#   'authDomain': "hood-control-67b78.firebaseapp.com",
+#   'databaseURL': "https://hood-control-67b78-default-rtdb.firebaseio.com",
+#   'projectId': "hood-control-67b78",
+#   'storageBucket': "hood-control-67b78.appspot.com",
+#   'messagingSenderId': "19231970603",
+#   'appId': "1:19231970603:web:a11433f93fdb9c1ce6216e",
+#   'measurementId': "G-5JCVCD9G1K"
+# }
 
 
 
@@ -90,6 +90,10 @@ class Db_service():
 
         self.active_streams=[]
 
+    def send_verification_email(self):
+        if self.user.verified:
+            return True
+        self.auth.send_email_verification(self.token)
 
     def authUser(self, email: str, password: str) -> None:
         '''Attempts to sign in.
