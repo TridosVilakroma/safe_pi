@@ -7892,6 +7892,19 @@ class AccountScreen(Screen):
         self._keep_ref(self.listen_to_server,.75)
         self._keep_ref(server.refresh_token,45*60)#45 minutes; token expires every hour.
 
+    def auth_server_new_account(self,email,password,*args):
+        self.clear_link_code()
+        email=str(email)
+        password=str(password)
+        if not (email and password):
+            return
+        if hasattr(server,'user'):
+            return
+        server.device_requests=server._device_requests.copy()
+        server.authUser(email, password)
+        self._keep_ref(self.listen_to_server,.75)
+        self._keep_ref(server.refresh_token,45*60)#45 minutes; token expires every hour.
+
     def listen_to_server(*args):
         if 1 not in server.device_requests.values():
             return
@@ -8025,49 +8038,11 @@ class AccountScreen(Screen):
         pass
 
     def side_bar_connect_send_func(self,*args):
-        if self._manual_connecting.is_alive():
-            return
-
-        @mainthread
-        def add_spinners():
-            sbm=self.widgets['side_bar_manual']
-            sbm.add_widget(PreLoader(rel_size=.3,ref='1',speed=500))
-            sbm.add_widget(PreLoader(rel_size=.25,ref='2',speed=850))
-            sbm.add_widget(PreLoader(rel_size=.2,ref='3',speed=600))
-            sbm.add_widget(PreLoader(rel_size=.15,ref='4',speed=950))
-            sbm.add_widget(PreLoader(rel_size=.1,ref='5',speed=700))
-            sbm.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050))
-
-        @mainthread
-        def remove_spinners():
-            sbm=self.widgets['side_bar_manual']
-            for i in range(6):
-                if str(i+1) in sbm.widgets:
-                    sbm.remove_widget(sbm.widgets[str(i+1)])
-
-        @mainthread
-        def set_toast_msg(text,level):
-            App.get_running_app().notifications.toast(text,level)
-
-        def _connect():
-            sbm=self.widgets['side_bar_manual']
-            add_spinners()
-            success=network.connect_to(self.widgets['side_bar_manual_ssid_input'].text,self.widgets['side_bar_manual_password_input'].text)
-            remove_spinners()
-            self.refresh_ap_data()
-            self.side_bar_scan_func()
-            if success:
-                set_toast_msg('[b][size=20]Connection Successful','info')
-                sbm.shrink()
-            else:
-                set_toast_msg('[b][size=20]Connection Failed','error')
-                w=self.widgets
-                w['side_bar_manual_ssid_input'].text=''
-                w['side_bar_manual_security_input'].text='[b][size=16]Enter Security Type'
-                w['side_bar_manual_password_input'].text=''
-
-        self._manual_connecting=Thread(target=_connect,daemon=True)
-        self._manual_connecting.start()
+        w=self.widgets
+        email=w['side_bar_connect_email_input'].text
+        password=w['side_bar_connect_password_input'].text
+        self.auth_server_new_account(email,password)
+        server.send_verification_email()
 
 class NetworkScreen(Screen):
     def __init__(self, **kwargs):
@@ -10588,7 +10563,7 @@ class Hood_Control(App):
         Clock.schedule_interval(self.context_screen.get_screen('main').widgets['clock_label'].update, 1)
         Clock.schedule_once(messages.refresh_active_messages)
         Clock.schedule_interval(messages.refresh_active_messages,10)
-        # Clock.schedule_once(self.context_screen.get_screen('account').auth_server)
+        Clock.schedule_once(self.context_screen.get_screen('account').auth_server)
         # Clock.schedule_interval(UpdateService.update,10)
         Window.bind(on_request_close=self.exit_check)
         Window.bind(children=self.keep_notifications_on_top)
