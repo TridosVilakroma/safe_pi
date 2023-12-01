@@ -2451,6 +2451,75 @@ class EmailInput(TextInput):
             self.contains_valid_email=False
             self.foreground_color=(1,0,0,1)
 
+class ScreenSaver(ButtonBehavior,Label):
+    '''ScreenSaver implements a software level screen saver.
+
+    call `ScreenSaver.start` in the apps `build` method to
+    init the screen saver service app-wide.
+    '''
+    clock_events={}
+    timeout=600
+
+    @classmethod
+    def start(cls,*args,**kwargs):
+        '''binds the `on_touch_down` event of `Window`
+        to the screen saver service, and calls the service once without a touch event.
+        '''
+        if 'timeout' in kwargs:
+            cls.timeout=kwargs['timeout']
+
+        Window.bind(on_touch_down=cls.service)
+        cls.service()
+
+    @classmethod
+    def service(cls,*args):
+        '''Unschedules any previously scheduled screen saver timer,
+        then schedules a new timer event to trigger a screen saver 
+        in the future.
+        '''
+        cls.delete_clock()
+        cls.create_clock()
+
+    @classmethod
+    def create_clock(cls,*args):
+        timer=Clock.schedule_once(cls.trigger_screen_saver, cls.timeout)
+        cls.clock_events['timer']=timer
+
+    @classmethod
+    def delete_clock(cls,*args):
+        if 'timer' in cls.clock_events:
+            Clock.unschedule(cls.clock_events['timer'])
+
+    @staticmethod
+    def trigger_screen_saver(*args):
+        Window.add_widget(ScreenSaver())
+
+    def __init__(self, **kwargs):
+        super(ScreenSaver,self).__init__(**kwargs)
+        with self.canvas.before:
+            self.canvas_color=Color(0,0,0,0)
+            Rectangle(size=Window.size)
+        Animation(rgba=(0,0,0,1),d=2,t='out_sine').start(self.canvas_color)
+
+    def clear(self,*args):
+        if hasattr(self,'parent'):
+            if self.parent is None:
+                return
+            self.parent.remove_widget(self)
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            touch.grab(self)
+        super(ScreenSaver, self).on_touch_down(touch)
+        return True
+
+    def on_touch_up(self, touch):
+        if touch.grab_current is self:
+            touch.ungrab(self)
+        self.clear()
+        super(ScreenSaver, self).on_touch_up(touch)
+        return True
+
 #<<<<<<<<<<>>>>>>>>>>#
 
 class ControlGrid(Screen):
@@ -10571,6 +10640,7 @@ class Hood_Control(App):
         Clock.schedule_once(partial(Window.add_widget,self.notifications))
         Clock.schedule_interval(self.notifications.update,.1)
         Clock.schedule_interval(logic_supervisor,10)
+        ScreenSaver.start()
         return self.context_screen
 
     def keep_notifications_on_top(self,window,children,*args):
