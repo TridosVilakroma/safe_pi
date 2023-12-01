@@ -4538,7 +4538,7 @@ class PreferenceScreen(Screen):
         self.widgets['account']=account
         account.ref='account'
         account.bind(on_release=self.account_func)
-        # account.disabled=True
+        account.disabled=True
 
         network=RoundedButton(text=current_language['network'],
                         size_hint =(1, 1),
@@ -10541,7 +10541,7 @@ class Hood_Control(App):
         settings_setter(self.config_)
         Clock.schedule_once(partial(language_setter,config=self.config_))
         self.context_screen=ScreenManager()
-        self.context_screen.add_widget(AccountScreen(name='account'))
+        # self.context_screen.add_widget(AccountScreen(name='account'))
         self.context_screen.add_widget(ControlGrid(name='main'))
         self.context_screen.add_widget(ActuationScreen(name='alert'))
         self.context_screen.add_widget(SettingsScreen(name='settings'))
@@ -10553,7 +10553,7 @@ class Hood_Control(App):
         self.context_screen.add_widget(DocumentScreen(name='documents'))
         self.context_screen.add_widget(TroubleScreen(name='trouble'))
         self.context_screen.add_widget(MountScreen(name='mount'))
-        # self.context_screen.add_widget(AccountScreen(name='account'))
+        self.context_screen.add_widget(AccountScreen(name='account'))
         self.context_screen.add_widget(NetworkScreen(name='network'))
         self.context_screen.add_widget(AnalyticScreen(name='analytics'))
         listener_event=Clock.schedule_interval(partial(listen, self.context_screen),.75)
@@ -10563,7 +10563,7 @@ class Hood_Control(App):
         Clock.schedule_interval(self.context_screen.get_screen('main').widgets['clock_label'].update, 1)
         Clock.schedule_once(messages.refresh_active_messages)
         Clock.schedule_interval(messages.refresh_active_messages,10)
-        Clock.schedule_once(self.context_screen.get_screen('account').auth_server)
+        # Clock.schedule_once(self.context_screen.get_screen('account').auth_server)
         # Clock.schedule_interval(UpdateService.update,10)
         Window.bind(on_request_close=self.exit_check)
         Window.bind(children=self.keep_notifications_on_top)

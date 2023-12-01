@@ -43,6 +43,7 @@ config = {
   'appId': "1:501458540776:web:b60a1d59d2d313753b515d"
 }
 
+#####prod config
 # config = {
 #   'apiKey': "AIzaSyDYLaE0PMm3yddp6spml8ANCZT-rpEotNs",
 #   'authDomain': "hood-control-67b78.firebaseapp.com",
@@ -91,8 +92,6 @@ class Db_service():
         self.active_streams=[]
 
     def send_verification_email(self):
-        if self.user.verified:
-            return True
         self.auth.send_email_verification(self.token)
 
     def authUser(self, email: str, password: str) -> None:
