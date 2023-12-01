@@ -3,7 +3,10 @@ import kivy.uix.filechooser as FileChooser
 import threading as th
 import os,random
 import version.updater as UpdateService
-
+try:
+    import firestore
+except:
+    import server.firestore as firestore
 
 
 #   TODO: 
@@ -29,7 +32,7 @@ schema = {
     "messages": []
 }
 
-
+#####test config
 config = {
   'apiKey': "AIzaSyCwsQ6EHLZ4XcnM65ef3-Q42oiwnwZWoSY",
   'authDomain': "hood-control.firebaseapp.com",
@@ -40,7 +43,17 @@ config = {
   'appId': "1:501458540776:web:b60a1d59d2d313753b515d"
 }
 
-
+#####prod config
+# config = {
+#   'apiKey': "AIzaSyDYLaE0PMm3yddp6spml8ANCZT-rpEotNs",
+#   'authDomain': "hood-control-67b78.firebaseapp.com",
+#   'databaseURL': "https://hood-control-67b78-default-rtdb.firebaseio.com",
+#   'projectId': "hood-control-67b78",
+#   'storageBucket': "hood-control-67b78.appspot.com",
+#   'messagingSenderId': "19231970603",
+#   'appId': "1:19231970603:web:a11433f93fdb9c1ce6216e",
+#   'measurementId': "G-5JCVCD9G1K"
+# }
 
 
 
@@ -64,6 +77,9 @@ class Db_service():
         # Init auth service
         self.auth = firebase.auth()
 
+        # Init null firestore service
+        self.firestore=False
+
         self._device_requests={
             'fans':0,
             'lights':0,
@@ -75,6 +91,8 @@ class Db_service():
 
         self.active_streams=[]
 
+    def send_verification_email(self):
+        self.auth.send_email_verification(self.token)
 
     def authUser(self, email: str, password: str) -> None:
         '''Attempts to sign in.
@@ -82,8 +100,11 @@ class Db_service():
         '''
         try:
             self.user = self.auth.sign_in_with_email_and_password(email, password)
-            # print(self.user)
-            
+            try:
+                self.firestore = firestore.firestore_init(self.user,config['projectId'])
+            except:
+                self.firestore=False
+
 
         except Exception as e:
             # Assumption is that any exception is from email not being found
@@ -91,29 +112,28 @@ class Db_service():
             print(f'server.py authUser(): {e}')
             self.user = self.auth.create_user_with_email_and_password(email, password)
             # print(self.user)
-            
-            
+
+
         finally:
             self.email = self.user["email"]
             self.path = "users/" + self.user["localId"]
             self.token = self.user["idToken"]
             self.uid = self.user["localId"]
-            self.db_version_stream = self.db.child('version').stream(self.version_stream_handler,self.token)
-            self.db_req_fans_stream = self.db.child(self.path).child(self.devices.req_fans).stream(self.req_fans_stream_handler,self.token)
-            self.db_req_lights_stream = self.db.child(self.path).child(self.devices.req_lights).stream(self.req_lights_stream_handler,self.token)
-            self.toggleDevice(self.devices.req_lights,0)
-            #add streams to a list for easy closing
-            self.active_streams.extend((self.db_version_stream,self.db_req_fans_stream,self.db_req_lights_stream))
-            # self.toggleDevice(self.db_exhaust_stream,0)
-            self.db.child(self.path).update({"email": self.email}, self.token)
-            self.set_version_info()
+            # self.db_version_stream = self.db.child('version').stream(self.version_stream_handler,self.token)
+            # self.db_req_fans_stream = self.db.child(self.path).child(self.devices.req_fans).stream(self.req_fans_stream_handler,self.token)
+            # self.db_req_lights_stream = self.db.child(self.path).child(self.devices.req_lights).stream(self.req_lights_stream_handler,self.token)
+            # self.toggleDevice(self.devices.req_lights,0)
+            # #add streams to a list for easy closing
+            # self.active_streams.extend((self.db_version_stream,self.db_req_fans_stream,self.db_req_lights_stream))
+            # # self.toggleDevice(self.db_exhaust_stream,0)
+            # self.db.child(self.path).update({"email": self.email}, self.token)
+            # self.set_version_info()
 
             ''' TODO Token expires after 1 hour.
             Add recurring timer or interval to refresh token every 45-55 min.
             self.auth.refresh(self.token)
             '''
-            
-            
+
     def refresh_token(self,*args):
         self.user=self.auth.refresh(self.user['refreshToken'])
 

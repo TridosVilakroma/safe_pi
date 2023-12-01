@@ -180,15 +180,45 @@ already, than it will overwrite it)\n\n[/color][/size]''',
 'account_screen_name' : "[size=50][color=#ffffff][b][u][i]       Account       ",
 'information_title' : "[size=20][color=#ffffff][b]Credentials",
 'details_title' : "[size=20][color=#ffffff][b]Details",
-'details_body' : '''[size=18][color=#ffffff]Connecting your Hood Control device
-with an account allows remote monitoring
-and diagnostics''',
+'details_body' : '''[size=18][color=#ffffff][b]Linking your Hood Control device to an account
+unlocks server access with several benefits[/b]
+
+[size=18][b][i]-Automatic updates[/b][/i][size=16]
+    Ensure the latest features and improvements.
+
+[size=18][b][i]-Remote access[/b][/i][size=16]
+    Providing convenience and flexibility.
+
+[size=18][b][i]-Comprehensive monitoring and diagnostics[/b][/i][size=16]
+    Reduce downtime and increase uptime!''',
 'status_title' : "[size=20][color=#ffffff][b]Status",
-'side_bar_unlink' : "[size=20][color=#ffffff][b]Unlink Account",
-'side_bar_connect' : "[size=20][color=#ffffff][b]Connect Account",
-'side_bar_add' : "[size=20][color=#ffffff][b]Add Device",
-'side_bar_remove' : "[size=20][color=#ffffff][b]Remove Device",
-'side_bar_refresh' : "[size=20][color=#ffffff][b]Refresh From Server",
+'side_bar_unlink_title' : "[size=20][color=#ffffff][b]Unlink Account",
+'side_bar_connect_title' : "[size=20][color=#ffffff][b]Connect Account",
+'side_bar_create_title' : "[size=20][color=#ffffff][b]Create Account",
+'side_bar_add_title' : "[size=20][color=#ffffff][b]Add Device",
+'side_bar_add_title_expanded' : "[size=20][color=#ffffff][b]Add Remote Access to a Device",
+'side_bar_add_body' : '''[size=18][u][color=#ffffff][b]Setting Up Remote Access to the Hood Control System[/b][/u][size=16]
+
+[b]1[/b]: Install the [i][b]Hood Control Admin[/i][/b] app on a supported device.
+
+[b]2[/b]: Verify that the Link Code is still valid, if
+    it has expired, generate a fresh Link Code.
+
+[b]3[/b]: Open the [i][b]Hood Control Admin[/i][/b] App on your device.
+
+[b]4[/b]: Select "Add Account" within the App.
+    Follow the on-screen prompts to either scan
+    the QR code or enter the Link Code manually.
+    You may need to grant camera access to scan the QR code.
+
+[b]5[/b]: A prompt will appear on this screen.
+    Confirm the device and grant remote access.''',
+'side_bar_add_app_body' : '''[size=20][b][color=#000000]You can access Hood Control Admin on the
+Apple App Store or on Google Play. Simply scan the
+QR code provided below, and it will direct you to
+the respective app store on your device.''',
+'side_bar_remove_title' : "[size=20][color=#ffffff][b]Remove Device",
+'side_bar_set_pin' : "[size=20][color=#ffffff][b]Change Pin",
 'network_screen_name' : "[size=50][color=#ffffff][b][u][i]       Network       ",
 'network_information_title' : "[size=20][color=#ffffff][b]Current Network",
 'network_details_title' : "[size=20][color=#ffffff][b]Details",

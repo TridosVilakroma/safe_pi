@@ -1,8 +1,9 @@
-import os,json,time,shutil,math,random,subprocess,re
+import os,json,time,shutil,math,random,subprocess,re,string
 import traceback,errno
-from datetime import datetime
+from datetime import datetime,timedelta
 from kivy.config import Config
 from copy import deepcopy
+import segno
 
 from device_classes.exhaust import Exhaust
 from device_classes.mau import Mau
@@ -21,7 +22,7 @@ if os.name=='posix':
 if os.name=='nt':
     import network_W as network
 from messages import messages
-# from server import server
+from server.server import server
 import version.updater as UpdateService
 from version.version import version as VERSION
 UpdateService.current_version=VERSION
@@ -66,7 +67,6 @@ from kivy.uix.scrollview import ScrollView
 from kivy.graphics import Rectangle, Color, Line, Bezier
 from kivy.properties import ListProperty,StringProperty,NumericProperty,ColorProperty,OptionProperty,BooleanProperty,ObjectProperty
 import configparser
-import logs.configurations.preferences as preferences
 from kivy.uix.settings import SettingsWithNoMenu
 from kivy.uix.settings import SettingsWithSidebar
 from kivy.effects.scroll import ScrollEffect
@@ -118,6 +118,13 @@ black_seperator_line=r'media/line_black.png'
 settings_icon=r'media/menu_lines.png'
 red_dot=r'media/red_dot.png'
 opaque_bubble=r'media/opaque_bubble.png'
+uid_qr=r'logs/configurations/uid_qr.png'
+app_icon_source=r'media/app_icon.png'
+square_bubble=r'media/square_bubble_.png'
+hc_mockup=r'media/hc_admin_mockup.png'
+store_badges=r'media/store_badges.png'
+visible_black=r'media/visible_black.png'
+hidden_black=r'media/hidden_black.png'
 
 
 class MarkupSpinnerOption(SpinnerOption):
@@ -697,7 +704,26 @@ class RoundedColorLayout(FloatLayout):
         super(RoundedColorLayout,self).__init__(**kwargs)
         self.bg_color=bg_color
 
-        with self.canvas.before:
+        with self.canvas:#.before:
+            self.shape_color = Color(*self.bg_color)
+            self.shape = RoundedRectangle(pos=self.pos, size=self.size, radius=[20])
+            self.bind(pos=self.update_shape, size=self.update_shape)
+
+    def update_shape(self, *args):
+        self.shape.pos = self.pos
+        self.shape.size = self.size
+
+class RoundedColorLayoutButton(ButtonBehavior,RoundedColorLayout):
+    def __init__(self, bg_color=(0.1, 0.1, 0.1, 0.95), **kwargs):
+        super(RoundedColorLayoutButton,self).__init__(bg_color=bg_color, **kwargs)
+
+class RoundedColorLayoutModal(FloatLayout):
+    bg_color=ColorProperty()
+    def __init__(self,bg_color= (.1,.1,.1,.95),**kwargs):
+        super(RoundedColorLayoutModal,self).__init__(**kwargs)
+        self.bg_color=bg_color
+
+        with self.canvas:
             self.shape_color = Color(*self.bg_color)
             self.shape = RoundedRectangle(pos=self.pos, size=self.size, radius=[20])
             self.bind(pos=self.update_shape, size=self.update_shape)
@@ -715,10 +741,17 @@ class ExpandableRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
         self._expanded=False
         self.original_pos=kwargs['pos_hint']
         self.original_size=kwargs['size_hint']
+        if 'locked' in kwargs:
+            self.locked=self._lock_callback=kwargs.pop('locked')
         if 'expanded_pos' in kwargs:
             self.expanded_pos=kwargs.pop('expanded_pos')
         if 'expanded_size' in kwargs:
             self.expanded_size=kwargs.pop('expanded_size')
+        if 'modal_dim' in kwargs:
+            self.modal_dim=kwargs.pop('modal_dim')
+            Clock.schedule_once(self._set_modal_dim)
+            self._apply_dim=Animation(rgba=self.modal_dim)
+            self._remove_dim=Animation(rgba=(0,0,0,0),d=.2)
         self.move_anim=Animation(pos_hint=self.expanded_pos,d=.15,t='in_out_quad')
         self.move_anim.bind(on_complete=self.set_expanded_true)
         self.return_anim=Animation(pos_hint=self.original_pos,d=.15,t='out_back')
@@ -728,6 +761,18 @@ class ExpandableRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
         self.shrink_anim=Animation(size_hint=self.original_size,d=.15,t='out_back')
         self.shrink_anim.bind(on_complete=self.set_expanded_false)
         super(ExpandableRoundedColorLayout,self).__init__(**kwargs)
+
+    def lock(self,*args):
+        self.locked=self._lock_callback
+
+    def unlock(self,*args):
+        if hasattr(self,'locked'):
+            del self.locked
+
+    def _set_modal_dim(self,*args):
+        with self.canvas.before:
+            self._dim=Color(0,0,0,0)
+            self._dim_rect=Rectangle(size=Window.size)
 
     def on_touch_down(self, touch):
         if not self._expanded:
@@ -739,6 +784,9 @@ class ExpandableRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
         return super(ExpandableRoundedColorLayout,self).on_touch_down(touch)
 
     def on_release(self,*args):
+        if hasattr(self,'locked'):
+            self.locked(self.expand)
+            return
         self.expand()
 
     def shrink(self,*args):
@@ -764,9 +812,16 @@ class ExpandableRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
 
     def set_expanded_true(self,*args):
         self.expanded=True
+        if hasattr(self,'modal_dim'):
+            self._remove_dim.cancel_all(self._dim)
+            self._apply_dim.start(self._dim)
+            self._dim_rect.size=Window.size
 
     def set_expanded_false(self,*args):
         self.expanded=False
+        if hasattr(self,'modal_dim'):
+            self._apply_dim.cancel_all(self._dim)
+            self._remove_dim.start(self._dim)
 
 class AnalyticExpandable(ExpandableRoundedColorLayout):
     def __init__(self, **kwargs):
@@ -1994,6 +2049,408 @@ class ScrollMenuBubble(Bubble):
             return True
         return super(ScrollMenuBubble,self).on_touch_down(touch)
 
+class PinLock(RoundedColorLayoutModal):
+    end_point_one=ListProperty([])
+    end_point_two=ListProperty([])
+    def __init__(self,callback=None,hidden=True,**kwargs):
+        if 'set_pin' in kwargs:
+            self.set_pin=kwargs.pop('set_pin')
+        if 'alt_pin' in kwargs:
+            self.alt_pin=kwargs.pop('alt_pin')
+        super(PinLock,self).__init__(bg_color=(.15,.15,.15,1),**kwargs)
+        self.hidden=hidden
+        self.widgets={}
+        self.pin=[]
+        self.entry_slots={
+            1:None,
+            2:None,
+            3:None,
+            4:None,
+            5:None,
+            6:None}
+        self.size_hint=(.5,.6)
+        self.pos_hint={'center_x':.5,'center_y':.5}
+        self.callback=callback
+        with self.canvas.before:
+            Color(0,0,0,.65)
+            Rectangle(size=Window.size)
+
+        title=Label(
+            text='[size=20][color=#ffffff][b]Admin Pin Entry',
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.925},)
+        self.widgets['title']=title
+        title.ref='title'
+
+        seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['seperator']=seperator
+
+        entry_one=MinimumBoundingLabel(
+            text='[size=35][b]-',
+            markup=True,
+            size_hint =(.15, .15),
+            pos_hint = {'center_x':.25, 'center_y':.7},)
+        self.widgets['entry_one']=entry_one
+        self.entry_slots[1]=entry_one
+
+        entry_two=MinimumBoundingLabel(
+            text='[size=35][b]-',
+            markup=True,
+            size_hint =(.15, .15),
+            pos_hint = {'center_x':.35, 'center_y':.7},)
+        self.widgets['entry_two']=entry_two
+        self.entry_slots[2]=entry_two
+
+        entry_three=MinimumBoundingLabel(
+            text='[size=35][b]-',
+            markup=True,
+            size_hint =(.15, .15),
+            pos_hint = {'center_x':.45, 'center_y':.7},)
+        self.widgets['entry_three']=entry_three
+        self.entry_slots[3]=entry_three
+
+        entry_four=MinimumBoundingLabel(
+            text='[size=35][b]-',
+            markup=True,
+            size_hint =(.15, .15),
+            pos_hint = {'center_x':.55, 'center_y':.7},)
+        self.widgets['entry_four']=entry_four
+        self.entry_slots[4]=entry_four
+
+        entry_five=MinimumBoundingLabel(
+            text='[size=35][b]-',
+            markup=True,
+            size_hint =(.15, .15),
+            pos_hint = {'center_x':.65, 'center_y':.7},)
+        self.widgets['entry_five']=entry_five
+        self.entry_slots[5]=entry_five
+
+        entry_six=MinimumBoundingLabel(
+            text='[size=35][b]-',
+            markup=True,
+            size_hint =(.15, .15),
+            pos_hint = {'center_x':.75, 'center_y':.7},)
+        self.widgets['entry_six']=entry_six
+        self.entry_slots[6]=entry_six
+
+        hidden_button=IconButton(
+            source=hidden_black,
+            size_hint =(.1, .1),
+            pos_hint = {'center_x':.9, 'center_y':.7})
+        self.widgets['hidden_button']=hidden_button
+        hidden_button.bind(on_release=self.visibility)
+
+        num_pad=RelativeLayout(size_hint =(.75, .65),
+            pos_hint = {'center_x':.5, 'y':0})
+        self.widgets['num_pad']=num_pad
+
+        one=RoundedButton(text="[size=35][b][color=#000000] 1 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.05, 'y':.65},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        one.value=1
+        self.widgets['one']=one
+        one.bind(on_release=self.entry_func)
+
+        two=RoundedButton(text="[size=35][b][color=#000000] 2 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.3, 'y':.65},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        two.value=2
+        self.widgets['two']=two
+        two.bind(on_release=self.entry_func)
+
+        three=RoundedButton(text="[size=35][b][color=#000000] 3 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.55, 'y':.65},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        three.value=3
+        self.widgets['three']=three
+        three.bind(on_release=self.entry_func)
+
+        four=RoundedButton(text="[size=35][b][color=#000000] 4 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.05, 'y':.45},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        four.value=4
+        self.widgets['four']=four
+        four.bind(on_release=self.entry_func)
+
+        five=RoundedButton(text="[size=35][b][color=#000000] 5 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.3, 'y':.45},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        five.value=5
+        self.widgets['five']=five
+        five.bind(on_release=self.entry_func)
+
+        six=RoundedButton(text="[size=35][b][color=#000000] 6 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.55, 'y':.45},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        six.value=6
+        self.widgets['six']=six
+        six.bind(on_release=self.entry_func)
+
+        seven=RoundedButton(text="[size=35][b][color=#000000] 7 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.05, 'y':.25},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        seven.value=7
+        self.widgets['seven']=seven
+        seven.bind(on_release=self.entry_func)
+
+        eight=RoundedButton(text="[size=35][b][color=#000000] 8 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.3, 'y':.25},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        eight.value=8
+        self.widgets['eight']=eight
+        eight.bind(on_release=self.entry_func)
+
+        nine=RoundedButton(text="[size=35][b][color=#000000] 9 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.55, 'y':.25},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        nine.value=9
+        self.widgets['nine']=nine
+        nine.bind(on_release=self.entry_func)
+
+        zero=RoundedButton(text="[size=35][b][color=#000000] 0 [/color][/b][/size]",
+            size_hint =(.15, .15),
+            pos_hint = {'x':.05, 'y':.05},
+            background_down='',
+            background_color=(200/250, 200/250, 200/250,.85),
+            markup=True)
+        zero.value=0
+        self.widgets['zero']=zero
+        zero.bind(on_release=self.entry_func)
+
+        backspace=RoundedButton(text="[size=35][b][color=#000000] <- [/color][/b][/size]",
+            size_hint =(.4, .15),
+            pos_hint = {'x':.3, 'y':.05},
+            background_down='',
+            background_color=(255/255, 100/255, 100/255,.85),
+            markup=True)
+        self.widgets['backspace']=backspace
+        backspace.bind(on_release=self.backspace_func)
+
+        enter=RoundedButton(text="[size=35][b][color=#000000] -> [/color][/b][/size]",
+            size_hint =(.15, .75),
+            pos_hint = {'right':.95, 'y':.05},
+            background_down='',
+            background_color=(100/255, 255/255, 100/255,.85),
+            markup=True)
+        self.widgets['enter']=enter
+        enter.bind(on_release=self.enter_func)
+
+        self.add_widget(title)
+        self.add_widget(seperator)
+        self.add_widget(entry_one)
+        self.add_widget(entry_two)
+        self.add_widget(entry_three)
+        self.add_widget(entry_four)
+        self.add_widget(entry_five)
+        self.add_widget(entry_six)
+        self.add_widget(hidden_button)
+        self.add_widget(num_pad)
+        num_pad.add_widget(one)
+        num_pad.add_widget(two)
+        num_pad.add_widget(three)
+        num_pad.add_widget(four)
+        num_pad.add_widget(five)
+        num_pad.add_widget(six)
+        num_pad.add_widget(seven)
+        num_pad.add_widget(eight)
+        num_pad.add_widget(nine)
+        num_pad.add_widget(zero)
+        num_pad.add_widget(backspace)
+        num_pad.add_widget(enter)
+
+    def visibility(self,*args):
+        self.hidden = not self.hidden
+        if self.hidden:
+            self.widgets['hidden_button'].source=hidden_black
+        elif not self.hidden:
+            self.widgets['hidden_button'].source=visible_black
+        for i,v in enumerate(self.pin):
+            if self.hidden:
+                self.entry_slots[i+1].text='[size=35][b]*'
+            else:
+                self.entry_slots[i+1].text=f'[size=35][b]{v}'
+
+    def entry_func(self,button):
+        if len(self.pin)>=6:
+            return
+        val=button.value
+        self.pin.append(val)
+        for i,v in enumerate(self.pin):
+            if self.hidden:
+                self.entry_slots[i+1].text='[size=35][b]*'
+            else:
+                self.entry_slots[i+1].text=f'[size=35][b]{v}'
+
+    def backspace_func(self,button):
+        if len(self.pin)<1:
+            return
+        del self.pin[-1]
+        self.entry_slots[len(self.pin)+1].text='[size=35][b]-'
+
+    def enter_func(self,button):
+        if len(self.pin)<1:
+            return
+        pin=''.join(str(x) for x in self.pin)
+        self.pin_to_set=pin
+        self.pin=[]
+        for i in self.entry_slots.values():
+            i.text='[size=35][b]-'
+        if hasattr(self,'set_pin'):
+            if self.set_pin:
+                self.clear_with_success()
+                return
+            else: return
+        if hasattr(self,'alt_pin'):
+            if self.alt_pin:
+                if pin==self.alt_pin:
+                    self.clear_with_success()
+                else:
+                    App.get_running_app().notifications.toast('[b][size=20]Pins do not match','error')
+                    return
+        if pin==App.get_running_app().config_.get('account','admin_pin',fallback='000000'):
+            self.clear_with_success()
+
+    def clear_with_success(self,*args):
+        self.check_one_start=[self.center_x-100,self.center_y-50]
+        self.check_one_end  =[self.center_x,self.center_y-125]
+        self.check_two_start=[self.center_x,self.center_y-125]
+        self.check_two_end  =[self.center_x+100,self.center_y+75]
+        fade=Animation(opacity=0,d=.25)
+        fade.start(self.widgets['num_pad'])
+        for i in self.entry_slots.values():
+            fade.start(i)
+        fade.start(self.widgets['hidden_button'])
+        with self.canvas.after:
+            Color(0,1,0)
+            self.check_one=Line(width=3)
+            self.check_two=Line(width=3)
+        self.end_point_one=self.check_one_start
+        self.end_point_two=self.check_two_start
+        down=Animation(end_point_one=self.check_one_end,d=.25,t='out_sine')
+        down+=Animation(end_point_two=self.check_two_end,d=.25,t='in_cubic')
+        down.start(self)
+        self.schedule_clear()
+
+    def on_end_point_one(self,*args):
+        points = self.check_one_start
+        points.extend(self.end_point_one)
+
+        # remove the old line
+        self.canvas.after.remove(self.check_one)
+
+        # draw the updated line
+        with self.canvas.after:
+            self.check_one = Line(points=points, width=3)
+
+    def on_end_point_two(self,*args):
+        if self.end_point_one!=self.check_one_end:
+            return
+        points = self.check_two_start
+        points.extend(self.end_point_two)
+
+        # remove the old line
+        self.canvas.after.remove(self.check_two)
+
+        # draw the updated line
+        with self.canvas.after:
+            self.check_two = Line(points=points, width=3)
+
+    def schedule_clear(self,*args):
+        Clock.schedule_once(self.clear,.85)
+        Clock.schedule_once(self.unlock,.85)
+
+    def unlock(self,*args):
+        try:
+            if hasattr(self,'set_pin'):
+                self.callback(alt_pin=self.pin_to_set)
+                return
+            if hasattr(self,'alt_pin'):
+                self.callback(self.pin_to_set)
+                return
+            self.callback()
+        except TypeError as e:
+            print(f'main.py PinLock unlock(): callback {self.callback} failed to execute')
+            print('error: ',repr(e))
+
+    def clear(self,*args):
+        if hasattr(self,'parent'):
+            if self.parent is None:
+                return
+            self.parent.remove_widget(self)
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            touch.grab(self)
+        super(PinLock, self).on_touch_down(touch)
+        return True
+
+    def on_touch_up(self, touch):
+        if not self.collide_point(*touch.pos):
+            if touch.grab_current is self:
+                touch.ungrab(self)
+            self.clear()
+        super(PinLock, self).on_touch_up(touch)
+        return True
+
+class ExpandableIcon(ExpandableRoundedColorLayout,Image):
+    pass
+
+class EmailInput(TextInput):
+    minimum_email_req=re.compile(r'\S+[@]\S+[.]\S+')
+
+    def __init__(self, **kwargs):
+        super(EmailInput,self).__init__(**kwargs)
+        self.bind(focus=self._text_validation)
+        self.contains_valid_email=False
+
+    def insert_text(self, substring, from_undo=False):
+        return super(EmailInput,self).insert_text(substring, from_undo)
+
+    def _text_validation(self,button,focused,*args):
+        if focused:
+            self.foreground_color=(0,0,0,1)
+            return
+        t=self.minimum_email_req.match(self.text)
+        if t:
+            self.contains_valid_email=True
+            self.foreground_color=(0,0,0,1)
+        else:
+            self.contains_valid_email=False
+            self.foreground_color=(1,0,0,1)
+
 #<<<<<<<<<<>>>>>>>>>>#
 
 class ControlGrid(Screen):
@@ -3164,6 +3621,7 @@ class DevicesScreen(Screen):
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
         self.widgets={}
         self.ud={}
+        self.unlocked=False
 
         back=RoundedButton(text=current_language['report_back'],
                     size_hint =(.4, .1),
@@ -3266,24 +3724,24 @@ class DevicesScreen(Screen):
         delete_icon.bind(state=self.delete_icon_change)
 
 
-        info_type=ExactLabel(text=f"[size=18]Device Type:                    {device.type}[/size]",
+        info_type=MinimumBoundingLabel(text=f"[size=18]Device Type:                    {device.type}[/size]",
                         color=(0,0,0,1),
-                        pos_hint = {'x':.05, 'y':.9},
+                        pos_hint = {'x':.1, 'y':.85},
                         markup=True)
 
-        info_pin=ExactLabel(text=f"[size=18]Device GPIO Pin:             {device.pin}[/size]",
+        info_pin=MinimumBoundingLabel(text=f"[size=18]Device GPIO Pin:             {device.pin}[/size]",
                         color=(0,0,0,1),
-                        pos_hint = {'x':.05, 'y':.8},
+                        pos_hint = {'x':.1, 'y':.75},
                         markup=True)
 
-        info_run_time=ExactLabel(text=f"[size=18]Device Run Time:           {general.Convert_time(device.run_time)}[/size]",
+        info_run_time=MinimumBoundingLabel(text=f"[size=18]Device Run Time:           {general.Convert_time(device.run_time)}[/size]",
                 color=(0,0,0,1),
-                pos_hint = {'x':.05, 'y':.7},
+                pos_hint = {'x':.1, 'y':.65},
                 markup=True)
 
-        info_admin_hint=ExactLabel(text=f"[size=18]Enable Admin mode to edit device[/size]",
+        info_admin_hint=MinimumBoundingLabel(text=f"[size=18]Enable Admin mode to edit device[/size]",
                 color=(0,0,0,1),
-                pos_hint = {'x':.33, 'y':.18},
+                pos_hint = {'center_x':.5, 'y':.2},
                 markup=True)
         self.widgets['info_admin_hint']=info_admin_hint
 
@@ -3348,12 +3806,12 @@ class DevicesScreen(Screen):
         delete_confirm_button.ref='about_back'
         delete_confirm_button.bind(on_press=partial(self.create_clock,device),on_touch_up=self.delete_clock)
 
-        delete_device_text=ExactLabel(text=f"""[size=18][color=#000000]Deleting device will remove all existing data and
+        delete_device_text=MinimumBoundingLabel(text=f"""[size=18][color=#000000]Deleting device will remove all existing data and
 terminate the associated GPIO pin usage immediately.
         
 Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         color=(0,0,0,1),
-                        pos_hint = {'x':.25, 'y':.7},
+                        pos_hint = {'center_x':.5, 'center_y':.7},
                         markup=True)
 
         delete_progress=CircularProgressBar()
@@ -3413,10 +3871,17 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         self.widgets['overlay_menu'].dismiss()
 
     def info_add_icon_func(self,device,button):
-        self.edit_device_overlay(device)
+        if App.get_running_app().admin_mode_start>time.time() or self.unlocked:
+            self.edit_device_overlay(device)
+        else:
+            Window.add_widget(PinLock(partial(self.unlock_callback,partial(self.edit_device_overlay,device))))
+
 
     def delete_icon_func(self,device,button):
-        self.delete_device_overlay(device,open=False)
+        if App.get_running_app().admin_mode_start>time.time() or self.unlocked:
+            self.delete_device_overlay(device,open=False)
+        else:
+            Window.add_widget(PinLock(partial(self.unlock_callback,partial(self.delete_device_overlay,device,open=False))))
 
     def icon_change(self,button,state):
         if state=='down':
@@ -3478,8 +3943,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         new_device_save_button.ref='save'
         new_device_save_button.bind(on_release=partial(self.new_device_save,current_device))
 
-        get_name_label=ExactLabel(text="[size=18]Device Name:[/size]",
-                        pos_hint = {'x':.05, 'y':.9},
+        get_name_label=MinimumBoundingLabel(text="[size=18]Device Name:[/size]",
+                        pos_hint = {'x':.1, 'y':.9},
                         color = (0,0,0,1),
                         markup=True)
 
@@ -3492,8 +3957,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         get_name.bind(on_text_validate=partial(self.get_name_func,current_device))
         get_name.bind(text=partial(self.get_name_func,current_device))
 
-        get_device_label=ExactLabel(text="[size=18]Device Type:[/size]",
-                        pos_hint = {'x':.05, 'y':.8},
+        get_device_label=MinimumBoundingLabel(text="[size=18]Device Type:[/size]",
+                        pos_hint = {'x':.1, 'y':.8},
                         color = (0,0,0,1),
                         markup=True)
 
@@ -3507,8 +3972,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         get_device_type.bind(text=partial(self.set_default_name))
         get_device_type.bind(text=partial(self.set_default_pin,current_device))
 
-        get_device_pin_label=ExactLabel(text="[size=18]Device I/O Pin:[/size]",
-                        pos_hint = {'x':.05, 'y':.7},
+        get_device_pin_label=MinimumBoundingLabel(text="[size=18]Device I/O Pin:[/size]",
+                        pos_hint = {'x':.1, 'y':.7},
                         color = (0,0,0,1),
                         markup=True)
 
@@ -3702,7 +4167,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         edit_device_save_button.ref='save'
         edit_device_save_button.bind(on_release=partial(self.edit_device_save,current_device,device))
 
-        get_name_label=ExactLabel(text="[size=18]Device Name:[/size]",
+        get_name_label=MinimumBoundingLabel(text="[size=18]Device Name:[/size]",
                         pos_hint = {'x':.05, 'y':.9},
                         color = (0,0,0,1),
                         markup=True)
@@ -3715,7 +4180,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         get_name.bind(on_text_validate=partial(self.edit_name_func,current_device))
         get_name.bind(text=partial(self.edit_name_func,current_device))
 
-        get_device_label=ExactLabel(text="[size=18]Device Type: (Locked)[/size]",
+        get_device_label=MinimumBoundingLabel(text="[size=18]Device Type: (Locked)[/size]",
                         pos_hint = {'x':.05, 'y':.8},
                         color = (0,0,0,1),
                         markup=True)
@@ -3728,7 +4193,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         pos_hint = {'x':.40, 'y':.8})
         get_device_type.bind(text=partial(self.edit_device_type_func,current_device))
 
-        get_device_pin_label=ExactLabel(text="[size=18]Device I/O Pin:[/size]",
+        get_device_pin_label=MinimumBoundingLabel(text="[size=18]Device I/O Pin:[/size]",
                         pos_hint = {'x':.05, 'y':.7},
                         color = (0,0,0,1),
                         markup=True)
@@ -3792,6 +4257,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             logic.available_pins.sort()
             logic.pin_off(device.pin)
             device.pin=current_device.pin
+            logic.set_pin_mode(device)
         self.aggregate_devices()
         self.info_overlay(device,open=False)
 
@@ -3859,24 +4325,47 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         new_device.bind(on_release=self.new_device_func)
 
     def new_device_func(self,button):
-        self.new_device_overlay()
+        if App.get_running_app().admin_mode_start>time.time() or self.unlocked:
+            self.new_device_overlay()
+        else:
+            self.add_widget(PinLock(partial(self.unlock_callback,self.new_device_overlay)))
+
+    def prompt_unlock(self,button,touch,*args):
+        if not button.collide_point(*touch.pos):
+            return
+        if self.unlocked:
+            return
+        for widget in self.children:
+            if type(widget)==PinLock:
+                return
+        self.add_widget(PinLock(self.unlock))
+
+    def unlock(self,*args):
+        self.unlocked=True
+        self.check_admin_mode()
+
+    def unlock_callback(self,callback,*args):
+        self.unlock()
+        callback()
 
     def check_admin_mode(self):
-        if App.get_running_app().admin_mode_start>time.time():
-            self.widgets['info_add_icon'].disabled=False
-            self.widgets['delete_icon'].disabled=False
-            self.widgets['info_add_icon'].color=(1,1,1,.5)
-            self.widgets['delete_icon'].color=(1,1,1,.8)
-            self.widgets['overlay_layout'].remove_widget(self.widgets['info_admin_hint'])
-
+        if App.get_running_app().admin_mode_start>time.time() or self.unlocked:
+            if 'info_add_icon' in  self.widgets:
+                self.widgets['info_add_icon'].color=(1,1,1,.5)
+            if 'delete_icon' in self.widgets:
+                self.widgets['delete_icon'].color=(1,1,1,.8)
+            if 'info_admin_hint' in self.widgets:
+                self.widgets['overlay_layout'].remove_widget(self.widgets['info_admin_hint'])
         else:
-            self.widgets['overlay_layout'].add_widget(self.widgets['info_admin_hint'])
-            self.widgets['info_add_icon'].disabled=True
-            self.widgets['delete_icon'].disabled=True
-            self.widgets['info_add_icon'].color=(1,1,1,.15)
-            self.widgets['delete_icon'].color=(1,1,1,.15)
+            if 'info_admin_hint' in self.widgets:
+                self.widgets['overlay_layout'].add_widget(self.widgets['info_admin_hint'])
+            if 'info_add_icon' in  self.widgets:
+                self.widgets['info_add_icon'].color=(1,1,1,.15)
+            if 'delete_icon' in self.widgets:
+                self.widgets['delete_icon'].color=(1,1,1,.15)
 
     def on_pre_enter(self):
+        self.unlocked=False
         self.aggregate_devices()
 
 class TrainScreen(Screen):
@@ -4867,7 +5356,10 @@ class PinScreen(Screen):
         admin_cancel.ref='admin_cancel'
 
         def admin_confirm_func(button):
-            App.get_running_app().admin_mode_start=time.time()+900#admin mode lasts 15 minutes
+            app=App.get_running_app()
+            admin_banner=app.notifications.banner('[i][size=20]Admin Mode Enabled','info')
+            Clock.schedule_once(partial(app.notifications.remove_banner,admin_banner),900)
+            app.admin_mode_start=time.time()+900#admin mode lasts 15 minutes
             self.widgets['admin_overlay'].dismiss()
         admin_confirm.bind(on_release=admin_confirm_func)
 
@@ -5989,6 +6481,9 @@ class AccountScreen(Screen):
         self.widgets={}
         self.scheduled_funcs=[]
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
+        self.unlocked=False
+        self._link_code=''
+        self.generate_link_timer=time.time()
 
         back=RoundedButton(
             text=current_language['settings_back'],
@@ -6020,11 +6515,12 @@ class AccountScreen(Screen):
         self.widgets['screen_name']=screen_name
         screen_name.ref='account_screen_name'
 
-        information_box=RoundedColorLayout(
+        information_box=RoundedColorLayoutButton(
             bg_color=(0,0,0,.85),
             size_hint =(.35, .25),
             pos_hint = {'center_x':.225, 'center_y':.75},)
         self.widgets['information_box']=information_box
+        information_box.bind(on_release=self.account_prompt)
 
         information_title=Label(
             text=current_language['information_title'],
@@ -6041,7 +6537,7 @@ class AccountScreen(Screen):
             size_hint =(.9, .005),
             pos_hint = {'x':.05, 'y':.85})
 
-        information_email=TextInput(
+        information_email=EmailInput(
             disabled=True,
             multiline=False,
             hint_text='Enter account email',
@@ -6081,11 +6577,11 @@ class AccountScreen(Screen):
             size_hint =(.9, .005),
             pos_hint = {'x':.05, 'y':.85})
 
-        details_body=Label(
+        details_body=MinimumBoundingLabel(
             text=current_language['details_body'],
             markup=True,
-            size_hint =(.9, .75),
-            pos_hint = {'center_x':.5, 'center_y':.5},)
+            halign='center',
+            pos_hint = {'center_x':.5, 'center_y':.425},)
         self.widgets['details_body']=details_body
         details_body.ref='details_body'
 
@@ -6144,71 +6640,615 @@ class AccountScreen(Screen):
             bg_color=(.5,.5,.5,.85),
             size_hint =(.175, .675),
             pos_hint = {'center_x':.9, 'center_y':.5375},)
-        self.widgets['status_box']=status_box
+        self.widgets['side_bar_box']=side_bar_box
 
-        side_bar_connect=RoundedButton(
-            text=current_language['side_bar_connect'],
+        side_bar_connect=ExpandableRoundedColorLayout(
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.875},
-            background_normal='',
-            background_color=(0,0,0,.9),
-            markup=True)
+            expanded_size=(5.143,1.185),
+            expanded_pos = {'center_x':-1.785, 'center_y':.52},
+            bg_color=(0,0,0,.9),
+            locked=lambda x: self.add_widget(PinLock(lambda :(self.unlock(),x()))))
         self.widgets['side_bar_connect']=side_bar_connect
-        side_bar_connect.ref='side_bar_connect'
-        side_bar_connect.bind(on_press=self.setup_connection)
+        side_bar_connect.widgets={}
+        side_bar_connect.bind(state=self.bg_color)
+        side_bar_connect.bind(expanded=self.side_bar_connect_populate)
+        side_bar_connect.bind(animating=partial(general.stripargs,side_bar_connect.clear_widgets))
 
-        side_bar_unlink=RoundedButton(
-            text=current_language['side_bar_unlink'],
+        side_bar_connect_title=Label(
+            text=current_language['side_bar_connect_title'],
+            markup=True,
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['side_bar_connect_title']=side_bar_connect_title
+        side_bar_connect_title.ref='side_bar_connect_title'
+
+        side_bar_connect_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['side_bar_connect_seperator']=side_bar_connect_seperator
+
+        side_bar_connect_login=AnalyticExpandable(
+            size_hint =(.1, .075),
+            pos_hint = {'center_x':.9, 'center_y':.75},
+            expanded_size=(1,1),
+            expanded_pos = {'center_x':.5, 'center_y':.5},
+            bg_color=(0,0,0,0))
+        self.widgets['side_bar_connect_login']=side_bar_connect_login
+        side_bar_connect_login.widgets={}
+        side_bar_connect_login.bind(expanded=self.side_bar_connect_login_populate)
+        side_bar_connect_login.bind(animating=partial(general.stripargs,side_bar_connect_login.clear_widgets))
+
+        side_bar_connect_login_title=MinimumBoundingLabel(
+            text='[color=#ffffff][b][size=12]Already have an account?\n[u][size=16]Login',
+            markup=True,
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.5},
+            halign='center')
+        self.widgets['side_bar_connect_login_title']=side_bar_connect_login_title
+
+        side_bar_connect_login_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['side_bar_connect_login_seperator']=side_bar_connect_login_seperator
+
+        side_bar_connect_login_back=RoundedButton(
+            text='[color=#ffffff][b][size=12]Don\'t have an account yet?\n[u][size=16]Create Account',
+            size_hint =(.1, .075),
+            pos_hint = {'center_x':.1, 'center_y':.75},
+            background_down='',
+            background_color=(200/255, 200/255, 200/255,0),
+            markup=True,
+            halign='center')
+        self.widgets['side_bar_connect_login_back']=side_bar_connect_login_back
+        side_bar_connect_login_back.bind(on_release=self.side_bar_connect_login_expand_button_func)
+
+        side_bar_connect_login_vertical_seperator=Image(
+            source=gray_seperator_line_vertical,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.0005, .3),
+            pos_hint = {'center_x':.37, 'center_y':.60})
+        self.widgets['side_bar_connect_login_vertical_seperator']=side_bar_connect_login_vertical_seperator
+
+        side_bar_connect_login_email=MinimumBoundingLabel(
+            text='[b][size=16]Email:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'right':.35, 'center_y':.7},)
+        self.widgets['side_bar_connect_login_email']=side_bar_connect_login_email
+
+        side_bar_connect_login_email_invalid_hint=MinimumBoundingLabel(
+            text='[b][size=16][color=#aa0000]Email is not in a valid format.\nEnter valid email format',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'center_x':.55, 'center_y':.63},
+            halign='center')
+        self.widgets['side_bar_connect_login_email_invalid_hint']=side_bar_connect_login_email_invalid_hint
+
+        side_bar_connect_login_email_input=EmailInput(
+            disabled=False,
+            multiline=False,
+            hint_text='Enter Account Email Address',
+            size_hint =(.3, .05),
+            pos_hint = {'x':.4, 'center_y':.7})
+        self.widgets['side_bar_connect_login_email_input']=side_bar_connect_login_email_input
+        side_bar_connect_login_email_input.bind(focus=self.side_bar_connect_login_email_input_clear)
+
+        side_bar_connect_login_password=MinimumBoundingLabel(
+            text='[b][size=16]Password:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'right':.35, 'center_y':.55},)
+        self.widgets['side_bar_connect_login_password']=side_bar_connect_login_password
+
+        side_bar_connect_login_password_input=TextInput(
+            disabled=False,
+            multiline=False,
+            password=True,
+            hint_text='Enter Account Password',
+            size_hint =(.3, .05),
+            pos_hint = {'x':.4, 'center_y':.55})
+        self.widgets['side_bar_connect_login_password_input']=side_bar_connect_login_password_input
+        side_bar_connect_login_password_input.bind(focus=self.side_bar_connect_login_password_input_clear)
+
+        side_bar_connect_login_send=RoundedButton(
+            text='[b][size=16]All Fields Required',
+            size_hint =(.425, .075),
+            pos_hint = {'center_x':.5, 'center_y':.3},
+            background_normal='',
+            background_color=(.1,.1,.1,1),
+            disabled=True,
+            disabled_color=(1,1,1,1),
+            markup=True)
+        self.widgets['side_bar_connect_login_send']=side_bar_connect_login_send
+        side_bar_connect_login_send.bind(on_release=self.side_bar_connect_login_send_func)
+        side_bar_connect_login_send.bind(disabled=self.side_bar_connect_login_send_disabled)
+
+        side_bar_connect_login_expand_button=RoundedButton(
+            size_hint =(.5, .075),
+            pos_hint = {'center_x':.5, 'center_y':.075},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
+            markup=True)
+        self.widgets['side_bar_connect_login_expand_button']=side_bar_connect_login_expand_button
+        side_bar_connect_login_expand_button.bind(on_release=self.side_bar_connect_login_expand_button_func)
+
+        side_bar_connect_login_expand_lines=Image(
+            source=settings_icon,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.4, .035),
+            pos_hint = {'center_x':.5, 'center_y':.075})
+        side_bar_connect_login_expand_lines.center=side_bar_connect_login_expand_button.center
+        self.widgets['side_bar_connect_login_expand_lines']=side_bar_connect_login_expand_lines
+
+
+        side_bar_connect_vertical_seperator=Image(
+            source=gray_seperator_line_vertical,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.0005, .3),
+            pos_hint = {'center_x':.37, 'center_y':.60})
+        self.widgets['side_bar_connect_vertical_seperator']=side_bar_connect_vertical_seperator
+
+        side_bar_connect_email=MinimumBoundingLabel(
+            text='[b][size=16]Email:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'right':.35, 'center_y':.7},)
+        self.widgets['side_bar_connect_email']=side_bar_connect_email
+
+        side_bar_connect_email_invalid_hint=MinimumBoundingLabel(
+            text='[b][size=16][color=#aa0000]Email is not in a valid format.\nEnter valid email format',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'center_x':.55, 'center_y':.63},
+            halign='center')
+        self.widgets['side_bar_connect_email_invalid_hint']=side_bar_connect_email_invalid_hint
+
+        side_bar_connect_email_input=EmailInput(
+            disabled=False,
+            multiline=False,
+            hint_text='Enter Email Address',
+            size_hint =(.3, .05),
+            pos_hint = {'x':.4, 'center_y':.7})
+        self.widgets['side_bar_connect_email_input']=side_bar_connect_email_input
+        side_bar_connect_email_input.bind(focus=self.side_bar_connect_email_input_clear)
+
+
+
+        side_bar_connect_password=MinimumBoundingLabel(
+            text='[b][size=16]Password:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'right':.35, 'center_y':.55},)
+        self.widgets['side_bar_connect_password']=side_bar_connect_password
+
+        side_bar_connect_password_input=TextInput(
+            disabled=False,
+            multiline=False,
+            password=True,
+            hint_text='Enter New Password',
+            size_hint =(.3, .05),
+            pos_hint = {'x':.4, 'center_y':.55})
+        self.widgets['side_bar_connect_password_input']=side_bar_connect_password_input
+        side_bar_connect_password_input.bind(focus=self.side_bar_connect_password_input_clear)
+
+        side_bar_connect_send=RoundedButton(
+            text='[b][size=16]All Fields Required',
+            size_hint =(.425, .075),
+            pos_hint = {'center_x':.5, 'center_y':.3},
+            background_normal='',
+            background_color=(.1,.1,.1,1),
+            disabled=True,
+            disabled_color=(1,1,1,1),
+            markup=True)
+        self.widgets['side_bar_connect_send']=side_bar_connect_send
+        side_bar_connect_send.bind(on_release=self.side_bar_connect_send_func)
+        side_bar_connect_send.bind(disabled=self.side_bar_connect_send_disabled)
+
+
+
+
+
+
+
+
+
+        side_bar_connect_expand_button=RoundedButton(
+            size_hint =(.5, .075),
+            pos_hint = {'center_x':.5, 'center_y':.075},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
+            markup=True)
+        self.widgets['side_bar_connect_expand_button']=side_bar_connect_expand_button
+        side_bar_connect_expand_button.bind(on_release=self.side_bar_connect_expand_button_func)
+
+        side_bar_connect_expand_lines=Image(
+            source=settings_icon,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.4, .035),
+            pos_hint = {'center_x':.5, 'center_y':.075})
+        side_bar_connect_expand_lines.center=side_bar_connect_expand_button.center
+        self.widgets['side_bar_connect_expand_lines']=side_bar_connect_expand_lines
+
+        side_bar_unlink=ExpandableRoundedColorLayout(
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.6875},
-            background_normal='',
-            background_color=(0,0,0,.9),
-            markup=True)
+            expanded_size=(5.143,1.185),
+            expanded_pos = {'center_x':-1.785, 'center_y':.52},
+            bg_color=(0,0,0,.9),
+            locked=lambda x: self.add_widget(PinLock(lambda :(self.unlock(),x()))))
         self.widgets['side_bar_unlink']=side_bar_unlink
-        side_bar_unlink.ref='side_bar_unlink'
-        side_bar_unlink.bind(on_press=self.remove_connection)
+        side_bar_unlink.widgets={}
+        side_bar_unlink.bind(state=self.bg_color)
+        side_bar_unlink.bind(expanded=self.side_bar_unlink_populate)
+        side_bar_unlink.bind(animating=partial(general.stripargs,side_bar_unlink.clear_widgets))
 
-        side_bar_add=RoundedButton(
-            text=current_language['side_bar_add'],
+        side_bar_unlink_title=Label(
+            text=current_language['side_bar_unlink_title'],
+            markup=True,
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['side_bar_unlink_title']=side_bar_unlink_title
+        side_bar_unlink_title.ref='side_bar_unlink_title'
+
+        side_bar_unlink_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['side_bar_unlink_seperator']=side_bar_unlink_seperator
+
+        side_bar_unlink_expand_button=RoundedButton(
+            size_hint =(.5, .075),
+            pos_hint = {'center_x':.5, 'center_y':.075},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
+            markup=True)
+        self.widgets['side_bar_unlink_expand_button']=side_bar_unlink_expand_button
+        side_bar_unlink_expand_button.bind(on_release=self.side_bar_unlink_expand_button_func)
+
+        side_bar_unlink_expand_lines=Image(
+            source=settings_icon,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.4, .035),
+            pos_hint = {'center_x':.5, 'center_y':.075})
+        side_bar_unlink_expand_lines.center=side_bar_unlink_expand_button.center
+        self.widgets['side_bar_unlink_expand_lines']=side_bar_unlink_expand_lines
+
+        side_bar_add=ExpandableRoundedColorLayout(
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.5},
-            background_normal='',
-            background_color=(0,0,0,.9),
-            markup=True)
+            expanded_size=(5.143,1.185),
+            expanded_pos = {'center_x':-1.785, 'center_y':.52},
+            bg_color=(0,0,0,.9),
+            locked=lambda x: self.add_widget(PinLock(lambda :(self.unlock(),x()))))
         self.widgets['side_bar_add']=side_bar_add
-        side_bar_add.ref='side_bar_add'
-        # side_bar_add.bind(on_press=self.side_bar_add)
+        side_bar_add.widgets={}
+        side_bar_add.bind(state=self.bg_color)
+        side_bar_add.bind(expanded=self.side_bar_add_populate)
+        side_bar_add.bind(animating=partial(general.stripargs,side_bar_add.clear_widgets))
 
-        side_bar_remove=RoundedButton(
-            text=current_language['side_bar_remove'],
+        side_bar_add_title=Label(
+            text=current_language['side_bar_add_title'],
+            markup=True,
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['side_bar_add_title']=side_bar_add_title
+        side_bar_add_title.ref='side_bar_add_title'
+
+        side_bar_add_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['side_bar_add_seperator']=side_bar_add_seperator
+
+        side_bar_add_body=MinimumBoundingLabel(
+            text=current_language['side_bar_add_body'],
+            markup=True,
+            pos_hint = {'center_x':.2, 'center_y':.5})
+        self.widgets['side_bar_add_body']=side_bar_add_body
+        side_bar_add_body.ref='side_bar_add_body'
+
+        with side_bar_add_body.canvas.before:
+            Color(0,0,0,1)
+            side_bar_add_body.rect=Rectangle()
+
+        # with side_bar_add_body.canvas.after:
+        #    side_bar_add_body.status_lines=Line(rounded_rectangle=(100, 100, 200, 200, 10, 10, 10, 10, 100))
+
+        def side_bar_add_body_update_lines(*args):
+            offset=5
+            x=int(side_bar_add_body.x)-offset
+            y=int(side_bar_add_body.y)-offset
+            width=int(side_bar_add_body.width*1)+offset*2
+            height=int(side_bar_add_body.height*1)+offset*2
+            # side_bar_add_body.status_lines.rounded_rectangle=(x, y, width, height, 10, 10, 10, 10, 100)
+            side_bar_add_body.rect.pos=(x,y)
+            side_bar_add_body.rect.size=(width,height)
+        side_bar_add_body.bind(pos=side_bar_add_body_update_lines, size=side_bar_add_body_update_lines)
+
+        side_bar_add_vertical_seperator=Image(
+            source=gray_seperator_line_vertical,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.0005, .4),
+            pos_hint = {'center_x':.5, 'center_y':.55})
+        self.widgets['side_bar_add_vertical_seperator']=side_bar_add_vertical_seperator
+
+        side_bar_add_uuid=MinimumBoundingLabel(
+            text='[b][size=16]UUID:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'right':.48, 'center_y':.675},)
+        self.widgets['side_bar_add_uuid']=side_bar_add_uuid
+
+        side_bar_add_uuid_display=MinimumBoundingLabel(
+            text='',
+            markup=True,
+            halign='center',
+            pos_hint = {'x':.55, 'center_y':.675})
+        self.widgets['side_bar_add_uuid_display']=side_bar_add_uuid_display
+
+        side_bar_add_link_code=MinimumBoundingLabel(
+            text='[b][size=16]Link Code:',
+            markup=True,
+            size_hint=(None,None),
+            pos_hint = {'right':.48, 'center_y':.425},)
+        self.widgets['side_bar_add_link_code']=side_bar_add_link_code
+
+        side_bar_add_link_code_display=MinimumBoundingLabel(
+            text='',
+            markup=True,
+            pos_hint = {'x':.53, 'center_y':.425})
+        self.widgets['side_bar_add_link_code_display']=side_bar_add_link_code_display
+
+        side_bar_add_valid_box=RoundedColorLayout(
+            bg_color=(100/255, 255/255, 100/255,.75),
+            size_hint=(.1, .115),
+            pos_hint={'center_x':.5875, 'center_y':.3})
+        self.widgets['side_bar_add_valid_box']=side_bar_add_valid_box
+
+        side_bar_add_valid_text=MinimumBoundingLabel(
+            text='[size=16][b][color=#000000]Valid',
+            markup=True,
+            pos_hint = {'center_x':.5, 'center_y':.8})
+        self.widgets['side_bar_add_valid_text']=side_bar_add_valid_text
+
+        side_bar_add_valid_time=MinimumBoundingLabel(
+            text='[size=28][color=#000000]15:00',
+            markup=True,
+            pos_hint = {'center_x':.5, 'center_y':.35})
+        self.widgets['side_bar_add_valid_time']=side_bar_add_valid_time
+
+        side_bar_add_qr_missing=MinimumBoundingLabel(
+            text='[size=16][color=#ffffff]No User ID Found.\nConfirm Your Account\nstatus and generate\na new link above.',
+            markup=True,
+            # size_hint =(1, 1),
+            pos_hint = {'center_x':.8, 'center_y':.45},)
+        self.widgets['side_bar_add_qr_missing']=side_bar_add_qr_missing
+        # side_bar_add_qr_missing.ref='side_bar_add_qr_missing'
+
+        side_bar_add_qr_frame=FloatLayout(
+            size_hint =(None, .5),
+            pos_hint = {'center_x':.8, 'center_y':.45})
+        self.widgets['side_bar_add_qr_frame']=side_bar_add_qr_frame
+
+        with side_bar_add_qr_frame.canvas.before:
+            qrf=side_bar_add_qr_frame
+            length=qrf.width*.3
+            qrf.frame_color=Color(1,1,1)
+            qrf.bl_line=Line(points=[qrf.x,qrf.y+length,qrf.x,qrf.y,qrf.x+length,qrf.y],width=2)
+            qrf.tl_line=Line(points=[qrf.x,qrf.top-length,qrf.x,qrf.top,qrf.x+length,qrf.top],width=2)
+            qrf.tr_line=Line(points=[qrf.right-length,qrf.top,qrf.right,qrf.top,qrf.right,qrf.top-length],width=2)
+            qrf.br_line=Line(points=[qrf.right,qrf.y+length,qrf.right,qrf.y,qrf.right-length,qrf.y],width=2)
+
+        def side_bar_add_qr_frame_align(self,*args):
+            qrf=side_bar_add_qr_frame
+            qrf.width=qrf.height
+            qrf.bl_line.points=[qrf.x,qrf.y+length,qrf.x,qrf.y,qrf.x+length,qrf.y]
+            qrf.tl_line.points=[qrf.x,qrf.top-length,qrf.x,qrf.top,qrf.x+length,qrf.top]
+            qrf.tr_line.points=[qrf.right-length,qrf.top,qrf.right,qrf.top,qrf.right,qrf.top-length]
+            qrf.br_line.points=[qrf.right,qrf.y+length,qrf.right,qrf.y,qrf.right-length,qrf.y]
+        side_bar_add_qr_frame.bind(pos=side_bar_add_qr_frame_align,size=side_bar_add_qr_frame_align)
+
+        side_bar_add_qr_image=Image(
+            allow_stretch=True,
+            keep_ratio=True,
+            size_hint =(.95, .95),
+            pos_hint = {'center_x':.5, 'center_y':.5})
+        self.widgets['side_bar_add_qr_image']=side_bar_add_qr_image
+        side_bar_add_qr_image.opacity=0
+
+        side_bar_add_qr_generate=RoundedButton(
+            text='[size=20][color=#000000]Generate Link',
+            size_hint =(.15, .075),
+            pos_hint = {'center_x':.8, 'y':.725},
+            background_normal='',
+            background_color=(.0, .5, .7,.85),
+            markup=True)
+        self.widgets['side_bar_add_qr_generate']=side_bar_add_qr_generate
+        side_bar_add_qr_generate.bind(on_release=self.side_bar_add_qr_generate_func)
+
+        side_bar_add_app_icon_layout=ExpandableRoundedColorLayout(
+            size_hint =(.1, .1),
+            pos_hint = {'center_x':.06, 'center_y':.125},
+            expanded_size=(.75,.8),
+            expanded_pos = {'center_x':.5, 'center_y':.5},
+            bg_color=(1,1,1,0),
+            modal_dim=(0,0,0,.75))
+        # side_bar_add_app_icon_layout.shrink_anim=Animation(size_hint=side_bar_add_app_icon_layout.original_size,d=.15,t='in_sine')
+        # side_bar_add_app_icon_layout.return_anim=Animation(pos_hint=side_bar_add_app_icon_layout.original_pos,d=.15,t='in_sine')
+        self.widgets['side_bar_add_app_icon_layout']=side_bar_add_app_icon_layout
+        side_bar_add_app_icon_layout.widgets={}
+        side_bar_add_app_icon_layout.bind(on_release=self.side_bar_add_app_icon_layout_func)
+        side_bar_add_app_icon_layout.bind(expanded=self.side_bar_add_app_icon_layout_populate)
+        side_bar_add_app_icon_layout.bind(animating=partial(general.stripargs,side_bar_add_app_icon_layout.clear_widgets))
+
+        side_bar_add_app_icon_image=Image(
+            source=app_icon_source,
+            allow_stretch=False,
+            keep_ratio=True,
+            # size_hint=(1.5,1.5),
+            pos_hint = {'center_x':.5, 'center_y':.5})
+        self.widgets['side_bar_add_app_icon_image']=side_bar_add_app_icon_image
+
+        side_bar_add_app_bubble_image=Image(
+            source=square_bubble,
+            allow_stretch=False,
+            keep_ratio=True,
+            size_hint=(1.5,1.5),
+            pos_hint = {'center_x':1.5, 'center_y':.25})
+        self.widgets['side_bar_add_app_bubble_image']=side_bar_add_app_bubble_image
+
+        side_bar_add_app_title=Label(
+            text='[size=24][color=#000000][b]Hood Control Admin',
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.925},)
+        self.widgets['side_bar_add_app_title']=side_bar_add_app_title
+        # side_bar_add_app_title.ref='side_bar_add_app_title'
+
+        side_bar_add_app_seperator_line=Image(
+            source=black_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.98, .004),
+            pos_hint = {'x':.01, 'y':.85})
+        self.widgets['side_bar_add_app_seperator_line']=side_bar_add_app_seperator_line
+
+        side_bar_add_app_mock_image=Image(
+            source=hc_mockup,
+            allow_stretch=False,
+            keep_ratio=True,
+            size_hint=(.7,.7),
+            pos_hint = {'center_x':.225, 'y':.1})
+        self.widgets['side_bar_add_app_mock_image']=side_bar_add_app_mock_image
+
+        side_bar_add_app_body=MinimumBoundingLabel(
+            text=current_language['side_bar_add_app_body'],
+            markup=True,
+            halign='center',
+            pos_hint = {'center_x':.625, 'top':.75},)
+        self.widgets['side_bar_add_app_body']=side_bar_add_app_body
+        side_bar_add_app_body.ref='side_bar_add_app_body'
+
+        side_bar_add_app_store_badges_image=Image(
+            source=store_badges,
+            allow_stretch=True,
+            keep_ratio=True,
+            size_hint=(.325,.325),
+            pos_hint = {'center_x':.5, 'y':.1})
+        self.widgets['side_bar_add_app_store_badges_image']=side_bar_add_app_store_badges_image
+
+        side_bar_add_app_qr_image=Image(
+            source=uid_qr,
+            allow_stretch=True,
+            keep_ratio=True,
+            size_hint=(.325,.325),
+            pos_hint = {'center_x':.775, 'y':.1})
+        self.widgets['side_bar_add_app_qr_image']=side_bar_add_app_qr_image
+
+        side_bar_add_expand_button=RoundedButton(
+            size_hint =(.5, .075),
+            pos_hint = {'center_x':.5, 'center_y':.075},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
+            markup=True)
+        self.widgets['side_bar_add_expand_button']=side_bar_add_expand_button
+        side_bar_add_expand_button.bind(on_release=self.side_bar_add_expand_button_func)
+
+        side_bar_add_expand_lines=Image(
+            source=settings_icon,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.4, .035),
+            pos_hint = {'center_x':.5, 'center_y':.075})
+        side_bar_add_expand_lines.center=side_bar_add_expand_button.center
+        self.widgets['side_bar_add_expand_lines']=side_bar_add_expand_lines
+
+        side_bar_remove=ExpandableRoundedColorLayout(
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.3125},
-            background_normal='',
-            background_color=(0,0,0,.9),
-            markup=True)
+            expanded_size=(5.143,1.185),
+            expanded_pos = {'center_x':-1.785, 'center_y':.52},
+            bg_color=(0,0,0,.9),
+            locked=lambda x: self.add_widget(PinLock(lambda :(self.unlock(),x()))))
         self.widgets['side_bar_remove']=side_bar_remove
-        side_bar_remove.ref='side_bar_remove'
-        # side_bar_remove.bind(on_press=self.side_bar_remove)
+        side_bar_remove.widgets={}
+        side_bar_remove.bind(state=self.bg_color)
+        side_bar_remove.bind(expanded=self.side_bar_remove_populate)
+        side_bar_remove.bind(animating=partial(general.stripargs,side_bar_remove.clear_widgets))
 
-        side_bar_refresh=RoundedButton(
-            text=current_language['side_bar_refresh'],
+        side_bar_remove_title=Label(
+            text=current_language['side_bar_remove_title'],
+            markup=True,
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['side_bar_remove_title']=side_bar_remove_title
+        side_bar_remove_title.ref='side_bar_remove_title'
+
+        side_bar_remove_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['side_bar_remove_seperator']=side_bar_remove_seperator
+
+        side_bar_remove_expand_button=RoundedButton(
+            size_hint =(.5, .075),
+            pos_hint = {'center_x':.5, 'center_y':.075},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
+            markup=True)
+        self.widgets['side_bar_remove_expand_button']=side_bar_remove_expand_button
+        side_bar_remove_expand_button.bind(on_release=self.side_bar_remove_expand_button_func)
+
+        side_bar_remove_expand_lines=Image(
+            source=settings_icon,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.4, .035),
+            pos_hint = {'center_x':.5, 'center_y':.075})
+        side_bar_remove_expand_lines.center=side_bar_remove_expand_button.center
+        self.widgets['side_bar_remove_expand_lines']=side_bar_remove_expand_lines
+
+        side_bar_set_pin=RoundedButton(
+            text=current_language['side_bar_set_pin'],
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.125},
             background_normal='',
             background_color=(0,0,0,.9),
             markup=True)
-        self.widgets['side_bar_refresh']=side_bar_refresh
-        side_bar_refresh.ref='side_bar_refresh'
-        # side_bar_refresh.bind(on_press=self.side_bar_refresh)
+        self.widgets['side_bar_set_pin']=side_bar_set_pin
+        side_bar_set_pin.ref='side_bar_set_pin'
+        side_bar_set_pin.bind(on_release=self.side_bar_set_pin_func)
+        side_bar_set_pin.bind(state=self.bg_color)
 
-
-
-
-        account_admin_hint=ExactLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
-                color=(0,0,0,1),
-                pos_hint = {'center_x':.5, 'y':.14},
-                markup=True)
+        account_admin_hint=RoundedButton(
+            text=f"[size=16][b][color=#ffffff]Enable Admin mode to edit fields[/size]",
+            color=(0,0,0,1),
+            size_hint=(.2,.05),
+            pos_hint = {'center_x':.5, 'y':.14},
+            markup=True,
+            background_normal='',
+            background_color=(0,0,0,.9))
         self.widgets['account_admin_hint']=account_admin_hint
+        account_admin_hint.bind(on_touch_up=self.prompt_unlock)
 
         seperator_line=Image(
             source=gray_seperator_line,
@@ -6232,11 +7272,26 @@ class AccountScreen(Screen):
         status_box.add_widget(status_scroll)
         status_scroll.add_widget(status_scroll_layout)
 
+        side_bar_connect_login.add_widget(side_bar_connect_login_title)
+
+        side_bar_connect.add_widget(side_bar_connect_title)
+
+        side_bar_unlink.add_widget(side_bar_unlink_title)
+
+        side_bar_remove.add_widget(side_bar_remove_title)
+
+        side_bar_add_app_icon_layout.add_widget(side_bar_add_app_icon_image)
+
+        side_bar_add.add_widget(side_bar_add_title)
+        side_bar_add_qr_frame.add_widget(side_bar_add_qr_image)
+        side_bar_add_valid_box.add_widget(side_bar_add_valid_text)
+        side_bar_add_valid_box.add_widget(side_bar_add_valid_time)
+
         side_bar_box.add_widget(side_bar_connect)
         side_bar_box.add_widget(side_bar_unlink)
         side_bar_box.add_widget(side_bar_add)
         side_bar_box.add_widget(side_bar_remove)
-        side_bar_box.add_widget(side_bar_refresh)
+        side_bar_box.add_widget(side_bar_set_pin)
 
         self.add_widget(bg_image)
         self.add_widget(screen_name)
@@ -6259,7 +7314,6 @@ class AccountScreen(Screen):
     def remove_connection(self,*args):
         self.unlink_server()
     def email_validate(self,button,*args):
-        print(button)
         config=App.get_running_app().config_
         config.set('account','email',f'{button.text}')
         with open(preferences_path,'w') as configfile:
@@ -6270,86 +7324,725 @@ class AccountScreen(Screen):
         with open(preferences_path,'w') as configfile:
             config.write(configfile)
 
-    def check_admin_mode(self,*args):
-        if App.get_running_app().admin_mode_start>time.time():
-            if self.widgets['account_admin_hint'].parent:
-                self.remove_widget(self.widgets['account_admin_hint'])
-            self.widgets['information_email'].disabled=False
-            self.widgets['information_password'].disabled=False
-            self.widgets['side_bar_connect'].disabled=False
-            self.widgets['side_bar_connect'].shape_color.rgba=(0,0,0,.9)
-            self.widgets['side_bar_unlink'].disabled=False
-            self.widgets['side_bar_unlink'].shape_color.rgba=(0,0,0,.9)
-            self.widgets['side_bar_add'].disabled=False
-            self.widgets['side_bar_add'].shape_color.rgba=(0,0,0,.9)
-            self.widgets['side_bar_remove'].disabled=False
-            self.widgets['side_bar_remove'].shape_color.rgba=(0,0,0,.9)
-            self.widgets['side_bar_refresh'].disabled=False
-            self.widgets['side_bar_refresh'].shape_color.rgba=(0,0,0,.9)
-        else:
-            if not self.widgets['account_admin_hint'].parent:
-                self.add_widget(self.widgets['account_admin_hint'])
-            self.widgets['information_email'].disabled=True
-            self.widgets['information_password'].disabled=True
-            self.widgets['side_bar_connect'].disabled=True
-            self.widgets['side_bar_connect'].shape_color.rgba=(.1,.1,.1,.8)
-            self.widgets['side_bar_unlink'].disabled=True
-            self.widgets['side_bar_unlink'].shape_color.rgba=(.1,.1,.1,.8)
-            self.widgets['side_bar_add'].disabled=True
-            self.widgets['side_bar_add'].shape_color.rgba=(.1,.1,.1,.8)
-            self.widgets['side_bar_remove'].disabled=True
-            self.widgets['side_bar_remove'].shape_color.rgba=(.1,.1,.1,.8)
-            self.widgets['side_bar_refresh'].disabled=True
-            self.widgets['side_bar_refresh'].shape_color.rgba=(.1,.1,.1,.8)
+    def side_bar_connect_populate(self,*args):
+        self.clear_hints()
+        sbc_parent=self.widgets['side_bar_box']
+        darken=Animation(rgba=(0,0,0,1))
+        lighten=Animation(rgba=(0,0,0,.85))
+        side_bar_connect=self.widgets['side_bar_connect']
+        side_bar_connect.clear_widgets()
+        if side_bar_connect.expanded:
+            self.remove_widget(sbc_parent)
+            self.add_widget(sbc_parent)#needed to draw children on top
+            darken.start(side_bar_connect.shape_color)
+            w=self.widgets
+            w['side_bar_connect_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            w['side_bar_connect_title'].size_hint=(.4, .05)
+            w['side_bar_connect_email_input'].text=''
+            w['side_bar_connect_password_input'].text=''
+            all_widgets=[
+                w['side_bar_connect_title'],
+                w['side_bar_connect_seperator'],
+                w['side_bar_connect_login'],
+                w['side_bar_connect_vertical_seperator'],
+                w['side_bar_connect_email'],
+                w['side_bar_connect_email_input'],
+                w['side_bar_connect_password'],
+                w['side_bar_connect_password_input'],
+                w['side_bar_connect_send'],
+                w['side_bar_connect_expand_button'],
+                w['side_bar_connect_expand_lines']]
+            for i in all_widgets:
+                side_bar_connect.add_widget(i)
+        elif not side_bar_connect.expanded:
+            lighten.start(side_bar_connect.shape_color)
+            w=self.widgets
+            w['side_bar_connect_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            w['side_bar_connect_title'].size_hint=(1,1)
+            w['side_bar_connect_login'].shrink()
+            all_widgets=[
+                w['side_bar_connect_title']]
+            for i in all_widgets:
+                side_bar_connect.add_widget(i)
+        self.connect_send_disable_func(False)
 
+    def side_bar_connect_login_populate(self,*args):
+        self.clear_hints()
+        darken=Animation(rgba=(0,0,0,1),d=.25)
+        lighten=Animation(rgba=(0,0,0,0))
+        side_bar_connect_login=self.widgets['side_bar_connect_login']
+        side_bar_connect_login.clear_widgets()
+        if side_bar_connect_login.expanded:
+            darken.start(side_bar_connect_login.shape_color)
+            w=self.widgets
+            w['side_bar_connect_login_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            w['side_bar_connect_login_title'].size_hint=(.4, .05)
+            w['side_bar_connect_login_title'].text='[color=#ffffff][b][size=20]Account Login'
+            w['side_bar_connect_login_email_input'].text=''
+            w['side_bar_connect_login_password_input'].text=''
+            w['side_bar_connect_email_input'].text=''
+            w['side_bar_connect_password_input'].text=''
+            all_widgets=[
+                w['side_bar_connect_login_title'],
+                w['side_bar_connect_login_seperator'],
+                w['side_bar_connect_login_back'],
+                w['side_bar_connect_login_vertical_seperator'],
+                w['side_bar_connect_login_email'],
+                w['side_bar_connect_login_email_input'],
+                w['side_bar_connect_login_password'],
+                w['side_bar_connect_login_password_input'],
+                w['side_bar_connect_login_send'],
+                w['side_bar_connect_login_expand_button'],
+                w['side_bar_connect_login_expand_lines']]
+            for i in all_widgets:
+                side_bar_connect_login.add_widget(i)
+        elif not side_bar_connect_login.expanded:
+            lighten.start(side_bar_connect_login.shape_color)
+            w=self.widgets
+            w['side_bar_connect_login_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            w['side_bar_connect_login_title'].size_hint=(1,1)
+            w['side_bar_connect_login_title'].text='[color=#ffffff][b][size=12]Already have an account?\n[u][size=16]Login'
+            all_widgets=[
+                w['side_bar_connect_login_title']]
+            for i in all_widgets:
+                side_bar_connect_login.add_widget(i)
+        self.connect_login_send_disable_func(False)
+        self.connect_send_disable_func(False)
+
+    def side_bar_unlink_populate(self,*args):
+        sbu_parent=self.widgets['side_bar_box']
+        darken=Animation(rgba=(0,0,0,1))
+        lighten=Animation(rgba=(0,0,0,.85))
+        side_bar_unlink=self.widgets['side_bar_unlink']
+        side_bar_unlink.clear_widgets()
+        if side_bar_unlink.expanded:
+            self.remove_widget(sbu_parent)
+            self.add_widget(sbu_parent)#needed to draw children on top
+            darken.start(side_bar_unlink.shape_color)
+            w=self.widgets
+            w['side_bar_unlink_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            w['side_bar_unlink_title'].size_hint=(.4, .05)
+            all_widgets=[
+                w['side_bar_unlink_title'],
+                w['side_bar_unlink_seperator'],
+                w['side_bar_unlink_expand_button'],
+                w['side_bar_unlink_expand_lines']]
+            for i in all_widgets:
+                side_bar_unlink.add_widget(i)
+        elif not side_bar_unlink.expanded:
+            lighten.start(side_bar_unlink.shape_color)
+            w=self.widgets
+            w['side_bar_unlink_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            w['side_bar_unlink_title'].size_hint=(1,1)
+            all_widgets=[
+                w['side_bar_unlink_title']]
+            for i in all_widgets:
+                side_bar_unlink.add_widget(i)
+
+    def side_bar_add_populate(self,*args):
+        sbm_parent=self.widgets['side_bar_box']
+        darken=Animation(rgba=(0,0,0,1))
+        lighten=Animation(rgba=(0,0,0,.85))
+        side_bar_add=self.widgets['side_bar_add']
+        side_bar_add.clear_widgets()
+        if side_bar_add.expanded:
+            self.remove_widget(sbm_parent)
+            self.add_widget(sbm_parent)#needed to draw children on top
+            darken.start(side_bar_add.shape_color)
+            w=self.widgets
+            if os.path.exists(uid_qr):
+                qr=w['side_bar_add_qr_image']
+                qr.source=uid_qr
+                qr.opacity=1
+            else:w['side_bar_add_qr_image'].opacity=0
+            w['side_bar_add_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            w['side_bar_add_title'].size_hint=(.4, .05)
+            w['side_bar_add_title'].text=current_language['side_bar_add_title_expanded']
+            if hasattr(w['side_bar_add_app_bubble_image'],'parent'):
+                if w['side_bar_add_app_bubble_image'].parent==None:
+                    w['side_bar_add_app_icon_layout'].add_widget(w['side_bar_add_app_bubble_image'])
+            all_widgets=[
+                w['side_bar_add_title'],
+                w['side_bar_add_seperator'],
+                w['side_bar_add_body'],
+                w['side_bar_add_vertical_seperator'],
+                w['side_bar_add_uuid'],
+                w['side_bar_add_uuid_display'],
+                w['side_bar_add_link_code'],
+                w['side_bar_add_link_code_display'],
+                w['side_bar_add_valid_box'],
+                w['side_bar_add_qr_missing'],
+                w['side_bar_add_qr_frame'],
+                w['side_bar_add_qr_generate'],
+                w['side_bar_add_app_icon_layout'],
+                w['side_bar_add_expand_button'],
+                w['side_bar_add_expand_lines']]
+            for i in all_widgets:
+                side_bar_add.add_widget(i)
+            self.side_bar_add_qr_generate_func()
+        elif not side_bar_add.expanded:
+            lighten.start(side_bar_add.shape_color)
+            w=self.widgets
+            if w['side_bar_add_app_icon_layout'].expanded:
+                w['side_bar_add_app_icon_layout'].shrink()
+            w['side_bar_add_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            w['side_bar_add_title'].size_hint=(1,1)
+            w['side_bar_add_title'].text=current_language['side_bar_add_title']
+            all_widgets=[
+                w['side_bar_add_title']]
+            for i in all_widgets:
+                side_bar_add.add_widget(i)
+
+    def side_bar_add_app_icon_layout_populate(self,*args):
+        sba_icon=self.widgets['side_bar_add_app_icon_layout']
+        sba_parent=self.widgets['side_bar_add']
+        darken=Animation(rgba=(1,1,1,1))
+        lighten=Animation(rgba=(1,1,1,0),d=.75)
+        side_bar_add_app_icon=self.widgets['side_bar_add_app_icon_layout']
+        side_bar_add_app_icon.clear_widgets()
+        if side_bar_add_app_icon.expanded:
+            sba_parent.remove_widget(sba_icon)
+            sba_parent.add_widget(sba_icon)#needed to draw children on top
+            darken.start(side_bar_add_app_icon.shape_color)
+            w=self.widgets
+            all_widgets=[
+                w['side_bar_add_app_title'],
+                w['side_bar_add_app_seperator_line'],
+                w['side_bar_add_app_mock_image'],
+                w['side_bar_add_app_body'],
+                w['side_bar_add_app_store_badges_image'],
+                w['side_bar_add_app_qr_image']]
+            for i in all_widgets:
+                side_bar_add_app_icon.add_widget(i)
+        elif not side_bar_add_app_icon.expanded:
+            lighten.start(side_bar_add_app_icon.shape_color)
+            w=self.widgets
+            w['side_bar_add_app_icon_image'].opacity=0
+            Animation(opacity=1,d=1.5).start(w['side_bar_add_app_icon_image'])
+            all_widgets=[
+                w['side_bar_add_app_icon_image']]
+            for i in all_widgets:
+                side_bar_add_app_icon.add_widget(i)
+
+    def side_bar_remove_populate(self,*args):
+        sbr_parent=self.widgets['side_bar_box']
+        darken=Animation(rgba=(0,0,0,1))
+        lighten=Animation(rgba=(0,0,0,.85))
+        side_bar_remove=self.widgets['side_bar_remove']
+        side_bar_remove.clear_widgets()
+        if side_bar_remove.expanded:
+            self.remove_widget(sbr_parent)
+            self.add_widget(sbr_parent)#needed to draw children on top
+            darken.start(side_bar_remove.shape_color)
+            w=self.widgets
+            w['side_bar_remove_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            w['side_bar_remove_title'].size_hint=(.4, .05)
+            all_widgets=[
+                w['side_bar_remove_title'],
+                w['side_bar_remove_seperator'],
+                w['side_bar_remove_expand_button'],
+                w['side_bar_remove_expand_lines']]
+            for i in all_widgets:
+                side_bar_remove.add_widget(i)
+        elif not side_bar_remove.expanded:
+            lighten.start(side_bar_remove.shape_color)
+            w=self.widgets
+            w['side_bar_remove_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            w['side_bar_remove_title'].size_hint=(1,1)
+            all_widgets=[
+                w['side_bar_remove_title']]
+            for i in all_widgets:
+                side_bar_remove.add_widget(i)
+
+    def side_bar_connect_login_expand_button_func(self,*args):
+        sba=self.widgets['side_bar_connect_login']
+        if sba.expanded:
+            a=Animation(rgba=(0,0,0,0),d=.25)
+            a.start(sba.shape_color)
+            a.bind(on_complete=sba.shrink)
+        if not sba.expanded:
+            sba.expand()
+
+    def side_bar_connect_expand_button_func(self,*args):
+        sba=self.widgets['side_bar_connect']
+        if sba.expanded:
+            sba.shrink()
+        if not sba.expanded:
+            sba.expand()
+
+    def side_bar_unlink_expand_button_func(self,*args):
+        sba=self.widgets['side_bar_unlink']
+        if sba.expanded:
+            sba.shrink()
+        if not sba.expanded:
+            sba.expand()
+
+    def side_bar_remove_expand_button_func(self,*args):
+        sba=self.widgets['side_bar_remove']
+        if sba.expanded:
+            sba.shrink()
+        if not sba.expanded:
+            sba.expand()
+
+    def side_bar_add_expand_button_func(self,*args):
+        sba=self.widgets['side_bar_add']
+        if sba.expanded:
+            sba.shrink()
+        if not sba.expanded:
+            sba.expand()
+
+    def side_bar_add_app_icon_layout_func(self,*args):
+        sba=self.widgets['side_bar_add_app_icon_layout']
+        def shrink(*args):
+            if sba.expanded:
+                sba.shrink()
+        if sba.expanded:
+            Clock.schedule_once(shrink,0)
+        else:
+            sba.shape_color.rgba=(1,1,1,.2)
+
+    def side_bar_add_qr_generate_func(self,*args):
+        w=self.widgets
+        if hasattr(server,'uid'):
+            if server.uid:
+                if self.generate_link_timer>time.time():
+                    return
+                self.uvt_event=Clock.schedule_interval(self.update_valid_time,.1)
+                self.generate_link_timer=time.time()+15#900
+                w['side_bar_add_qr_image'].source=uid_qr
+                w['side_bar_add_qr_image'].opacity=1
+                w['side_bar_add_valid_box'].opacity=1
+                _quarterPoint = len(server.uid)//4
+                _midPoint = len(server.uid)//2
+                _endquarterPoint = int(len(server.uid)//1.3)
+                _uuid=server.uid[:_quarterPoint]+'\n'+server.uid[_quarterPoint:_midPoint]+'\n'+server.uid[_midPoint:_endquarterPoint]+'\n'+server.uid[_endquarterPoint:]
+                w['side_bar_add_uuid_display'].text=f'[size=16]{_uuid}'
+                self._link_code='    '.join(random.choices(string.ascii_uppercase+string.digits+string.digits,k=6))
+                w['side_bar_add_link_code_display'].text='[size=16]'+self._link_code
+                stripped_link_code=self._link_code.replace(' ','')
+                config=App.get_running_app().config_
+                config.set('account','uuid',server.uid)
+                config.set('account','link_code',stripped_link_code)
+                with open(preferences_path,'w') as configfile:
+                    config.write(configfile)
+                qr_data=server.uid+stripped_link_code
+                print(qr_data)
+                self.generate_uid_qr(qr_data)
+                w['side_bar_add_qr_image'].reload()
+                return
+        w['side_bar_add_qr_image'].opacity=0
+        w['side_bar_add_valid_box'].opacity=0
+        w['side_bar_add_uuid_display'].text=''
+        w['side_bar_add_link_code_display'].text=''
+
+    def side_bar_set_pin_func(self,*args):
+        def set_pin(*args):
+            pl=PinLock(set_pin=True,callback=confirm_pin)
+            pl.widgets['title'].text='[size=20][color=#ffffff][b]Enter New Pin'
+            self.add_widget(pl)
+
+        def confirm_pin(**kwargs):
+            if not 'alt_pin' in kwargs:
+                App.get_running_app().notifications.toast('Error','warning')
+                return
+            pin=kwargs.pop('alt_pin')
+            pl=PinLock(alt_pin=pin,callback=save_pin)
+            pl.widgets['title'].text='[size=20][color=#ffffff][b]Confirm New Pin'
+            self.add_widget(pl)
+
+        def save_pin(pin,*args):
+            root=App.get_running_app()
+            config=root.config_
+            config['account']['admin_pin']=pin
+            with open(preferences_path,'w') as configfile:
+                config.write(configfile)
+            root.notifications.toast('[b][size=20]Pin Saved')
+
+        self.add_widget(PinLock(set_pin))
+
+    def side_bar_connect_login_email_input_clear(self,button,focused,*args):
+        si=self.widgets['side_bar_connect_login_email_input']
+        p=si.parent
+        if p:
+            p.remove_widget(si)
+            p.add_widget(si)
+        if focused:
+            si.font_size=32
+            si.pos_hint={'center_x':.5, 'center_y':.6}
+            si.size_hint=(.8, .1)
+        else:
+            si.font_size=15
+            si.pos_hint={'x':.4, 'center_y':.7}
+            si.size_hint=(.3, .05)
+        self.connect_login_send_disable_func(focused)
+
+    def side_bar_connect_login_password_input_clear(self,button,focused,*args):
+        pi=self.widgets['side_bar_connect_login_password_input']
+        p=pi.parent
+        if p:
+            p.remove_widget(pi)
+            p.add_widget(pi)
+        if focused:
+            pi.text=''
+            pi.font_size=32
+            pi.pos_hint={'center_x':.5, 'center_y':.6}
+            pi.size_hint=(.8, .1)
+        else:
+            pi.font_size=15
+            pi.pos_hint={'x':.4, 'center_y':.55}
+            pi.size_hint=(.3, .05)
+        self.connect_login_send_disable_func(focused)
+
+    def side_bar_connect_email_input_clear(self,button,focused,*args):
+        si=self.widgets['side_bar_connect_email_input']
+        p=si.parent
+        p.remove_widget(si)
+        p.add_widget(si)
+        if focused:
+            si.font_size=32
+            si.pos_hint={'center_x':.5, 'center_y':.6}
+            si.size_hint=(.8, .1)
+        else:
+            si.font_size=15
+            si.pos_hint={'x':.4, 'center_y':.7}
+            si.size_hint=(.3, .05)
+        self.connect_send_disable_func(focused)
+
+    def side_bar_connect_password_input_clear(self,button,focused,*args):
+        pi=self.widgets['side_bar_connect_password_input']
+        p=pi.parent
+        if p:
+            p.remove_widget(pi)
+            p.add_widget(pi)
+        if focused:
+            pi.text=''
+            pi.font_size=32
+            pi.pos_hint={'center_x':.5, 'center_y':.6}
+            pi.size_hint=(.8, .1)
+        else:
+            pi.font_size=15
+            pi.pos_hint={'x':.4, 'center_y':.55}
+            pi.size_hint=(.3, .05)
+        self.connect_send_disable_func(focused)
+
+    def bg_color(self,button,*args):
+        if hasattr(button,'expanded'):
+            if button.expanded:
+                return
+        if button.state=='normal':
+            button.shape_color.rgba=(0,0,0,.9)
+        if button.state=='down':
+            button.shape_color.rgba=(.05,.05,0,.7)
+
+    def prompt_unlock(self,button,touch,*args):
+        if not button.collide_point(*touch.pos):
+            return
+        if self.unlocked:
+            return
+        for widget in self.children:
+            if isinstance(widget,PinLock):
+                return
+        self.add_widget(PinLock(self.unlock))
+
+    def unlock(self,*args):
+        self.unlocked=True
+        self.check_admin_mode()
+
+    def account_prompt(self,*args):
+        if hasattr(self,'prompt_fade'):
+            return
+        if App.get_running_app().config_.get('account','email',fallback=False):
+            return
+        else:
+            self.prompt_fade=True
+            def clear_prompt_fade(*args):
+                if hasattr(self,'prompt_fade'):
+                    del self.prompt_fade
+            b=self.widgets['side_bar_connect']
+            p=b.parent
+            pp=b.parent.parent
+            p.remove_widget(b)
+            p.add_widget(b)
+            pp.remove_widget(p)
+            pp.add_widget(p)
+            with b.canvas.before:
+                b.screen_fade=Color(0,0,0,0)
+                Rectangle(size=Window.size)
+            def modal(_touch):
+                if not b.collide_point(*_touch.pos):
+                    return True
+                else:
+                    super(ExpandableRoundedColorLayout,b).on_touch_down(_touch)
+                    return True
+            def not_modal(_touch):
+                return super(ExpandableRoundedColorLayout,b).on_touch_down(_touch)
+            setattr(b,'on_touch_down',modal)
+            a=Animation(rgba=(0,0,0,.75),d=.35)
+            a.start(b.screen_fade)
+            def unfade(*args):
+                a=Animation(rgba=(0,0,0,0),d=.25)
+                a.start(b.screen_fade)
+                a.bind(on_complete=clear_prompt_fade)
+                setattr(b,'on_touch_down',not_modal)
+            def schedule_unfade(*args):
+                Clock.schedule_once(unfade,1.75)
+            a.bind(on_complete=schedule_unfade)
+
+    def check_admin_mode(self,*args):
+        # App.get_running_app().admin_mode_start=time.time()+1000
+        w=self.widgets
+        if App.get_running_app().admin_mode_start>time.time() or self.unlocked:
+            self.unlocked=True
+            if w['account_admin_hint'].parent:
+                self.remove_widget(w['account_admin_hint'])
+            w['side_bar_connect'].unlock()
+            w['side_bar_unlink'].unlock()
+            w['side_bar_add'].unlock()
+            w['side_bar_remove'].unlock()
+        else:
+            self.unlocked=False
+            if not w['account_admin_hint'].parent:
+                self.add_widget(w['account_admin_hint'])
+            w['information_email'].disabled=True
+            w['information_password'].disabled=True
+            w['side_bar_connect'].lock()
+            w['side_bar_unlink'].lock()
+            w['side_bar_add'].lock()
+            w['side_bar_remove'].lock()
+
+        #check for presence of email
+        if w['information_email'].text:
+            w['side_bar_unlink'].disabled=False
+            w['side_bar_add'].disabled=False
+            w['side_bar_remove'].disabled=False
+            w['side_bar_unlink'].shape_color.rgba=(0,0,0,.9)
+            w['side_bar_add'].shape_color.rgba=(0,0,0,.9)
+            w['side_bar_remove'].shape_color.rgba=(0,0,0,.9)
+        else:
+            w['side_bar_unlink'].disabled=True
+            w['side_bar_add'].disabled=True
+            w['side_bar_remove'].disabled=True
+            w['side_bar_unlink'].shape_color.rgba=(.1,.1,.1,.8)
+            w['side_bar_add'].   shape_color.rgba=(.1,.1,.1,.8)
+            w['side_bar_remove'].shape_color.rgba=(.1,.1,.1,.8)
+
+    def generate_uid_qr(self,data,*args):
+        qr=segno.make_qr(data)
+        qr.save(
+            uid_qr,
+            'png',
+            scale=5,
+            border=1)
+
+    def update_valid_time(self,*args):
+        _dt=self.generate_link_timer-time.time()
+        w=self.widgets
+        box=w['side_bar_add_valid_box']
+        valid_time=w['side_bar_add_valid_time']
+        valid_text=w['side_bar_add_valid_text']
+        gen=w['side_bar_add_qr_generate']
+        if _dt>0:
+            _time=str(timedelta(seconds=int(_dt)))[2:]
+            box.shape_color.rgba=(100/255, 255/255, 100/255,.75)
+            valid_text.text='[size=16][b][color=#000000]Valid'
+            valid_time.text=f'[size=28][color=#000000]{_time}'
+            gen.disabled=True
+            gen.shape_color.rgba=(.0, .2, .4,.5)
+        else:
+            self.uvt_event.cancel()
+            box.shape_color.rgba=(255/255, 100/255, 100/255,.85)
+            valid_text.text='[size=16][b][color=#000000]Expired'
+            valid_time.text='[size=28][color=#000000]00:00'
+            gen.disabled=False
+            gen.shape_color.rgba=(.0, .5, .7,.85)
+            config=App.get_running_app().config_
+            config.set('account','link_code','')
+            with open(preferences_path,'w') as configfile:
+                config.write(configfile)
 
     def on_pre_enter(self, *args):
+        w=self.widgets
+        self.unlocked=False
+        if App.get_running_app().config_.get('account','email',fallback=False):
+            w['information_email'].text=App.get_running_app().config_['account']['email']
+            w['information_password'].text=App.get_running_app().config_['account']['password']
+            w['side_bar_connect_title'].text=current_language['side_bar_connect_title']
+            w['side_bar_connect_title'].ref='side_bar_connect_title'
+        else:
+            w['side_bar_connect_title'].text=current_language['side_bar_create_title']
+            w['side_bar_connect_title'].ref='side_bar_create_title'
         self.check_admin_mode()
-        if App.get_running_app().config_['account']['email']:
-            self.widgets['information_email'].text=App.get_running_app().config_['account']['email']
-            self.widgets['information_password'].text=App.get_running_app().config_['account']['password']
         return super().on_pre_enter(*args)
 
     def auth_server(self,*args):
-        return
-        # config=App.get_running_app().config_
-        # account_email=config['account']['email']
-        # account_password=config['account']['password']
-        # if not (account_email and account_password):
-        #     return
-        # if hasattr(server,'user'):
-        #     return
-        # server.device_requests=server._device_requests.copy()
-        # server.authUser(f'{account_email}', f'{account_password}')
-        # self._keep_ref(self.listen_to_server,.75)
-        # self._keep_ref(server.refresh_token,45*60)#45 minutes; token expires every hour.
+        self.clear_link_code()
+        config=App.get_running_app().config_
+        if not config.get('account','email',fallback=False):
+            return
+        if not config.get('account','password',fallback=False):
+            return
+        account_email=config['account']['email']
+        account_password=config['account']['password']
+        if not (account_email and account_password):
+            return
+        if hasattr(server,'user'):
+            return
+        server.device_requests=server._device_requests.copy()
+        server.authUser(f'{account_email}', f'{account_password}')
+        self._keep_ref(self.listen_to_server,.75)
+        self._keep_ref(server.refresh_token,45*60)#45 minutes; token expires every hour.
+
+    def auth_server_new_account(self,email,password,*args):
+        self.clear_link_code()
+        email=str(email)
+        password=str(password)
+        if not (email and password):
+            return
+        if hasattr(server,'user'):
+            return
+        server.device_requests=server._device_requests.copy()
+        server.authUser(email, password)
+        self._keep_ref(self.listen_to_server,.75)
+        self._keep_ref(server.refresh_token,45*60)#45 minutes; token expires every hour.
 
     def listen_to_server(*args):
-        pass
-        # if 1 not in server.device_requests.values():
-        #     return
+        if 1 not in server.device_requests.values():
+            return
 
-        # main_screen=App.get_running_app().context_screen.get_screen('main')
-        # for i in server.device_requests.items():
-        #     if not i[1]:
-        #         continue
-        #     if i[0] in main_screen.widgets:
-        #         main_screen.widgets[i[0]].trigger_action()
+        main_screen=App.get_running_app().context_screen.get_screen('main')
+        for i in server.device_requests.items():
+            if not i[1]:
+                continue
+            if i[0] in main_screen.widgets:
+                main_screen.widgets[i[0]].trigger_action()
 
-        # server.reset_reqs()
+        server.reset_reqs()
 
     def _keep_ref(self,func_to_sched,interval,*args):
         log=self.scheduled_funcs
         log.append(Clock.schedule_interval(func_to_sched,interval))
 
     def unlink_server(self,*args):
+        if not hasattr(server,'user'):
+            return
+        for i in self.scheduled_funcs:
+            i.cancel()
+        self.scheduled_funcs=[]
+        delattr(server,'user')
+
+    def clear_link_code(self,*args):
+        config=App.get_running_app().config_
+        config.set('account','link_code','')
+        with open(preferences_path,'w') as configfile:
+            config.write(configfile)
+
+    def side_bar_connect_login_send_disabled(self,button,disabled,*args):
+        if  button.disabled:
+            button.text='[b][size=16]All Fields Required'
+        elif not button.disabled:
+            button.text='[b][size=16]Connect Account'
+        button.color_swap()
+
+    def connect_login_send_disable_func(self,focused,*args):
+        con_btn=self.widgets['side_bar_connect_login_send']
+        si=self.widgets['side_bar_connect_login_email_input']
+        pi=self.widgets['side_bar_connect_login_password_input']
+        self.clear_hints()
+        if (si.contains_valid_email and pi.text!=''):
+            con_btn.disabled=False
+            con_btn.bg_color=(.0, .7, .9,1)
+            con_btn.color_swap()
+        else:
+            con_btn.disabled=True
+            con_btn.bg_color=(.1,.1,.1,1)
+            con_btn.color_swap()
+            if not focused and si.text!='' and not si.contains_valid_email:
+                if hasattr(self,'login_email_hint_icon'):
+                    return
+                self.login_email_hint_icon=h=RoundedLabelColor(
+                    text='[b][size=20]!',
+                    markup=True,
+                    bg_color=(1,0,0,.25),
+                    size_hint =(.025, .05),
+                    pos_hint = {'center_x':.725, 'center_y':.7})
+                if hasattr(h,'parent'):
+                    if h.parent:
+                        return
+                self.widgets['side_bar_connect_login'].add_widget(h)
+                eih=self.widgets['side_bar_connect_login_email_invalid_hint']
+                if hasattr(eih,'parent'):
+                    if eih.parent:
+                        return
+                self.widgets['side_bar_connect_login'].add_widget(eih)
+
+    def side_bar_connect_send_disabled(self,button,disabled,*args):
+        if  button.disabled:
+            button.text='[b][size=16]All Fields Required'
+        elif not button.disabled:
+            button.text='[b][size=16]Send Verification Email'
+        button.color_swap()
+
+    def connect_send_disable_func(self,focused,*args):
+        con_btn=self.widgets['side_bar_connect_send']
+        si=self.widgets['side_bar_connect_email_input']
+        pi=self.widgets['side_bar_connect_password_input']
+        self.clear_hints()
+        if (si.contains_valid_email and pi.text!=''):
+            con_btn.disabled=False
+            con_btn.bg_color=(.0, .7, .9,1)
+            con_btn.color_swap()
+        else:
+            con_btn.disabled=True
+            con_btn.bg_color=(.1,.1,.1,1)
+            con_btn.color_swap()
+            if not focused and si.text!='' and not si.contains_valid_email:
+                if hasattr(self,'email_hint_icon'):
+                    return
+                self.email_hint_icon=h=RoundedLabelColor(
+                    text='[b][size=20]!',
+                    markup=True,
+                    bg_color=(1,0,0,.25),
+                    size_hint =(.025, .05),
+                    pos_hint = {'center_x':.725, 'center_y':.7})
+                if hasattr(h,'parent'):
+                    if h.parent:
+                        return
+                self.widgets['side_bar_connect'].add_widget(h)
+                eih=self.widgets['side_bar_connect_email_invalid_hint']
+                if hasattr(eih,'parent'):
+                    if eih.parent:
+                        return
+                self.widgets['side_bar_connect'].add_widget(eih)
+
+    def clear_hints(self,*args):
+        if hasattr(self,'email_hint_icon'):
+            if hasattr(self.email_hint_icon, 'parent'):
+                if self.email_hint_icon.parent:
+                    self.email_hint_icon.parent.remove_widget(self.email_hint_icon)
+            del self.email_hint_icon
+        if hasattr(self,'login_email_hint_icon'):
+            if hasattr(self.login_email_hint_icon, 'parent'):
+                if self.login_email_hint_icon.parent:
+                    self.login_email_hint_icon.parent.remove_widget(self.login_email_hint_icon)
+            del self.login_email_hint_icon
+        eih=self.widgets['side_bar_connect_email_invalid_hint']
+        if hasattr(eih,'parent'):
+            if eih.parent:
+                eih.parent.remove_widget(eih)
+        leih=self.widgets['side_bar_connect_login_email_invalid_hint']
+        if hasattr(leih,'parent'):
+            if leih.parent:
+                leih.parent.remove_widget(leih)
+
+    def side_bar_connect_login_send_func(self,*args):
         pass
-        # if not hasattr(server,'user'):
-        #     return
-        # for i in self.scheduled_funcs:
-        #     i.cancel()
-        # self.scheduled_funcs=[]
-        # delattr(server,'user')
+
+    def side_bar_connect_send_func(self,*args):
+        w=self.widgets
+        email=w['side_bar_connect_email_input'].text
+        password=w['side_bar_connect_password_input'].text
+        self.auth_server_new_account(email,password)
+        server.send_verification_email()
 
 class NetworkScreen(Screen):
     def __init__(self, **kwargs):
@@ -7132,7 +8825,7 @@ class NetworkScreen(Screen):
             side_bar_disconnect.status_lines.rounded_rectangle=(x, y, width, height, 10, 10, 10, 10, 100)
         side_bar_disconnect.bind(pos=update_lines, size=update_lines)
 
-        account_admin_hint=ExactLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
+        account_admin_hint=MinimumBoundingLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
                 color=(0,0,0,1),
                 pos_hint = {'center_x':.5, 'y':.14},
                 markup=True)
@@ -8098,8 +9791,9 @@ class NetworkScreen(Screen):
     def side_bar_manual_password_input_clear(self,button,focused,*args):
         pi=self.widgets['side_bar_manual_password_input']
         p=pi.parent
-        p.remove_widget(pi)
-        p.add_widget(pi)
+        if p:
+            p.remove_widget(pi)
+            p.add_widget(pi)
         if focused:
             pi.text=''
             pi.font_size=32
@@ -8430,9 +10124,9 @@ class AnalyticScreen(Screen):
         # side_bar_refresh.bind(on_press=self.side_bar_refresh)
 
 
-        account_admin_hint=ExactLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
+        account_admin_hint=MinimumBoundingLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
                 color=(0,0,0,1),
-                pos_hint = {'center_x':.5, 'y':.14},
+                pos_hint = {'center_x':.5, 'y':.2},
                 markup=True)
         self.widgets['account_admin_hint']=account_admin_hint
 
@@ -8675,6 +10369,13 @@ def listen(app_object,*args):
             pass
     #micro switch
         if event_log['micro_switch']==1:
+            if app_object.current!='alert':
+                if not hasattr(root,'system_banner'):
+                    root.system_banner=notifications.banner('[i][size=20]Fire System Actuated','critical',100)
+            elif app_object.current=='alert':
+                if hasattr(root,'system_banner'):
+                    notifications.remove_banner(root.system_banner)
+                    del root.system_banner
             if App.get_running_app().service_pin_entered:
                 pass
             elif app_object.current!='alert':
@@ -8691,6 +10392,9 @@ def listen(app_object,*args):
 
             logic.fs.moli['maint_override']=0
         elif event_log['micro_switch']==0:
+            if hasattr(root,'system_banner'):
+                notifications.remove_banner(target=root.system_banner)
+                del root.system_banner
             if app_object.current=='alert':
                 app_object.transition = SlideTransition(direction='right')
                 app_object.current='main'
@@ -8837,6 +10541,7 @@ class Hood_Control(App):
         settings_setter(self.config_)
         Clock.schedule_once(partial(language_setter,config=self.config_))
         self.context_screen=ScreenManager()
+        # self.context_screen.add_widget(AccountScreen(name='account'))
         self.context_screen.add_widget(ControlGrid(name='main'))
         self.context_screen.add_widget(ActuationScreen(name='alert'))
         self.context_screen.add_widget(SettingsScreen(name='settings'))
@@ -8940,6 +10645,6 @@ finally:
     print("devices saved")
     logic.clean_exit()
     print("pins set as inputs")
-    # server.clean_exit()
-    # print("streams closed")
+    server.clean_exit()
+    print("streams closed")
     quit()
