@@ -2459,11 +2459,19 @@ class ScreenSaver(ButtonBehavior,Label):
     '''
     clock_events={}
     timeout=600
+    brightness='50'
+    dim_flag=0
 
     @classmethod
     def start(cls,*args,**kwargs):
         '''binds the `on_touch_down` event of `Window`
         to the screen saver service, and calls the service once without a touch event.
+
+        `timeout` can be passed an integer to set the timeout
+        before a screen saver is triggered.
+
+        e.g. timeout=60 to set screensaver
+        to trigger after one minute of inactivity.
         '''
         if 'timeout' in kwargs:
             cls.timeout=kwargs['timeout']
@@ -2490,9 +2498,28 @@ class ScreenSaver(ButtonBehavior,Label):
         if 'timer' in cls.clock_events:
             Clock.unschedule(cls.clock_events['timer'])
 
-    @staticmethod
-    def trigger_screen_saver(*args):
+    @classmethod
+    def trigger_screen_saver(cls,*args):
         Window.add_widget(ScreenSaver())
+        Thread(target=cls.capture_brightness,daemon=True).start()
+
+    @staticmethod
+    def _dim(*args):
+        subprocess.run(['ddcutil','setvcp','10','20','--bus','20'],stdout=subprocess.PIPE)
+
+    @classmethod
+    def _brighten(cls,*args):
+        subprocess.run(['ddcutil','setvcp','10',cls.brightness,'--bus','20'],stdout=subprocess.PIPE)
+
+    @classmethod
+    def capture_brightness(cls,*args):
+        if os.name=='nt':
+            return
+        val=str(subprocess.check_output(r"ddcutil getvcp 10 --bus 20 --terse | sed 's/^.*C \([0-9]\+\).*/\1/'",shell=True))
+        if val.isdigit():
+            cls.brightness=val
+            cls._dim()
+            cls.dim_flag=1
 
     def __init__(self, **kwargs):
         super(ScreenSaver,self).__init__(**kwargs)
@@ -2502,20 +2529,16 @@ class ScreenSaver(ButtonBehavior,Label):
         Animation(rgba=(0,0,0,1),d=2,t='out_sine').start(self.canvas_color)
 
     def clear(self,*args):
+        cls=ScreenSaver
+        if cls.dim_flag:
+            cls.dim_flag=0
+            Thread(target=cls._brighten,daemon=True).start()
         if hasattr(self,'parent'):
             if self.parent is None:
                 return
             self.parent.remove_widget(self)
 
-    def on_touch_down(self, touch):
-        if self.collide_point(*touch.pos):
-            touch.grab(self)
-        super(ScreenSaver, self).on_touch_down(touch)
-        return True
-
     def on_touch_up(self, touch):
-        if touch.grab_current is self:
-            touch.ungrab(self)
         self.clear()
         super(ScreenSaver, self).on_touch_up(touch)
         return True
