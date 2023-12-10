@@ -2461,6 +2461,7 @@ class ScreenSaver(ButtonBehavior,Label):
     timeout=600
     brightness='50'
     dim_flag=0
+    pause_flag=0
 
     @classmethod
     def start(cls,*args,**kwargs):
@@ -2480,11 +2481,29 @@ class ScreenSaver(ButtonBehavior,Label):
         cls.service()
 
     @classmethod
+    def pause(cls,*args):
+        '''Unschedules any previously scheduled screen saver timer.
+        Leaves the Window binding in place, however stops `service`
+        from creating new timeout events.
+        '''
+        cls.delete_clock()
+        cls.pause_flag=1
+
+    @classmethod
+    def resume(cls,*args):
+        '''removes `pause_flag` and calls `service`'''
+        cls.pause_flag=0
+        cls.service()
+
+    @classmethod
     def service(cls,*args):
         '''Unschedules any previously scheduled screen saver timer,
         then schedules a new timer event to trigger a screen saver 
         in the future.
+        Skips all clock calls when `pause_flag` == `True`
         '''
+        if cls.pause_flag:
+            return
         cls.delete_clock()
         cls.create_clock()
 
@@ -10471,6 +10490,7 @@ def listen(app_object,*args):
             if App.get_running_app().service_pin_entered:
                 pass
             elif app_object.current!='alert':
+                ScreenSaver.pause()
                 app_object.transition = SlideTransition(direction='left')
                 app_object.current='alert'
                 app_object.get_screen('preferences').widgets['overlay_menu'].dismiss()
@@ -10488,6 +10508,7 @@ def listen(app_object,*args):
                 notifications.remove_banner(target=root.system_banner)
                 del root.system_banner
             if app_object.current=='alert':
+                ScreenSaver.resume()
                 app_object.transition = SlideTransition(direction='right')
                 app_object.current='main'
     #troubles
