@@ -2520,7 +2520,9 @@ class ScreenSaver(ButtonBehavior,Label):
     @classmethod
     def trigger_screen_saver(cls,*args):
         Window.add_widget(ScreenSaver())
-        Thread(target=cls.capture_brightness,daemon=True).start()
+        # TODO get screen ddc/ci communication working
+        # then uncomment line below
+        # Thread(target=cls.capture_brightness,daemon=True).start()
 
     @staticmethod
     def _dim(*args):
