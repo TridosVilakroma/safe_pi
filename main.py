@@ -2458,6 +2458,7 @@ class ScreenSaver(ButtonBehavior,Label):
     init the screen saver service app-wide.
     '''
     clock_events={}
+    active_screensavers=[]
     timeout=600
     brightness='50'
     dim_flag=0
@@ -2488,6 +2489,8 @@ class ScreenSaver(ButtonBehavior,Label):
         '''
         cls.delete_clock()
         cls.pause_flag=1
+        for i in cls.active_screensavers:
+            i.clear()
 
     @classmethod
     def resume(cls,*args):
@@ -2519,7 +2522,9 @@ class ScreenSaver(ButtonBehavior,Label):
 
     @classmethod
     def trigger_screen_saver(cls,*args):
-        Window.add_widget(ScreenSaver())
+        s=ScreenSaver()
+        cls.active_screensavers.append(s)
+        Window.add_widget(s)
         # TODO get screen ddc/ci communication working
         # then uncomment line below
         # Thread(target=cls.capture_brightness,daemon=True).start()
