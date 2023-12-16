@@ -54,6 +54,7 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.pagelayout import PageLayout
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.slider import Slider
 from kivy.core.window import Window
 from threading import Thread
 from kivy.uix.screenmanager import NoTransition
@@ -125,6 +126,7 @@ hc_mockup=r'media/hc_admin_mockup.png'
 store_badges=r'media/store_badges.png'
 visible_black=r'media/visible_black.png'
 hidden_black=r'media/hidden_black.png'
+slider_handle_yellow=r'media/slider_handle_yellow.png'
 
 
 class MarkupSpinnerOption(SpinnerOption):
@@ -4611,15 +4613,15 @@ class PreferenceScreen(Screen):
         heat_sensor.ref='heat_sensor'
         heat_sensor.bind(on_release=self.heat_sensor_func)
 
-        msg_center=RoundedButton(text=current_language['msg_center'],
+        general_settings=RoundedButton(text=current_language['general_settings'],
                         size_hint =(1, 1),
                         #pos_hint = {'x':.01, 'y':.9},
                         background_down='',
                         background_color=(200/250, 200/250, 200/250,.9),
                         markup=True)
-        self.widgets['msg_center']=msg_center
-        msg_center.ref='msg_center'
-        msg_center.bind(on_release=self.msg_center_func)
+        self.widgets['general_settings']=general_settings
+        general_settings.ref='general_settings'
+        general_settings.bind(on_release=self.general_settings_func)
 
         train=RoundedButton(text=current_language['train'],
                         size_hint =(1, 1),
@@ -4733,7 +4735,7 @@ class PreferenceScreen(Screen):
         self.add_widget(back_main)
         scroll_layout.add_widget(network)
         scroll_layout.add_widget(account)
-        scroll_layout.add_widget(msg_center)
+        scroll_layout.add_widget(general_settings)
         scroll_layout.add_widget(clean_mode)
         scroll_layout.add_widget(heat_sensor)
         scroll_layout.add_widget(train)
@@ -5006,7 +5008,7 @@ class PreferenceScreen(Screen):
         self.widgets['overlay_layout'].add_widget(about_back_button)
         self.widgets['overlay_menu'].open()
 
-    def msg_overlay(self):
+    def general_settings_overlay(self):
         overlay_menu=self.widgets['overlay_menu']
         overlay_menu.background_color=(0,0,0,.75)
         overlay_menu.title=''
@@ -5043,14 +5045,14 @@ class PreferenceScreen(Screen):
                 button.bg_color=(.5,.5,.5,1)
 
 
-        overlay_title=Label(text=current_language['msg_overlay'],
+        overlay_title=Label(text=current_language['general_settings_overlay'],
                         pos_hint = {'x':.0, 'y':.5},
                         markup=True)
         self.widgets['overlay_title']=overlay_title
-        overlay_title.ref='msg_overlay'
+        overlay_title.ref='general_settings_overlay'
 
         evoke_title=Label(text=current_language['evoke_title'],
-                        pos_hint = {'center_x':.2, 'center_y':.88},
+                        pos_hint = {'center_x':.2, 'center_y':.87},
                         markup=True)
         self.widgets['evoke_title']=evoke_title
         evoke_title.ref='evoke_title'
@@ -5091,6 +5093,28 @@ class PreferenceScreen(Screen):
             msg_evoke_off.state='down'
             _swap_color(msg_evoke_on)
 
+        screensaver_timer_title=Label(text=current_language['screensaver_timer_title'],
+                        pos_hint = {'center_x':.6, 'center_y':.88},
+                        markup=True)
+        self.widgets['screensaver_timer_title']=screensaver_timer_title
+        screensaver_timer_title.ref='screensaver_timer_title'
+
+        screensaver_timer_value=Label(
+            text='[size=30][b][color=#ffffff]'+config.get('preferences','screensaver_timeout',fallback='10')+' Minutes',
+            pos_hint = {'center_x':.6, 'center_y':.8},
+            markup=True)
+        self.widgets['screensaver_timer_value']=screensaver_timer_value
+
+        screensaver_timer_setter=Slider(
+            size_hint =(.4, .125),
+            pos_hint = {'center_x':.6, 'y':.65},
+            cursor_image=slider_handle_yellow,
+            sensitivity='handle',
+            min=1,
+            max=30,
+            step=1,
+            value=config.getint('preferences','screensaver_timeout',fallback=10))
+        self.widgets['screensaver_timer_setter']=screensaver_timer_setter
 
         def msg_evoke_on_func(button):
             config.set('preferences','evoke','True')
@@ -5104,6 +5128,21 @@ class PreferenceScreen(Screen):
                 config.write(configfile)
         msg_evoke_off.bind(on_release=msg_evoke_off_func)
 
+        def screensaver_timer_setter_display_func(slider,touch,*args):
+            if touch.grab_current != slider:
+                return
+            screensaver_timer_value.text='[size=30][b][color=#ffffff]'+str(slider.value)+' Minutes'
+        screensaver_timer_setter.bind(on_touch_move=screensaver_timer_setter_display_func)
+
+        def screensaver_timer_setter_save_func(slider,touch,*args):
+            if touch.grab_current != slider:
+                return
+            config.set('preferences','screensaver_timeout',str(slider.value))
+            with open(preferences_path,'w') as configfile:
+                config.write(configfile)
+            ScreenSaver.timeout=slider.value*60
+            ScreenSaver.service()
+        screensaver_timer_setter.bind(on_touch_up=screensaver_timer_setter_save_func)
 
         def on_dismiss(self,*args):
             overlay_menu.canvas.before.remove_group("msg")
@@ -5112,6 +5151,9 @@ class PreferenceScreen(Screen):
         self.widgets['overlay_layout'].add_widget(evoke_title)
         self.widgets['overlay_layout'].add_widget(msg_evoke_on)
         self.widgets['overlay_layout'].add_widget(msg_evoke_off)
+        self.widgets['overlay_layout'].add_widget(screensaver_timer_title)
+        self.widgets['overlay_layout'].add_widget(screensaver_timer_value)
+        self.widgets['overlay_layout'].add_widget(screensaver_timer_setter)
         overlay_menu.bind(on_dismiss=on_dismiss)
         overlay_menu.open()
 
@@ -5126,8 +5168,8 @@ class PreferenceScreen(Screen):
     def heat_sensor_func(self,button):
         self.parent.transition = SlideTransition(direction='left')
         self.heat_overlay()
-    def msg_center_func(self,button):
-        self.msg_overlay()
+    def general_settings_func(self,button):
+        self.general_settings_overlay()
     def train_func (self,button):
         self.parent.transition = SlideTransition(direction='left')
         self.manager.current='train'
@@ -10686,7 +10728,7 @@ class Hood_Control(App):
         Clock.schedule_once(partial(Window.add_widget,self.notifications))
         Clock.schedule_interval(self.notifications.update,.1)
         Clock.schedule_interval(logic_supervisor,10)
-        ScreenSaver.start()
+        ScreenSaver.start(timeout=(self.config_.getint('preferences','screensaver_timeout',fallback=10)*60))
         return self.context_screen
 
     def keep_notifications_on_top(self,window,children,*args):
