@@ -127,6 +127,8 @@ store_badges=r'media/store_badges.png'
 visible_black=r'media/visible_black.png'
 hidden_black=r'media/hidden_black.png'
 slider_handle_yellow=r'media/slider_handle_yellow.png'
+overlay_x_icon=r'media/popup_x_white.png'
+overlay_x_icon_black=r'media/popup_x.png'
 
 
 class MarkupSpinnerOption(SpinnerOption):
@@ -2085,6 +2087,13 @@ class PinLock(RoundedColorLayoutModal):
         self.widgets['title']=title
         title.ref='title'
 
+        overlay_x=IconButton(
+            source=overlay_x_icon,
+            size_hint=(.1,.1),
+            pos_hint={'x':.90,'y':.88})
+        overlay_x.bind(on_release=self.clear)
+        self.widgets['overlay_x']=overlay_x
+
         seperator=Image(
             source=gray_seperator_line,
             allow_stretch=True,
@@ -2271,6 +2280,7 @@ class PinLock(RoundedColorLayoutModal):
         enter.bind(on_release=self.enter_func)
 
         self.add_widget(title)
+        self.add_widget(overlay_x)
         self.add_widget(seperator)
         self.add_widget(entry_one)
         self.add_widget(entry_two)
@@ -2787,6 +2797,13 @@ class ControlGrid(Screen):
         overlay_layout=FloatLayout()
         self.widgets['overlay_layout']=overlay_layout
 
+        overlay_x=IconButton(
+            source=overlay_x_icon,
+            size_hint=(.1,.1),
+            pos_hint={'x':.95,'y':.98})
+        overlay_x.bind(on_release=overlay_menu.dismiss)
+        self.widgets['overlay_x']=overlay_x
+
         overlay_menu.add_widget(overlay_layout)
         clock_set_layout.add_widget(hour_wheel)
         clock_set_layout.add_widget(delimiter_dots)
@@ -2994,6 +3011,7 @@ class ControlGrid(Screen):
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
         self.widgets['overlay_layout'].clear_widgets()
+        self.widgets['overlay_layout'].add_widget(self.widgets['overlay_x'])
 
         about_text=Label(
             text=current_language['about_overlay_text'],
@@ -3477,6 +3495,13 @@ class SettingsScreen(Screen):
         overlay_layout=FloatLayout()
         self.widgets['overlay_layout']=overlay_layout
 
+        overlay_x=IconButton(
+            source=overlay_x_icon,
+            size_hint=(.1,.1),
+            pos_hint={'x':.95,'y':.98})
+        overlay_x.bind(on_release=overlay_menu.dismiss)
+        self.widgets['overlay_x']=overlay_x
+
         seperator_line=Image(source=gray_seperator_line,
                     allow_stretch=True,
                     keep_ratio=False,
@@ -3512,6 +3537,7 @@ class SettingsScreen(Screen):
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
         self.widgets['overlay_layout'].clear_widgets()
+        self.widgets['overlay_layout'].add_widget(self.widgets['overlay_x'])
 
         about_text=Label(
             text=current_language['about_overlay_text'],
@@ -4727,6 +4753,13 @@ class PreferenceScreen(Screen):
         overlay_layout=FloatLayout()
         self.widgets['overlay_layout']=overlay_layout
 
+        overlay_x=IconButton(
+            source=overlay_x_icon,
+            size_hint=(.1,.1),
+            pos_hint={'x':.95,'y':.98})
+        overlay_x.bind(on_release=overlay_menu.dismiss)
+        self.widgets['overlay_x']=overlay_x
+
         seperator_line=Image(source=gray_seperator_line,
                     allow_stretch=True,
                     keep_ratio=False,
@@ -4759,6 +4792,7 @@ class PreferenceScreen(Screen):
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
         self.widgets['overlay_layout'].clear_widgets()
+        self.widgets['overlay_layout'].add_widget(self.widgets['overlay_x'])
 
         overlay_title=Label(text=current_language['heat_overlay'],
                         pos_hint = {'x':.0, 'y':.5},
@@ -4833,6 +4867,7 @@ class PreferenceScreen(Screen):
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
         self.widgets['overlay_layout'].clear_widgets()
+        self.widgets['overlay_layout'].add_widget(self.widgets['overlay_x'])
 
         warning_text=Label(
             text=current_language['maint_overlay_warning_text'],
@@ -4968,6 +5003,7 @@ class PreferenceScreen(Screen):
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
         self.widgets['overlay_layout'].clear_widgets()
+        self.widgets['overlay_layout'].add_widget(self.widgets['overlay_x'])
 
         about_text=Label(
             text=current_language['about_overlay_text'],
@@ -5020,6 +5056,7 @@ class PreferenceScreen(Screen):
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
         self.widgets['overlay_layout'].clear_widgets()
+        self.widgets['overlay_layout'].add_widget(self.widgets['overlay_x'])
         config=App.get_running_app().config_
 
         with overlay_menu.canvas.before:
