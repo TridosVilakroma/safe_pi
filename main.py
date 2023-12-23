@@ -4131,12 +4131,40 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         get_device_pin.bind(text=partial(self.get_device_pin_func,current_device))
         self.widgets['get_device_pin']=get_device_pin
 
+        get_advanced_device_pin_label=MinimumBoundingLabel(text="[size=18]Advanced Device I/O Pin:[/size]",
+                        pos_hint = {'x':.1, 'y':.6},
+                        color = (0,0,0,1),
+                        markup=True)
+
+        get_advanced_device_pin=Spinner(
+            text="Select GPIO Pin",
+            values=(str(i) for i in range(1,41)),
+            size_hint =(.5, .05),
+            pos_hint = {'x':.40, 'y':.6},
+            disabled=True)
+        get_advanced_device_pin.bind(text=partial(self.get_advanced_device_pin_func,current_device))
+        self.widgets['get_advanced_device_pin']=get_advanced_device_pin
+
+        advanced_toggle=RoundedToggleButton(
+            text='Enable Advanced Pin Selection',
+            size_hint =(.5, .05),
+            pos_hint = {'x':.40, 'y':.5},
+            # background_normal='',
+            background_down='',
+            background_color=(245/250, 216/250, 41/250,.75),
+            markup=True)
+        self.widgets['advanced_toggle']=advanced_toggle
+        advanced_toggle.bind(state=partial(self.advanced_toggle_func,current_device))
+
         lay_out.add_widget(get_name_label)
         lay_out.add_widget(get_name)
         lay_out.add_widget(get_device_label)
         lay_out.add_widget(get_device_type)
         lay_out.add_widget(get_device_pin_label)
         lay_out.add_widget(get_device_pin)
+        lay_out.add_widget(get_advanced_device_pin_label)
+        lay_out.add_widget(get_advanced_device_pin)
+        lay_out.add_widget(advanced_toggle)
         lay_out.add_widget(new_device_back_button)
         lay_out.add_widget(new_device_save_button)
         if open:
@@ -4243,6 +4271,26 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         #value is get_device_pin.text
         #string is split to pull out BOARD int
         current_device.pin=int(value.split()[1])
+    def get_advanced_device_pin_func(self,current_device,button,value):
+        if current_device.type=='Manometer':
+            return
+        if value=='Select GPIO Pin':
+            return
+        current_device.pin=int(value)
+
+    def advanced_toggle_func(self,current_device,button,state,*args):
+        w=self.widgets
+        normal_select=w['get_device_pin']
+        adv_select=w['get_advanced_device_pin']
+        current_device.pin=0
+        if state=='down':
+            normal_select.disabled=True
+            normal_select.text='Select GPIO Pin'
+            adv_select.disabled=False
+        else:
+            normal_select.disabled=False
+            adv_select.disabled=True
+            adv_select.text='Select GPIO Pin'
 
     def edit_device_overlay(self,device):
         class InfoShelf():
@@ -4344,19 +4392,48 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         color = (0,0,0,1),
                         markup=True)
 
-        get_device_pin=Spinner(
+        edit_device_pin=Spinner(
                         text=str(device.pin),
                         values=(general.pin_decode(i) for i in logic.available_pins),
                         size_hint =(.5, .05),
                         pos_hint = {'x':.40, 'y':.7})
-        get_device_pin.bind(text=partial(self.edit_device_pin_func,current_device))
+        edit_device_pin.bind(text=partial(self.edit_device_pin_func,current_device))
+        self.widgets['edit_device_pin']=edit_device_pin
+
+        get_advanced_device_pin_label=MinimumBoundingLabel(text="[size=18]Advanced Device I/O Pin:[/size]",
+                        pos_hint = {'x':.05, 'y':.6},
+                        color = (0,0,0,1),
+                        markup=True)
+
+        edit_advanced_device_pin=Spinner(
+            text="Select GPIO Pin",
+            values=(str(i) for i in range(1,41)),
+            size_hint =(.5, .05),
+            pos_hint = {'x':.40, 'y':.6},
+            disabled=True)
+        edit_advanced_device_pin.bind(text=partial(self.edit_advanced_device_pin_func,current_device))
+        self.widgets['edit_advanced_device_pin']=edit_advanced_device_pin
+
+        edit_advanced_toggle=RoundedToggleButton(
+            text='Enable Advanced Pin Selection',
+            size_hint =(.5, .05),
+            pos_hint = {'x':.40, 'y':.5},
+            # background_normal='',
+            background_down='',
+            background_color=(245/250, 216/250, 41/250,.75),
+            markup=True)
+        self.widgets['edit_advanced_toggle']=edit_advanced_toggle
+        edit_advanced_toggle.bind(state=partial(self.edit_advanced_toggle_func,current_device))
 
         lay_out.add_widget(get_name_label)
         lay_out.add_widget(get_name)
         lay_out.add_widget(get_device_label)
         lay_out.add_widget(get_device_type)
         lay_out.add_widget(get_device_pin_label)
-        lay_out.add_widget(get_device_pin)
+        lay_out.add_widget(edit_device_pin)
+        lay_out.add_widget(get_advanced_device_pin_label)
+        lay_out.add_widget(edit_advanced_device_pin)
+        lay_out.add_widget(edit_advanced_toggle)
         lay_out.add_widget(edit_device_back_button)
         lay_out.add_widget(edit_device_save_button)
 
@@ -4439,6 +4516,26 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         #value is get_device_pin.text
         #string is split to pull out BOARD int
         current_device.pin=int(value.split()[1])
+    def edit_advanced_device_pin_func(self,current_device,button,value):
+        if current_device.type=='Manometer':
+            return
+        if value=='Select GPIO Pin':
+            return
+        current_device.pin=int(value)
+
+    def edit_advanced_toggle_func(self,current_device,button,state,*args):
+        w=self.widgets
+        normal_select=w['edit_device_pin']
+        adv_select=w['edit_advanced_device_pin']
+        current_device.pin=0
+        if state=='down':
+            normal_select.disabled=True
+            normal_select.text='Select GPIO Pin'
+            adv_select.disabled=False
+        else:
+            normal_select.disabled=False
+            adv_select.disabled=True
+            adv_select.text='Select GPIO Pin'
 
 
     def devices_back (self,button):
