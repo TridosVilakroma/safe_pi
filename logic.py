@@ -53,6 +53,9 @@ def get_devices():
                 set_pin_mode(i)
             elif i.pin==0:
                 print(f"logic.get_devices(): {i}.pin == 0")
+            else:
+                print(f"logic.get_devices(): {i}.pin using {i.pin} as advanced pin")
+                set_pin_mode(i)
             devices.append(i)
 
 def set_pin_mode(device):
