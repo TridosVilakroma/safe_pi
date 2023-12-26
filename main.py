@@ -3870,20 +3870,29 @@ class DevicesScreen(Screen):
         delete_icon.bind(state=self.delete_icon_change)
 
 
-        info_type=MinimumBoundingLabel(text=f"[size=18]Device Type:                    {device.type}[/size]",
-                        color=(0,0,0,1),
-                        pos_hint = {'x':.1, 'y':.85},
-                        markup=True)
+        info_type=MinimumBoundingLabel(
+            text=f"[size=18]Device Type:                         {device.type}[/size]",
+            color=(0,0,0,1),
+            pos_hint = {'x':.1, 'y':.85},
+            markup=True)
 
-        info_pin=MinimumBoundingLabel(text=f"[size=18]Device GPIO Pin:             {device.pin}[/size]",
-                        color=(0,0,0,1),
-                        pos_hint = {'x':.1, 'y':.75},
-                        markup=True)
+        info_pin=MinimumBoundingLabel(
+            text=f"[size=18]Device GPIO Pin:                 {device.pin}[/size]",
+            color=(0,0,0,1),
+            pos_hint = {'x':.1, 'y':.75},
+            markup=True)
 
-        info_run_time=MinimumBoundingLabel(text=f"[size=18]Device Run Time:           {general.Convert_time(device.run_time)}[/size]",
-                color=(0,0,0,1),
-                pos_hint = {'x':.1, 'y':.65},
-                markup=True)
+        info_run_time=MinimumBoundingLabel(
+            text=f"[size=18]Device Run Time:                {general.Convert_time(device.run_time)}[/size]",
+            color=(0,0,0,1),
+            pos_hint = {'x':.1, 'y':.65},
+            markup=True)
+
+        info_trigger=MinimumBoundingLabel(
+            text=f"[size=18]Device Trigger State:         {device.trigger.capitalize()}[/size]",
+            color=(0,0,0,1),
+            pos_hint = {'x':.1, 'y':.55},
+            markup=True)
 
         info_admin_hint=MinimumBoundingLabel(text=f"[size=18]Enable Admin mode to edit device[/size]",
                 color=(0,0,0,1),
@@ -3914,6 +3923,7 @@ class DevicesScreen(Screen):
         self.widgets['overlay_layout'].add_widget(info_type)
         self.widgets['overlay_layout'].add_widget(info_pin)
         self.widgets['overlay_layout'].add_widget(info_run_time)
+        self.widgets['overlay_layout'].add_widget(info_trigger)
         self.widgets['overlay_layout'].add_widget(info_back_button)
         if isinstance(device,GasValve) :
             self.widgets['overlay_layout'].add_widget(info_gv_reset)
@@ -4048,6 +4058,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                 self.pin=0
                 self.color=(0/255, 0/255, 0/255,.85)
                 self.run_time=0
+                self.trigger="High"
                 self.device_types={
                     "Exfan":"exhaust.Exhaust",
                     "MAU":"mau.Mau",
@@ -4138,17 +4149,31 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         get_advanced_device_pin=Spinner(
             text="Select GPIO Pin",
-            values=(str(i) for i in range(1,41)),
+            values=(general.pin_decode(i) for i in range(1,41) if i not in (1,2,4,6,9,14,17,20,25,30,34,39)),#eliminate 3.3v,5v,and ground pins
             size_hint =(.5, .05),
             pos_hint = {'x':.40, 'y':.6},
             disabled=True)
         get_advanced_device_pin.bind(text=partial(self.get_advanced_device_pin_func,current_device))
         self.widgets['get_advanced_device_pin']=get_advanced_device_pin
 
+        get_trigger_label=MinimumBoundingLabel(text="[size=18]Device Pin Trigger State:[/size]",
+                        pos_hint = {'x':.1, 'y':.5},
+                        color = (0,0,0,1),
+                        markup=True)
+
+        get_trigger_state=Spinner(
+            text="High",
+            values=("High","Low"),
+            size_hint =(.5, .05),
+            pos_hint = {'x':.40, 'y':.5},
+            disabled=True)
+        get_trigger_state.bind(text=partial(self.get_trigger_state_func,current_device))
+        self.widgets['get_trigger_state']=get_trigger_state
+
         advanced_toggle=RoundedToggleButton(
             text='Enable Advanced Pin Selection',
             size_hint =(.5, .05),
-            pos_hint = {'x':.40, 'y':.5},
+            pos_hint = {'x':.40, 'y':.4},
             # background_normal='',
             background_down='',
             background_color=(245/250, 216/250, 41/250,.75),
@@ -4164,6 +4189,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         lay_out.add_widget(get_device_pin)
         lay_out.add_widget(get_advanced_device_pin_label)
         lay_out.add_widget(get_advanced_device_pin)
+        lay_out.add_widget(get_trigger_label)
+        lay_out.add_widget(get_trigger_state)
         lay_out.add_widget(advanced_toggle)
         lay_out.add_widget(new_device_back_button)
         lay_out.add_widget(new_device_save_button)
@@ -4192,7 +4219,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             "device_name":current_device.name,
             "gpio_pin":current_device.pin,
             "run_time":current_device.run_time,
-            "color":current_device.color}
+            "color":current_device.color,
+            "trigger":current_device.trigger.lower()}
         with open(rf"logs/devices/{current_device.name}.json","w+") as write_file:
             json.dump(data, write_file,indent=0)
         with open(rf"logs/devices/device_list.json","r+") as read_file:
@@ -4276,21 +4304,28 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             return
         if value=='Select GPIO Pin':
             return
-        current_device.pin=int(value)
+        #value is get_device_pin.text
+        #string is split to pull out BOARD int
+        current_device.pin=int(value.split()[1])
+    def get_trigger_state_func(self,current_device,button,value):
+        current_device.trigger=value.lower()
 
     def advanced_toggle_func(self,current_device,button,state,*args):
         w=self.widgets
         normal_select=w['get_device_pin']
         adv_select=w['get_advanced_device_pin']
+        trigger_select=w['get_trigger_state']
         current_device.pin=0
         if state=='down':
             normal_select.disabled=True
             normal_select.text='Select GPIO Pin'
             adv_select.disabled=False
+            trigger_select.disabled=False
         else:
             normal_select.disabled=False
             adv_select.disabled=True
             adv_select.text='Select GPIO Pin'
+            trigger_select.disabled=True
 
     def edit_device_overlay(self,device):
         class InfoShelf():
@@ -4319,6 +4354,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                 self.pin=device.pin
                 self.color=device.color
                 self.run_time=device.run_time
+                self.trigger=device.trigger
                 self.device_types={
                     "Exfan":"exhaust.Exhaust",
                     "MAU":"mau.Mau",
@@ -4393,7 +4429,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         markup=True)
 
         edit_device_pin=Spinner(
-                        text=str(device.pin),
+                        text=general.pin_decode(str(device.pin)),
                         values=(general.pin_decode(i) for i in logic.available_pins),
                         size_hint =(.5, .05),
                         pos_hint = {'x':.40, 'y':.7})
@@ -4407,17 +4443,31 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         edit_advanced_device_pin=Spinner(
             text="Select GPIO Pin",
-            values=(str(i) for i in range(1,41)),
+            values=(general.pin_decode(i) for i in range(1,41) if i not in (1,2,4,6,9,14,17,20,25,30,34,39)),#eliminate 3.3v,5v,and ground pins
             size_hint =(.5, .05),
             pos_hint = {'x':.40, 'y':.6},
             disabled=True)
         edit_advanced_device_pin.bind(text=partial(self.edit_advanced_device_pin_func,current_device))
         self.widgets['edit_advanced_device_pin']=edit_advanced_device_pin
 
+        edit_trigger_label=MinimumBoundingLabel(text="[size=18]Device Pin Trigger State:[/size]",
+                        pos_hint = {'x':.05, 'y':.5},
+                        color = (0,0,0,1),
+                        markup=True)
+
+        edit_trigger_state=Spinner(
+            text=device.trigger.capitalize(),
+            values=("High","Low"),
+            size_hint =(.5, .05),
+            pos_hint = {'x':.40, 'y':.5},
+            disabled=True)
+        edit_trigger_state.bind(text=partial(self.edit_trigger_state_func,current_device))
+        self.widgets['edit_trigger_state']=edit_trigger_state
+
         edit_advanced_toggle=RoundedToggleButton(
             text='Enable Advanced Pin Selection',
             size_hint =(.5, .05),
-            pos_hint = {'x':.40, 'y':.5},
+            pos_hint = {'x':.40, 'y':.4},
             # background_normal='',
             background_down='',
             background_color=(245/250, 216/250, 41/250,.75),
@@ -4433,6 +4483,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         lay_out.add_widget(edit_device_pin)
         lay_out.add_widget(get_advanced_device_pin_label)
         lay_out.add_widget(edit_advanced_device_pin)
+        lay_out.add_widget(edit_trigger_label)
+        lay_out.add_widget(edit_trigger_state)
         lay_out.add_widget(edit_advanced_toggle)
         lay_out.add_widget(edit_device_back_button)
         lay_out.add_widget(edit_device_save_button)
@@ -4442,6 +4494,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
     def edit_device_save(self,current_device,device,button):
         toast=App.get_running_app().notifications.toast
+        w=self.widgets
+        pin_select=w['edit_device_pin']
+        adv_pin_select=w['edit_advanced_device_pin']
         if device.name!=current_device.name and \
             current_device.name in [general.strip_markup(i.text) for i in self.widgets['device_layout'].children]:
             print("main.edit_device_save(): can not save device; device name already taken")
@@ -4451,7 +4506,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             print("main.edit_device_save(): can not save device without name")
             toast('[b][size=20]Can not save without\ndevice name','error')
             return
-        if current_device.pin==0 or all((not isinstance(current_device.pin,int), current_device.type!='Manometer')):
+        if current_device.pin==0 or \
+            all((not isinstance(current_device.pin,int), current_device.type!='Manometer')) or \
+            all((pin_select.text=='Select GPIO Pin',adv_pin_select.text=='Select GPIO Pin')):
             print("main.edit_device_save(): can not save device without pin designation")
             toast('[b][size=20]Can not save without\npin designation','error')
             return
@@ -4459,7 +4516,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             "device_name":current_device.name,
             "gpio_pin":current_device.pin,
             "run_time":current_device.run_time,
-            "color":current_device.color}
+            "color":current_device.color,
+            "trigger":current_device.trigger}
         if device.name!=current_device.name:
             os.rename(rf"logs/devices/{device.name}.json",rf"logs/devices/{current_device.name}.json")
         with open(rf"logs/devices/{current_device.name}.json","w") as write_file:
@@ -4475,12 +4533,15 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             read_file.truncate()
         device.name=current_device.name
         if device.pin != current_device.pin:
-            logic.available_pins.append(device.pin)
-            logic.available_pins.remove(current_device.pin)
+            if device.pin in logic._available_pins:
+                logic.available_pins.append(device.pin)
+            if current_device.pin in logic.available_pins:
+                logic.available_pins.remove(current_device.pin)
             logic.available_pins.sort()
             logic.pin_off(device.pin)
             device.pin=current_device.pin
             logic.set_pin_mode(device)
+        device.trigger = current_device.trigger
         self.aggregate_devices()
         self.info_overlay(device,open=False)
 
@@ -4521,21 +4582,28 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             return
         if value=='Select GPIO Pin':
             return
-        current_device.pin=int(value)
+        #value is get_device_pin.text
+        #string is split to pull out BOARD int
+        current_device.pin=int(value.split()[1])
+    def edit_trigger_state_func(self,current_device,button,value):
+        current_device.trigger=value.lower()
 
     def edit_advanced_toggle_func(self,current_device,button,state,*args):
         w=self.widgets
         normal_select=w['edit_device_pin']
         adv_select=w['edit_advanced_device_pin']
-        current_device.pin=0
+        trigger_select=w['edit_trigger_state']
         if state=='down':
             normal_select.disabled=True
             normal_select.text='Select GPIO Pin'
             adv_select.disabled=False
+            trigger_select.disabled=False
         else:
             normal_select.disabled=False
+            normal_select.text=general.pin_decode(str(current_device.pin))
             adv_select.disabled=True
             adv_select.text='Select GPIO Pin'
+            trigger_select.disabled=True
 
 
     def devices_back (self,button):
