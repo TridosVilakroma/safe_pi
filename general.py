@@ -30,7 +30,10 @@ def pin_decode(pin_number):
            13:27,15:22,16:23,18:24,
            19:10,21:9,22:25,23:11,
            32:12,33:13,35:19,36:16,
-           37:26,38:20,40:21}
+           37:26,38:20,40:21,
+           #advanced pins below
+           3:2,5:3,7:4,24:8,26:7,
+           27:0,28:1,29:5,31:6}
 
     if pin_number in index:
          bcm_conversion=index[pin_number]
