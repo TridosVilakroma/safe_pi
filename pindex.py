@@ -28,3 +28,6 @@ class Pindex:
 
     def p4862(pin_screen):
         pin_screen.widgets['device_reload_overlay'].open()
+
+    def p9870(pin_screen):
+        pin_screen.widgets['delete_devices_overlay'].open()

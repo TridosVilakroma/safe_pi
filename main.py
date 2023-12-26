@@ -3996,7 +3996,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
     def delete_device_confirm(self,device,*args):
         logic.devices.remove(device)
         logic.pin_off(device.pin)
-        logic.available_pins.append(device.pin)
+        if device.pin in logic._available_pins:
+            logic.available_pins.append(device.pin)
         logic.available_pins.sort()
         os.remove(rf"logs/devices/{device.name}.json")
         with open(rf"logs/devices/device_list.json","r+") as read_file:
@@ -5864,6 +5865,50 @@ class PinScreen(Screen):
             self.widgets['device_reload_overlay'].dismiss()
         device_reload_cancel.bind(on_release=device_reload_cancel_func)
 
+        delete_devices_overlay=PinPop('delete_devices')
+        self.popups.append(delete_devices_overlay)
+        self.widgets['delete_devices_overlay']=delete_devices_overlay
+        delete_devices_overlay.ref='delete_devices_overlay'
+        delete_devices_overlay.widgets['overlay_layout']=delete_devices_overlay.overlay_layout
+
+        delete_devices_text=Label(
+            text=current_language['delete_devices_text'],
+            markup=True,
+            size_hint =(1,.6),
+            pos_hint = {'x':0, 'y':.35},)
+        self.widgets['delete_devices_text']=delete_devices_text
+        delete_devices_text.ref='delete_devices_text'
+
+        delete_devices_confirm=RoundedButton(text=current_language['delete_devices_confirm'],
+                        size_hint =(.35, .25),
+                        pos_hint = {'x':.05, 'y':.05},
+                        background_down='',
+                        background_color=(245/250, 216/250, 41/250,.9),
+                        markup=True)
+        self.widgets['delete_devices_confirm']=delete_devices_confirm
+        delete_devices_confirm.ref='delete_devices_confirm'
+
+        delete_devices_cancel=RoundedButton(text=current_language['delete_devices_cancel'],
+                        size_hint =(.35, .25),
+                        pos_hint = {'x':.6, 'y':.05},
+                        background_down='',
+                        background_color=(245/250, 216/250, 41/250,.9),
+                        markup=True)
+        self.widgets['delete_devices_cancel']=delete_devices_cancel
+        delete_devices_cancel.ref='delete_devices_cancel'
+
+        def delete_devices_confirm_func(button):
+            del_func=App.get_running_app().context_screen.get_screen('devices').delete_device_confirm
+            d=[i for i in logic.devices]
+            for i in d:
+                del_func(i)
+            self.widgets['delete_devices_overlay'].dismiss()
+        delete_devices_confirm.bind(on_release=delete_devices_confirm_func)
+
+        def delete_devices_cancel_func(button):
+            self.widgets['delete_devices_overlay'].dismiss()
+        delete_devices_cancel.bind(on_release=delete_devices_cancel_func)
+
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_text)
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_confirm)
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_cancel)
@@ -5885,6 +5930,9 @@ class PinScreen(Screen):
         self.widgets['device_reload_overlay'].widgets['overlay_layout'].add_widget(device_reload_text)
         self.widgets['device_reload_overlay'].widgets['overlay_layout'].add_widget(device_reload_confirm)
         self.widgets['device_reload_overlay'].widgets['overlay_layout'].add_widget(device_reload_cancel)
+        self.widgets['delete_devices_overlay'].widgets['overlay_layout'].add_widget(delete_devices_text)
+        self.widgets['delete_devices_overlay'].widgets['overlay_layout'].add_widget(delete_devices_confirm)
+        self.widgets['delete_devices_overlay'].widgets['overlay_layout'].add_widget(delete_devices_cancel)
 
         seperator_line=Image(source=gray_seperator_line,
                     allow_stretch=True,
