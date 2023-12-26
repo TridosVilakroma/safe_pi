@@ -21,6 +21,8 @@ heat_sensor_timer=300
 #there are only 19 GPIO pins available for input/output.
 #pins 0-8[BCM] are set as pull-up (use as input exclusively; not outputs)
 #the additional 15 are grounds, constant powers, and reserved for hats.
+_available_pins=[8,10,11,12,13,15,16,18,19,
+                21,22,23,32,33,35,36,37,38,40]
 available_pins=[8,10,11,12,13,15,16,18,19,
                 21,22,23,32,33,35,36,37,38,40]#i for i in range(2,28)]
 
@@ -63,7 +65,11 @@ def set_pin_mode(device):
         if device.mode=="in":
             GPIO.setup(device.pin,GPIO.IN,pull_up_down = GPIO.PUD_DOWN)
         elif device.mode=="out":
-            GPIO.setup(device.pin, GPIO.OUT,initial=GPIO.LOW)
+            #we want to init pins to the opposite of a trigger state
+            if device.trigger=="high":
+                GPIO.setup(device.pin, GPIO.OUT,initial=GPIO.LOW)
+            elif device.trigger=="low":
+                GPIO.setup(device.pin, GPIO.OUT,initial=GPIO.HIGH)
         else:
             print(f"logic.set_pin_mode(): {device}.mode is not \"in\" or \"out\"")
     except:
@@ -72,56 +78,86 @@ def set_pin_mode(device):
 def exfans_on(Logic_instance):
     for i in (i for i in devices if isinstance(i,exhaust.Exhaust)):
         if i.pin!=0:
-            Logic_instance.pin_states[i.pin]=1
+            if i.trigger=='high':
+                Logic_instance.pin_states[i.pin]=1
+            elif i.trigger=='low':
+                Logic_instance.pin_states[i.pin]=0
             i.on()
 
 def exfans_off(Logic_instance):
     for i in (i for i in devices if isinstance(i,exhaust.Exhaust)):
-        Logic_instance.pin_states[i.pin]=0
+        if i.trigger=='high':
+            Logic_instance.pin_states[i.pin]=0
+        elif i.trigger=='low':
+            Logic_instance.pin_states[i.pin]=1
         i.off()
 
 def maufans_on(Logic_instance):
     for i in (i for i in devices if isinstance(i,mau.Mau)):
         if i.pin!=0:
-            Logic_instance.pin_states[i.pin]=1
+            if i.trigger=='high':
+                Logic_instance.pin_states[i.pin]=1
+            elif i.trigger=='low':
+                Logic_instance.pin_states[i.pin]=0
             i.on()
 
 def maufans_off(Logic_instance):
     for i in (i for i in devices if isinstance(i,mau.Mau)):
-        Logic_instance.pin_states[i.pin]=0
+        if i.trigger=='high':
+            Logic_instance.pin_states[i.pin]=0
+        elif i.trigger=='low':
+            Logic_instance.pin_states[i.pin]=1
         i.off()
 
 def lights_on(Logic_instance):
     for i in (i for i in devices if isinstance(i,light.Light)):
         if i.pin!=0:
-            Logic_instance.pin_states[i.pin]=1
+            if i.trigger=='high':
+                Logic_instance.pin_states[i.pin]=1
+            elif i.trigger=='low':
+                Logic_instance.pin_states[i.pin]=0
             i.on()
 
 def lights_off(Logic_instance):
     for i in (i for i in devices if isinstance(i,light.Light)):
-        Logic_instance.pin_states[i.pin]=0
+        if i.trigger=='high':
+            Logic_instance.pin_states[i.pin]=0
+        elif i.trigger=='low':
+            Logic_instance.pin_states[i.pin]=1
         i.off()
 
 def dry_on(Logic_instance):
     for i in (i for i in devices if isinstance(i,drycontact.DryContact)):
         if i.pin!=0:
-            Logic_instance.pin_states[i.pin]=1
+            if i.trigger=='high':
+                Logic_instance.pin_states[i.pin]=1
+            elif i.trigger=='low':
+                Logic_instance.pin_states[i.pin]=0
             i.on()
 
 def dry_off(Logic_instance):
     for i in (i for i in devices if isinstance(i,drycontact.DryContact)):
-        Logic_instance.pin_states[i.pin]=0
+        if i.trigger=='high':
+            Logic_instance.pin_states[i.pin]=0
+        elif i.trigger=='low':
+            Logic_instance.pin_states[i.pin]=1
         i.off()
 
 def gv_on(Logic_instance):
     for i in (i for i in devices if isinstance(i,gas_valve.GasValve)):
         if i.pin!=0 and i.latched:
-            Logic_instance.pin_states[i.pin]=1
+            if i.trigger=='high':
+                Logic_instance.pin_states[i.pin]=1
+            elif i.trigger=='low':
+                Logic_instance.pin_states[i.pin]=0
             i.on()
 
 def gv_off(Logic_instance):
     for i in (i for i in devices if isinstance(i,gas_valve.GasValve)):
-        Logic_instance.pin_states[i.pin]=0
+        if i.trigger=='high':
+            Logic_instance.pin_states[i.pin]=0
+        elif i.trigger=='low':
+            Logic_instance.pin_states[i.pin]=1
         i.off()
 
 def gv_reset_all(*args):
