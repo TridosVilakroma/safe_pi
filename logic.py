@@ -224,9 +224,11 @@ if os.name == 'posix':
                 continue
         return False
 def clean_exit():
-    all_pins=[8,10,11,12,13,15,16,18,19,
-              21,22,23,32,33,35,36,37,38,40]
-    GPIO.setup(all_pins, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
+    for i in range(1,41):
+        try:
+            GPIO.setup(i, GPIO.IN, pull_up_down = GPIO.PUD_DOWN)
+        except ValueError:
+            continue
 
 def clean_list(list,element):
     while True:
