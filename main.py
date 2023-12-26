@@ -3835,6 +3835,79 @@ class DevicesScreen(Screen):
                     size_hint =(.98, .001),
                     pos_hint = {'x':.01, 'y':.13})
 
+        batch_add_layout=ExpandableRoundedColorLayout(
+            size_hint =(.1, .15),
+            pos_hint = {'center_x':.5, 'center_y':1.5},
+            expanded_size=(.9,.8),
+            expanded_pos = {'center_x':.5, 'center_y':.55},
+            bg_color=(0,0,0,.85))
+        batch_add_layout.widgets={}
+        self.widgets['batch_add_layout']=batch_add_layout
+        batch_add_layout.bind(expanded=self.batch_add_layout_populate)
+        batch_add_layout.bind(animating=partial(general.stripargs,batch_add_layout.clear_widgets))
+
+        batch_add_title=Label(
+            text="[size=20][color=#ffffff][b]Device Batch Add",
+            markup=True,
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.925},)
+        self.widgets['batch_add_title']=batch_add_title
+        batch_add_title.ref='batch_add_title'
+
+        batch_add_seperator=Image(
+            source=gray_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['batch_add_seperator']=batch_add_seperator
+
+        batch_add_expand_button=RoundedButton(
+            size_hint =(.5, .075),
+            pos_hint = {'center_x':.5, 'center_y':.075},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
+            markup=True)
+        self.widgets['batch_add_expand_button']=batch_add_expand_button
+        batch_add_expand_button.bind(on_release=batch_add_layout.shrink)
+
+        batch_add_expand_lines=Image(
+            source=settings_icon,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.4, .035),
+            pos_hint = {'center_x':.5, 'center_y':.075})
+        batch_add_expand_lines.center=batch_add_expand_button.center
+        self.widgets['batch_add_expand_lines']=batch_add_expand_lines
+
+        batch_add_vertical_seperator=Image(
+            source=gray_seperator_line_vertical,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.0005, .4),
+            pos_hint = {'center_x':.6, 'center_y':.55})
+        self.widgets['batch_add_vertical_seperator']=batch_add_vertical_seperator
+
+        batch_add_instructions=LabelColor(
+            bg_color=(0,0,0,1),
+            text=current_language['batch_add_instructions'],
+            markup=True,
+            size_hint =(.3, .6),
+            pos_hint = {'center_x':.2, 'center_y':.475},)
+        self.widgets['batch_add_instructions']=batch_add_instructions
+        batch_add_instructions.ref='batch_add_instructions'
+
+        with batch_add_instructions.canvas.after:
+           batch_add_instructions.status_lines=Line(rounded_rectangle=(100, 100, 200, 200, 10, 10, 10, 10, 100))
+
+        def update_lines(*args):
+            x=int(batch_add_instructions.x)
+            y=int(batch_add_instructions.y)
+            width=int(batch_add_instructions.width*1)
+            height=int(batch_add_instructions.height*1)
+            batch_add_instructions.status_lines.rounded_rectangle=(x, y, width, height, 10, 10, 10, 10, 100)
+        batch_add_instructions.bind(pos=update_lines, size=update_lines)
+
         device_layout.add_widget(device_details)
         device_scroll.add_widget(device_layout)
         self.add_widget(bg_image)
@@ -3842,6 +3915,41 @@ class DevicesScreen(Screen):
         self.add_widget(back_main)
         self.add_widget(device_scroll)
         self.add_widget(seperator_line)
+        self.add_widget(batch_add_layout)
+
+    def batch_add_layout_populate(self,*args):
+        darken=Animation(rgba=(0,0,0,.95))
+        lighten=Animation(rgba=(0,0,0,.85))
+        batch_add_layout=self.widgets['batch_add_layout']
+        batch_add_layout.clear_widgets()
+        if batch_add_layout.expanded:
+            self.remove_widget(batch_add_layout)
+            self.add_widget(batch_add_layout)#needed to draw children on top
+            darken.start(batch_add_layout.shape_color)
+            w=self.widgets
+            # w['batch_add_layout_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            # w['batch_add_layout_title'].size_hint=(.4, .05)
+            # w['batch_add_layout_ssid_input'].text=''
+            # w['batch_add_layout_security_input'].text='[b][size=16]Enter Security Type'
+            # w['batch_add_layout_password_input'].text=''
+            all_widgets=[
+                w['batch_add_title'],
+                w['batch_add_seperator'],
+                w['batch_add_expand_button'],
+                w['batch_add_expand_lines'],
+                w['batch_add_vertical_seperator'],
+                w['batch_add_instructions']]
+            for i in all_widgets:
+                batch_add_layout.add_widget(i)
+        elif not batch_add_layout.expanded:
+            lighten.start(batch_add_layout.shape_color)
+            w=self.widgets
+            # w['batch_add_layout_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            # w['batch_add_layout_title'].size_hint=(1,1)
+            all_widgets=[
+                ]
+            for i in all_widgets:
+                batch_add_layout.add_widget(i)
 
     def resize(self,popup,*args):
         pass
@@ -4605,7 +4713,6 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             adv_select.disabled=True
             adv_select.text='Select GPIO Pin'
             trigger_select.disabled=True
-
 
     def devices_back (self,button):
         self.widgets['device_scroll'].scroll_y=1
@@ -5909,6 +6016,49 @@ class PinScreen(Screen):
             self.widgets['delete_devices_overlay'].dismiss()
         delete_devices_cancel.bind(on_release=delete_devices_cancel_func)
 
+        batch_add_overlay=PinPop('batch_add')
+        self.popups.append(batch_add_overlay)
+        self.widgets['batch_add_overlay']=batch_add_overlay
+        batch_add_overlay.ref='batch_add_overlay'
+        batch_add_overlay.widgets['overlay_layout']=batch_add_overlay.overlay_layout
+
+        batch_add_text=Label(
+            text=current_language['batch_add_text'],
+            markup=True,
+            size_hint =(1,.6),
+            pos_hint = {'x':0, 'y':.35},)
+        self.widgets['batch_add_text']=batch_add_text
+        batch_add_text.ref='batch_add_text'
+
+        batch_add_confirm=RoundedButton(text=current_language['batch_add_confirm'],
+                        size_hint =(.35, .25),
+                        pos_hint = {'x':.05, 'y':.05},
+                        background_down='',
+                        background_color=(245/250, 216/250, 41/250,.9),
+                        markup=True)
+        self.widgets['batch_add_confirm']=batch_add_confirm
+        batch_add_confirm.ref='batch_add_confirm'
+
+        batch_add_cancel=RoundedButton(text=current_language['batch_add_cancel'],
+                        size_hint =(.35, .25),
+                        pos_hint = {'x':.6, 'y':.05},
+                        background_down='',
+                        background_color=(245/250, 216/250, 41/250,.9),
+                        markup=True)
+        self.widgets['batch_add_cancel']=batch_add_cancel
+        batch_add_cancel.ref='batch_add_cancel'
+
+        def batch_add_confirm_func(button):
+            self.parent.transition = SlideTransition(direction='right')
+            App.get_running_app().context_screen.current='devices'
+            App.get_running_app().context_screen.get_screen('devices').widgets['batch_add_layout'].expand()
+            self.widgets['batch_add_overlay'].dismiss()
+        batch_add_confirm.bind(on_release=batch_add_confirm_func)
+
+        def batch_add_cancel_func(button):
+            self.widgets['batch_add_overlay'].dismiss()
+        batch_add_cancel.bind(on_release=batch_add_cancel_func)
+
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_text)
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_confirm)
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_cancel)
@@ -5933,6 +6083,9 @@ class PinScreen(Screen):
         self.widgets['delete_devices_overlay'].widgets['overlay_layout'].add_widget(delete_devices_text)
         self.widgets['delete_devices_overlay'].widgets['overlay_layout'].add_widget(delete_devices_confirm)
         self.widgets['delete_devices_overlay'].widgets['overlay_layout'].add_widget(delete_devices_cancel)
+        self.widgets['batch_add_overlay'].widgets['overlay_layout'].add_widget(batch_add_text)
+        self.widgets['batch_add_overlay'].widgets['overlay_layout'].add_widget(batch_add_confirm)
+        self.widgets['batch_add_overlay'].widgets['overlay_layout'].add_widget(batch_add_cancel)
 
         seperator_line=Image(source=gray_seperator_line,
                     allow_stretch=True,
