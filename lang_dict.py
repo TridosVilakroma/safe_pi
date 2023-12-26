@@ -141,6 +141,10 @@ DISABLE for 3 seconds.
     'delete_devices_text' : '[size=30][color=#000000]Delete all devices from device_list.json?[/color][/size]',
     'delete_devices_confirm' : '[size=30][b][color=#000000] Continue [/color][/b][/size]',
     'delete_devices_cancel' : '[size=30][b][color=#000000] Cancel [/color][/b][/size]',
+    'batch_add_overlay' : 'Batch Add Devices',
+    'batch_add_text' : '[size=30][color=#000000]Enter device batch add mode?[/color][/size]',
+    'batch_add_confirm' : '[size=30][b][color=#000000] Continue [/color][/b][/size]',
+    'batch_add_cancel' : '[size=30][b][color=#000000] Cancel [/color][/b][/size]',
     'report_pending_overlay' : 'Report Pending',
     'report_pending_text' : '''[size=30][color=#000000] Enable/Disable system report 
  pending changes watermark? [/color][/size]''',

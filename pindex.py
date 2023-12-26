@@ -31,3 +31,6 @@ class Pindex:
 
     def p9870(pin_screen):
         pin_screen.widgets['delete_devices_overlay'].open()
+
+    def p1470(pin_screen):
+        pin_screen.widgets['batch_add_overlay'].open()
