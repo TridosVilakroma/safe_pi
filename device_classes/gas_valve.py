@@ -23,7 +23,8 @@ class GasValve():
             "device_name":self.name,
             "gpio_pin":self.pin,
             "run_time":self.run_time,
-            "color":self.color}
+            "color":self.color,
+            "trigger":self.trigger}
         with open(rf"logs/devices/{self.name}.json","w") as write_file:
             json.dump(data, write_file,indent=0)
 
