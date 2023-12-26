@@ -34,6 +34,7 @@ class GasValve():
             self.pin=int(data["gpio_pin"])
             self.run_time=float(data["run_time"])
             self.color=data["color"]
+            self.trigger=data.get("trigger","high")
 
     def read(self):
         try:
