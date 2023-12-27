@@ -3884,8 +3884,8 @@ class DevicesScreen(Screen):
             source=gray_seperator_line_vertical,
             allow_stretch=True,
             keep_ratio=False,
-            size_hint =(.0005, .4),
-            pos_hint = {'center_x':.6, 'center_y':.55})
+            size_hint =(.0005, .6),
+            pos_hint = {'center_x':.6, 'center_y':.475})
         self.widgets['batch_add_vertical_seperator']=batch_add_vertical_seperator
 
         batch_add_instructions=LabelColor(
@@ -3907,6 +3907,28 @@ class DevicesScreen(Screen):
             height=int(batch_add_instructions.height*1)
             batch_add_instructions.status_lines.rounded_rectangle=(x, y, width, height, 10, 10, 10, 10, 100)
         batch_add_instructions.bind(pos=update_lines, size=update_lines)
+
+        batches_scroll=OutlineScroll(
+            size_hint =(.175,.6),
+            pos_hint = {'center_x':.475, 'center_y':.475},
+            bg_color=(1,1,1,.15),
+            bar_width=8,
+            bar_color=(245/250, 216/250, 41/250,.9),
+            bar_inactive_color=(245/250, 216/250, 41/250,.35),
+            do_scroll_y=True,
+            do_scroll_x=False)
+        self.widgets['batches_scroll']=batches_scroll
+
+        batches_device_info_scroll=OutlineScroll(
+            size_hint =(.3125,.6),
+            pos_hint = {'center_x':.79375, 'center_y':.475},
+            bg_color=(1,1,1,.15),
+            bar_width=8,
+            bar_color=(245/250, 216/250, 41/250,.9),
+            bar_inactive_color=(245/250, 216/250, 41/250,.35),
+            do_scroll_y=True,
+            do_scroll_x=False)
+        self.widgets['batches_device_info_scroll']=batches_device_info_scroll
 
         device_layout.add_widget(device_details)
         device_scroll.add_widget(device_layout)
@@ -3938,7 +3960,9 @@ class DevicesScreen(Screen):
                 w['batch_add_expand_button'],
                 w['batch_add_expand_lines'],
                 w['batch_add_vertical_seperator'],
-                w['batch_add_instructions']]
+                w['batch_add_instructions'],
+                w['batches_scroll'],
+                w['batches_device_info_scroll']]
             for i in all_widgets:
                 batch_add_layout.add_widget(i)
         elif not batch_add_layout.expanded:
