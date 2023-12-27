@@ -3937,7 +3937,12 @@ class DevicesScreen(Screen):
             do_scroll_x=False)
         self.widgets['batches_device_info_scroll']=batches_device_info_scroll
 
-        batches_device_info_scroll_layout=FloatLayout()
+        batches_device_info_scroll_layout=GridLayout(
+            cols=1,
+            spacing=50,
+            size_hint_y=None,
+            padding=5)
+        batches_device_info_scroll_layout.bind(minimum_height=lambda layout,min_height:setattr(layout,'height',min_height))
         self.widgets['batches_device_info_scroll_layout']=batches_device_info_scroll_layout
 
         batch_blue_relay_4_button=RoundedButton(
@@ -3961,14 +3966,26 @@ class DevicesScreen(Screen):
         self.add_widget(batch_add_layout)
 
     def get_batch_info(self,batch,*args):
-        infodex={
-            "blue_relay_4" : {
-                'title':'Four Channel Blue Relay Board',
-                'devices':{
-                    'Exhaust Fan':''
-                }
-            }
-        }
+        layout=self.widgets['batches_device_info_scroll_layout']
+        layout.clear_widgets()
+        b=importlib.import_module(f'device_classes.batches.{batch}')
+        layout.add_widget(Label())
+        for i in b.info:
+            l=Label(
+                text='[size=16]'+i,
+                markup=True,
+                halign='center')
+            layout.add_widget(l)
+            layout.add_widget(Label())
+        add_batch_button=RoundedButton(
+            size_hint_y=None,
+            text='[b][size=16][color=#000000]Add Batch',
+            background_normal='',
+            background_color=(.0, .5, .7,.8),
+            markup=True)
+        add_batch_button.bind(on_release=partial(self.add_batch,batch))
+        layout.add_widget(add_batch_button)
+        layout.add_widget(Label())
 
     def batch_add_layout_populate(self,*args):
         darken=Animation(rgba=(0,0,0,.95))
@@ -3993,6 +4010,7 @@ class DevicesScreen(Screen):
                 batch_add_layout.add_widget(i)
         elif not batch_add_layout.expanded:
             lighten.start(batch_add_layout.shape_color)
+            self.widgets['batch_add_instructions'].clear_widgets()
 
     def add_batch(self,batch,*args):
         b=importlib.import_module(f'device_classes.batches.{batch}')
