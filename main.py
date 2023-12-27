@@ -5607,6 +5607,7 @@ class PinScreen(Screen):
         self.date_flag=0
         self.cols = 2
         self.widgets={}
+        self.ud={}
         self.popups=[]
         self.pin=''
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
@@ -6080,6 +6081,7 @@ class PinScreen(Screen):
                         markup=True)
         self.widgets['delete_devices_confirm']=delete_devices_confirm
         delete_devices_confirm.ref='delete_devices_confirm'
+        delete_devices_confirm.bind(on_press=self.create_clock,on_touch_up=self.delete_clock)
 
         delete_devices_cancel=RoundedButton(text=current_language['delete_devices_cancel'],
                         size_hint =(.35, .25),
@@ -6089,14 +6091,6 @@ class PinScreen(Screen):
                         markup=True)
         self.widgets['delete_devices_cancel']=delete_devices_cancel
         delete_devices_cancel.ref='delete_devices_cancel'
-
-        def delete_devices_confirm_func(button):
-            del_func=App.get_running_app().context_screen.get_screen('devices').delete_device_confirm
-            d=[i for i in logic.devices]
-            for i in d:
-                del_func(i)
-            self.widgets['delete_devices_overlay'].dismiss()
-        delete_devices_confirm.bind(on_release=delete_devices_confirm_func)
 
         def delete_devices_cancel_func(button):
             self.widgets['delete_devices_overlay'].dismiss()
@@ -6144,6 +6138,11 @@ class PinScreen(Screen):
         def batch_add_cancel_func(button):
             self.widgets['batch_add_overlay'].dismiss()
         batch_add_cancel.bind(on_release=batch_add_cancel_func)
+
+        delete_progress=CircularProgressBar()
+        delete_progress._widget_size=200
+        delete_progress._progress_colour=(180/255, 10/255, 10/255,1)
+        self.widgets['delete_progress']=delete_progress
 
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_text)
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_confirm)
@@ -6197,6 +6196,44 @@ class PinScreen(Screen):
         self.add_widget(num_pad)
         self.add_widget(display)
         self.add_widget(seperator_line)
+
+    def create_clock(self,*args):
+        w=self.widgets
+        delete_progress=CircularProgressBar()
+        delete_progress._widget_size=200
+        delete_progress._progress_colour=(180/255, 10/255, 10/255,1)
+        self.widgets['delete_progress']=delete_progress
+        scheduled_delete=partial(self.delete_devices_confirm_func)
+        Clock.schedule_once(scheduled_delete, 2)
+        self.ud['event'] = scheduled_delete
+        w['delete_devices_overlay'].widgets['overlay_layout'].add_widget(w['delete_progress'])
+        Clock.schedule_interval(self.progress_bar_update,.0001)
+        self.ud['event_bar'] = self.progress_bar_update
+
+    def delete_clock(self,*args):
+        w=self.widgets
+        if 'event' in self.ud:
+            Clock.unschedule(self.ud['event'])
+        if 'event_bar' in self.ud:
+            Clock.unschedule(self.ud['event_bar'])
+            w['delete_progress'].value=0
+            w['delete_devices_overlay'].widgets['overlay_layout'].remove_widget(w['delete_progress'])
+
+    def delete_devices_confirm_func(self,*args):
+        del_func=App.get_running_app().context_screen.get_screen('devices').delete_device_confirm
+        d=[i for i in logic.devices]
+        for i in d:
+            del_func(i)
+        App.get_running_app().notifications.toast(f'[size=20]All Devices Deleted','info')
+        self.widgets['delete_devices_overlay'].dismiss()
+
+    def progress_bar_update(self,dt,*args):
+        self.widgets['delete_progress'].pos=self.widgets['delete_devices_confirm'].last_touch.pos
+        if not self.widgets['delete_progress'].parent:
+            self.widgets['overlay_layout'].add_widget(self.widgets['delete_progress'])
+        if self.widgets['delete_progress'].value >= 1000: # Checks to see if progress_bar.value has met 1000
+            return False # Returning False schedule is canceled and won't repeat
+        self.widgets['delete_progress'].value += 1000/2*dt # Updates progress_bar's progress
 
     def Pin_back(self,button):
         self.pin=''
