@@ -4033,9 +4033,14 @@ class DevicesScreen(Screen):
                     "Light Switch":"switch_light.SwitchLight",
                     "Fans Switch":"switch_fans.SwitchFans",
                     "Manometer":"manometer.Manometer"}
-
+        result=True
         for i in b.devices:
-            self.new_device_save(InfoShelf(i))
+            if self.new_device_save(InfoShelf(i)) == False:
+                result=False
+        if result:
+            App.get_running_app().notifications.toast(f'[size=20]Batch Added','info')
+        else:
+            App.get_running_app().notifications.toast(f'[size=20]Failed to add all devices','error')
 
     def resize(self,popup,*args):
         pass
@@ -4401,15 +4406,15 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         if current_device.name in [general.strip_markup(i.text) for i in self.widgets['device_layout'].children]:
             print("main.new_device_save(): can not save device; device name already taken")
             toast('[b][size=20]Device name already exists','error')
-            return
+            return False
         if current_device.name=="default" or re.search('^\s*$',current_device.name):
             print("main.new_device_save(): can not save device without name")
             toast('[b][size=20]Can not save without\ndevice name','error')
-            return
+            return False
         if current_device.pin==0 or all((not isinstance(current_device.pin,int), current_device.type!='Manometer')):
             print("main.new_device_save(): can not save device without pin designation")
             toast('[b][size=20]Can not save without\npin designation','error')
-            return
+            return False
         data={
             "device_name":current_device.name,
             "gpio_pin":current_device.pin,
