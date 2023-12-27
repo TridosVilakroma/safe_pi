@@ -1,4 +1,4 @@
-import os,json,time,shutil,math,random,subprocess,re,string
+import os,json,time,shutil,math,random,subprocess,re,string,importlib
 import traceback,errno
 from datetime import datetime,timedelta
 from kivy.config import Config
@@ -3919,6 +3919,13 @@ class DevicesScreen(Screen):
             do_scroll_x=False)
         self.widgets['batches_scroll']=batches_scroll
 
+        batches_scroll_layout=GridLayout(
+            cols=1,
+            spacing=10,
+            size_hint_y=None,
+            padding=5)
+        self.widgets['batches_scroll_layout']=batches_scroll_layout
+
         batches_device_info_scroll=OutlineScroll(
             size_hint =(.3125,.6),
             pos_hint = {'center_x':.79375, 'center_y':.475},
@@ -3930,6 +3937,20 @@ class DevicesScreen(Screen):
             do_scroll_x=False)
         self.widgets['batches_device_info_scroll']=batches_device_info_scroll
 
+        batches_device_info_scroll_layout=FloatLayout()
+        self.widgets['batches_device_info_scroll_layout']=batches_device_info_scroll_layout
+
+        batch_blue_relay_4_button=RoundedButton(
+            text='[b][size=16][color=#000000]Four Channel Blue Relay Board',
+            background_normal='',
+            background_color=(.0, .5, .7,.8),
+            markup=True)
+        self.widgets['batch_blue_relay_4_button']=batch_blue_relay_4_button
+        batch_blue_relay_4_button.bind(on_release=partial(self.get_batch_info,"blue_relay_4"))
+
+        batches_scroll_layout.add_widget(batch_blue_relay_4_button)
+        batches_scroll.add_widget(batches_scroll_layout)
+        batches_device_info_scroll.add_widget(batches_device_info_scroll_layout)
         device_layout.add_widget(device_details)
         device_scroll.add_widget(device_layout)
         self.add_widget(bg_image)
@@ -3938,6 +3959,16 @@ class DevicesScreen(Screen):
         self.add_widget(device_scroll)
         self.add_widget(seperator_line)
         self.add_widget(batch_add_layout)
+
+    def get_batch_info(self,batch,*args):
+        infodex={
+            "blue_relay_4" : {
+                'title':'Four Channel Blue Relay Board',
+                'devices':{
+                    'Exhaust Fan':''
+                }
+            }
+        }
 
     def batch_add_layout_populate(self,*args):
         darken=Animation(rgba=(0,0,0,.95))
@@ -3949,11 +3980,6 @@ class DevicesScreen(Screen):
             self.add_widget(batch_add_layout)#needed to draw children on top
             darken.start(batch_add_layout.shape_color)
             w=self.widgets
-            # w['batch_add_layout_title'].pos_hint={'center_x':.5, 'center_y':.925}
-            # w['batch_add_layout_title'].size_hint=(.4, .05)
-            # w['batch_add_layout_ssid_input'].text=''
-            # w['batch_add_layout_security_input'].text='[b][size=16]Enter Security Type'
-            # w['batch_add_layout_password_input'].text=''
             all_widgets=[
                 w['batch_add_title'],
                 w['batch_add_seperator'],
@@ -3967,13 +3993,31 @@ class DevicesScreen(Screen):
                 batch_add_layout.add_widget(i)
         elif not batch_add_layout.expanded:
             lighten.start(batch_add_layout.shape_color)
-            w=self.widgets
-            # w['batch_add_layout_title'].pos_hint={'center_x':.5, 'center_y':.5}
-            # w['batch_add_layout_title'].size_hint=(1,1)
-            all_widgets=[
-                ]
-            for i in all_widgets:
-                batch_add_layout.add_widget(i)
+
+    def add_batch(self,batch,*args):
+        b=importlib.import_module(f'device_classes.batches.{batch}')
+        class InfoShelf():
+            def __init__(self,device) -> None:
+                self.name=device['device_name']
+                self.type=device['type']
+                self.pin=device['gpio_pin']
+                self.color=device['color']
+                self.run_time=0
+                self.trigger=device['trigger']
+                self.device_types={
+                    "Exfan":"exhaust.Exhaust",
+                    "MAU":"mau.Mau",
+                    "Light":"light.Light",
+                    "Dry":"drycontact.DryContact",
+                    "GV":"gas_valve.GasValve",
+                    "Micro":"micro_switch.MicroSwitch",
+                    "Heat":"heat_sensor.HeatSensor",
+                    "Light Switch":"switch_light.SwitchLight",
+                    "Fans Switch":"switch_fans.SwitchFans",
+                    "Manometer":"manometer.Manometer"}
+
+        for i in b.devices:
+            self.new_device_save(InfoShelf(i))
 
     def resize(self,popup,*args):
         pass
@@ -4334,7 +4378,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
     def new_device_overlay_close(self,button):
         self.widgets['overlay_menu'].dismiss()
 
-    def new_device_save(self,current_device,button):
+    def new_device_save(self,current_device,*args):
         toast=App.get_running_app().notifications.toast
         if current_device.name in [general.strip_markup(i.text) for i in self.widgets['device_layout'].children]:
             print("main.new_device_save(): can not save device; device name already taken")
