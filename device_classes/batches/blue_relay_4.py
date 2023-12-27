@@ -52,3 +52,26 @@ devices=[
     "trigger": "low"
     }
 ]
+
+info=[
+'[size=18][u]Four Channel Blue Relay Board',
+'''Four devices will be added, all low trigger.
+The pins being used are 35,37,38 and 40.''',
+'[size=18][u]'+' '*80,
+'''Device: Exhaust Fan
+Pin: 35
+Trigger: Low
+Relay Ch: 1''',
+'''Device: Makeup Air Fan
+Pin: 37
+Trigger: Low
+Relay Ch: 2''',
+'''Device: Lights
+Pin: 38
+Trigger: Low
+Relay Ch: 3''',
+'''Device: Dry Contact
+Pin: 40
+Trigger: Low
+Relay Ch: 4'''
+]
