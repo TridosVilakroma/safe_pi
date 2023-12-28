@@ -3709,6 +3709,20 @@ class ReportScreen(Screen):
                     pos_hint = {'x':.01, 'y':.13})
         self.widgets['seperator_line']=seperator_line
 
+        tn_label=DisplayLabel(
+            text='[size=12]TN',
+            markup=True,
+            size_hint =(.14, .05),
+            pos_hint = {'center_x':.25, 'center_y':.8})
+        self.widgets['tn_label']=tn_label
+
+        tn_zip_label=DisplayLabel(
+            text='[size=10]TN',
+            markup=True,
+            size_hint =(.14, .05),
+            pos_hint = {'center_x':.75, 'center_y':.75})
+        self.widgets['tn_zip_label']=tn_zip_label
+
         self.add_widget(bg_image)
         scroll_layout.add_widget(report_image)
         scroll_layout.add_widget(date_label)
@@ -3734,6 +3748,24 @@ class ReportScreen(Screen):
                 self.widgets['scroll_layout'].add_widget(self.widgets['pending_watermark2'])
                 self.widgets['scroll_layout'].add_widget(self.widgets['pending_watermark3'])
 
+    def add_state_labels(self,*args):
+        w=self.widgets
+        layout=w['scroll_layout']
+        config=App.get_running_app().config_
+        report_state=config.get("config","report_state",fallback='KY')
+        if report_state=='KY':
+            layout.clear_widgets()
+            layout.add_widget(w['report_image'])
+            layout.add_widget(w['date_label'])
+        elif report_state=='TN':
+            if hasattr(w['tn_label'],'parent'):
+                if w['tn_label'].parent!=None:
+                    return
+            if hasattr(w['tn_zip_label'],'parent'):
+                if w['tn_zip_label'].parent!=None:
+                    return
+            layout.add_widget(w['tn_label'])
+            layout.add_widget(w['tn_zip_label'])
 
     def on_enter(self):
         self.check_pending()
