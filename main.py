@@ -3966,8 +3966,19 @@ class DevicesScreen(Screen):
         self.widgets['batch_blue_relay_6_button']=batch_blue_relay_6_button
         batch_blue_relay_6_button.bind(on_release=partial(self.get_batch_info,"blue_relay_6"))
 
+        basic_inputs_button=RoundedButton(
+            text='[b][size=16][color=#000000]Basic Input Devices',
+            background_normal='',
+            background_color=(.0, .5, .7,.8),
+            markup=True,
+            size_hint_y=None,
+            height=60)
+        self.widgets['basic_inputs_button']=basic_inputs_button
+        basic_inputs_button.bind(on_release=partial(self.get_batch_info,"basic_inputs"))
+
         batches_scroll_layout.add_widget(batch_blue_relay_4_button)
         batches_scroll_layout.add_widget(batch_blue_relay_6_button)
+        batches_scroll_layout.add_widget(basic_inputs_button)
         batches_scroll.add_widget(batches_scroll_layout)
         batches_device_info_scroll.add_widget(batches_device_info_scroll_layout)
         device_layout.add_widget(device_details)
@@ -3993,6 +4004,7 @@ class DevicesScreen(Screen):
             layout.add_widget(Label())
         add_batch_button=RoundedButton(
             size_hint_y=None,
+            height=75,
             text='[b][size=16][color=#000000]Add Batch',
             background_normal='',
             background_color=(.0, .5, .7,.8),
