@@ -4904,6 +4904,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         self.unlocked=False
         self.aggregate_devices()
 
+    def on_leave(self):
+        self.widgets['batch_add_layout'].shrink()
+
 class TrainScreen(Screen):
     def __init__(self, **kw):
         super(TrainScreen,self).__init__(**kw)
