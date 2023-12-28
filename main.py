@@ -3924,6 +3924,7 @@ class DevicesScreen(Screen):
             spacing=10,
             size_hint_y=None,
             padding=5)
+        batches_scroll_layout.bind(minimum_height=lambda layout,min_height:setattr(layout,'height',min_height))
         self.widgets['batches_scroll_layout']=batches_scroll_layout
 
         batches_device_info_scroll=OutlineScroll(
@@ -3949,11 +3950,24 @@ class DevicesScreen(Screen):
             text='[b][size=16][color=#000000]Four Channel Blue Relay Board',
             background_normal='',
             background_color=(.0, .5, .7,.8),
-            markup=True)
+            markup=True,
+            size_hint_y=None,
+            height=60)
         self.widgets['batch_blue_relay_4_button']=batch_blue_relay_4_button
         batch_blue_relay_4_button.bind(on_release=partial(self.get_batch_info,"blue_relay_4"))
 
+        batch_blue_relay_6_button=RoundedButton(
+            text='[b][size=16][color=#000000]Six Channel Blue Relay Board',
+            background_normal='',
+            background_color=(.0, .5, .7,.8),
+            markup=True,
+            size_hint_y=None,
+            height=60)
+        self.widgets['batch_blue_relay_6_button']=batch_blue_relay_6_button
+        batch_blue_relay_6_button.bind(on_release=partial(self.get_batch_info,"blue_relay_6"))
+
         batches_scroll_layout.add_widget(batch_blue_relay_4_button)
+        batches_scroll_layout.add_widget(batch_blue_relay_6_button)
         batches_scroll.add_widget(batches_scroll_layout)
         batches_device_info_scroll.add_widget(batches_device_info_scroll_layout)
         device_layout.add_widget(device_details)
