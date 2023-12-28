@@ -2581,6 +2581,11 @@ class ScreenSaver(ButtonBehavior,Label):
         super(ScreenSaver, self).on_touch_up(touch)
         return True
 
+class ResizeLabel(Label):
+    def __init__(self, **kwargs):
+        super(ResizeLabel,self).__init__(**kwargs)
+
+
 #<<<<<<<<<<>>>>>>>>>>#
 
 class ControlGrid(Screen):
@@ -3947,22 +3952,24 @@ class DevicesScreen(Screen):
         self.widgets['batches_device_info_scroll_layout']=batches_device_info_scroll_layout
 
         batch_blue_relay_4_button=RoundedButton(
-            text='[b][size=16][color=#000000]Four Channel Blue Relay Board',
+            text='[b][size=16][color=#000000]Four Channel\nBlue Relay Board',
             background_normal='',
             background_color=(.0, .5, .7,.8),
             markup=True,
             size_hint_y=None,
-            height=60)
+            height=60,
+            halign='center')
         self.widgets['batch_blue_relay_4_button']=batch_blue_relay_4_button
         batch_blue_relay_4_button.bind(on_release=partial(self.get_batch_info,"blue_relay_4"))
 
         batch_blue_relay_6_button=RoundedButton(
-            text='[b][size=16][color=#000000]Six Channel Blue Relay Board',
+            text='[b][size=16][color=#000000]Six Channel\nBlue Relay Board',
             background_normal='',
             background_color=(.0, .5, .7,.8),
             markup=True,
             size_hint_y=None,
-            height=60)
+            height=60,
+            halign='center')
         self.widgets['batch_blue_relay_6_button']=batch_blue_relay_6_button
         batch_blue_relay_6_button.bind(on_release=partial(self.get_batch_info,"blue_relay_6"))
 
@@ -3972,7 +3979,8 @@ class DevicesScreen(Screen):
             background_color=(.0, .5, .7,.8),
             markup=True,
             size_hint_y=None,
-            height=60)
+            height=60,
+            halign='center')
         self.widgets['basic_inputs_button']=basic_inputs_button
         basic_inputs_button.bind(on_release=partial(self.get_batch_info,"basic_inputs"))
 

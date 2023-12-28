@@ -262,19 +262,24 @@ available.
 Drag and drop to change order;
 Highest priority at the top.''',
 'analytic_screen_name' : "[size=50][color=#000000][b][u][i]       Analytics       ",
-'batch_add_instructions' : '''[size=18][color=#ffffff][b]Add prebuilt batches of devices by
-selecting a batch from the list, verifying the
-included devices, and pressing the accept button.[/b]
+'batch_add_instructions' : '''[size=18][color=#ffffff][b]Add prebuilt batches of devices
+by selecting a batch from the list,
+verifying the included devices,
+and pressing the accept button.[/b]
 
 [size=18][b][i]-Delete Other Devices[/b][/i][size=16]
-    Batch add mode should not be used while other devices exist.
+    Batch add mode should not be
+    used while other devices exist.
 
 [size=18][b][i]-Verify Output Triggers[/b][/i][size=16]
-    Some devices added via batch-add have low trigger enabled.
+    Some devices added
+    via batch-add have
+    low trigger enabled.
 
 [size=18][b][i]-Read Included Devices[/b][/i][size=16]
-    Batches may be updated without notice,
-    or a batch may include multiple batches.''',
+    Batches may be updated
+    without notice, or a batch
+    may include multiple batches.''',
 }
 
 spanish={
