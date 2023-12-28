@@ -34,3 +34,6 @@ class Pindex:
 
     def p1470(pin_screen):
         pin_screen.widgets['batch_add_overlay'].open()
+
+    def p6578(pin_screen):
+        pin_screen.widgets['report_state_overlay'].open()
