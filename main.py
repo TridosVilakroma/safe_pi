@@ -3997,6 +3997,7 @@ class DevicesScreen(Screen):
             self.add_widget(batch_add_layout)#needed to draw children on top
             darken.start(batch_add_layout.shape_color)
             w=self.widgets
+            w['batches_device_info_scroll_layout'].clear_widgets()
             all_widgets=[
                 w['batch_add_title'],
                 w['batch_add_seperator'],
@@ -4010,7 +4011,6 @@ class DevicesScreen(Screen):
                 batch_add_layout.add_widget(i)
         elif not batch_add_layout.expanded:
             lighten.start(batch_add_layout.shape_color)
-            self.widgets['batch_add_instructions'].clear_widgets()
 
     def add_batch(self,batch,*args):
         b=importlib.import_module(f'device_classes.batches.{batch}')
