@@ -6266,6 +6266,7 @@ class PinScreen(Screen):
             with open(preferences_path,'w') as configfile:
                 config.write(configfile)
             App.get_running_app().context_screen.get_screen('report').add_state_labels()
+            App.get_running_app().notifications.toast(f'[size=20]Report state set:\n\n[b]{st}','info')
             self.widgets['report_state_overlay'].dismiss()
         report_state_confirm.bind(on_release=report_state_confirm_func)
 
