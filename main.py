@@ -3710,14 +3710,14 @@ class ReportScreen(Screen):
         self.widgets['seperator_line']=seperator_line
 
         tn_label=DisplayLabel(
-            text='[color=#000000][size=12]TN',
+            text='[b][color=#000000][size=16]TN',
             markup=True,
             size_hint =(.05, .01),
-            pos_hint = {'center_x':.425, 'center_y':.7875})
+            pos_hint = {'center_x':.425, 'center_y':.77425})
         self.widgets['tn_label']=tn_label
 
         tn_zip_label=DisplayLabel(
-            text='[color=#000000][size=10]TN',
+            text='[b][color=#000000][size=14]TN',
             markup=True,
             size_hint =(.02225, .01),
             pos_hint = {'center_x':.7675, 'center_y':.7875})
