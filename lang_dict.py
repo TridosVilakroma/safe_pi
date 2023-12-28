@@ -145,6 +145,10 @@ DISABLE for 3 seconds.
     'batch_add_text' : '[size=30][color=#000000]Enter device batch add mode?[/color][/size]',
     'batch_add_confirm' : '[size=30][b][color=#000000] Continue [/color][/b][/size]',
     'batch_add_cancel' : '[size=30][b][color=#000000] Cancel [/color][/b][/size]',
+    'report_state_overlay' : 'Set State for Report',
+    'report_state_text' : '[size=30][color=#000000]Enter which state report to be\nshown under "System Report"\n\n\n[/color][/size]',
+    'report_state_confirm' : '[size=30][b][color=#000000] Save [/color][/b][/size]',
+    'report_state_cancel' : '[size=30][b][color=#000000] Cancel [/color][/b][/size]',
     'report_pending_overlay' : 'Report Pending',
     'report_pending_text' : '''[size=30][color=#000000] Enable/Disable system report 
  pending changes watermark? [/color][/size]''',
