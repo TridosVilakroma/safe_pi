@@ -3770,6 +3770,7 @@ class ReportScreen(Screen):
     def on_enter(self):
         self.check_pending()
     def on_pre_enter(self):
+        self.add_state_labels()
         self.date_setter()
         self.widgets['report_image'].reload()
         self.refresh_widget()
