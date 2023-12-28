@@ -6218,6 +6218,60 @@ class PinScreen(Screen):
         delete_progress._progress_colour=(180/255, 10/255, 10/255,1)
         self.widgets['delete_progress']=delete_progress
 
+        report_state_overlay=PinPop('report_state')
+        self.popups.append(report_state_overlay)
+        self.widgets['report_state_overlay']=report_state_overlay
+        report_state_overlay.ref='report_state_overlay'
+        report_state_overlay.widgets['overlay_layout']=report_state_overlay.overlay_layout
+
+        report_state_text=Label(
+            text=current_language['report_state_text'],
+            markup=True,
+            size_hint =(1,.6),
+            pos_hint = {'x':0, 'y':.35},)
+        self.widgets['report_state_text']=report_state_text
+        report_state_text.ref='report_state_text'
+
+        report_state_confirm=RoundedButton(text=current_language['report_state_confirm'],
+                        size_hint =(.35, .25),
+                        pos_hint = {'x':.05, 'y':.05},
+                        background_down='',
+                        background_color=(245/250, 216/250, 41/250,.9),
+                        markup=True)
+        self.widgets['report_state_confirm']=report_state_confirm
+        report_state_confirm.ref='report_state_confirm'
+
+        report_state_cancel=RoundedButton(text=current_language['report_state_cancel'],
+                        size_hint =(.35, .25),
+                        pos_hint = {'x':.6, 'y':.05},
+                        background_down='',
+                        background_color=(245/250, 216/250, 41/250,.9),
+                        markup=True)
+        self.widgets['report_state_cancel']=report_state_cancel
+        report_state_cancel.ref='report_state_cancel'
+
+        report_state_input=Spinner(
+            disabled=False,
+            text='KY',
+            values=('KY','TN'),
+            size_hint =(.4, .1),
+            pos_hint = {'center_x':.5, 'center_y':.55})
+        self.widgets['report_state_input']=report_state_input
+
+        def report_state_confirm_func(*args):
+            st=report_state_input.text
+            config=App.get_running_app().config_
+            config.set("config","report_state",st)
+            with open(preferences_path,'w') as configfile:
+                config.write(configfile)
+            App.get_running_app().context_screen.get_screen('report').add_state_labels()
+            self.widgets['report_state_overlay'].dismiss()
+        report_state_confirm.bind(on_release=report_state_confirm_func)
+
+        def report_state_cancel_func(*args):
+            self.widgets['report_state_overlay'].dismiss()
+        report_state_cancel.bind(on_release=report_state_cancel_func)
+
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_text)
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_confirm)
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_cancel)
@@ -6245,6 +6299,10 @@ class PinScreen(Screen):
         self.widgets['batch_add_overlay'].widgets['overlay_layout'].add_widget(batch_add_text)
         self.widgets['batch_add_overlay'].widgets['overlay_layout'].add_widget(batch_add_confirm)
         self.widgets['batch_add_overlay'].widgets['overlay_layout'].add_widget(batch_add_cancel)
+        self.widgets['report_state_overlay'].widgets['overlay_layout'].add_widget(report_state_text)
+        self.widgets['report_state_overlay'].widgets['overlay_layout'].add_widget(report_state_confirm)
+        self.widgets['report_state_overlay'].widgets['overlay_layout'].add_widget(report_state_cancel)
+        self.widgets['report_state_overlay'].widgets['overlay_layout'].add_widget(report_state_input)
 
         seperator_line=Image(source=gray_seperator_line,
                     allow_stretch=True,
