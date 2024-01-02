@@ -202,44 +202,53 @@ def pin_off(pin):
 dry_contact=12
 lights_pin=7
 if os.name == 'nt':
-    def heat_sensor_active():
+    def heat_sensor_active(*args):
         for i in (i for i in devices if isinstance(i,heat_sensor.HeatSensor)):
             if GPIO.input(i.pin,'h'):
                 return True
         return False
-    def micro_switch_active():
+    def micro_switch_active(*args):
+        print(args)
         for i in (i for i in devices if isinstance(i,micro_switch.MicroSwitch)):
             if GPIO.input(i.pin,'m'):
                 return True
         return False
-    def fan_switch_on():
+    def fan_switch_on(*args):
         for i in (i for i in devices if isinstance(i,switch_fans.SwitchFans)):
             if GPIO.input(i.pin,'f'):
                 return True
         return False
-    def light_switch_on():
+    def light_switch_on(*args):
         for i in (i for i in devices if isinstance(i,switch_light.SwitchLight)):
             if GPIO.input(i.pin,'l'):
                 return True
         return False
 if os.name == 'posix':
-    def heat_sensor_active():
+    def heat_sensor_active(logic_instance):
+        fs=logic_instance
+        dt=time.time()-fs.heat_debounce_timer
         for i in (i for i in devices if isinstance(i,heat_sensor.HeatSensor)):
             try:
                 if GPIO.input(i.pin):
-                    return True
+                    if dt>=2:
+                        return True
             except ValueError:
                 print('logic.py heat_sensor_active(): pin not valid; skipping"')
                 continue
+        fs.heat_debounce_timer=time.time()
         return False
-    def micro_switch_active():
+    def micro_switch_active(logic_instance):
+        fs=logic_instance
+        dt=time.time()-fs.micro_debounce_timer
         for i in (i for i in devices if isinstance(i,micro_switch.MicroSwitch)):
             try:
                 if not GPIO.input(i.pin):
-                    return True
+                    if dt>=2:
+                        return True
             except ValueError:
                 print('logic.py micro_switch_active(): pin not valid; skipping"')
                 continue
+        fs.micro_debounce_timer=time.time()
         return False
     def fan_switch_on():
         for i in (i for i in devices if isinstance(i,switch_fans.SwitchFans)):
@@ -282,6 +291,8 @@ class Logic():
         self.running=False
         self.shut_off=False
         self.sensor_target=time.time()
+        self.micro_debounce_timer=time.time()
+        self.heat_debounce_timer=time.time()
 
         '''two dictionaries are used to share data between two threads.
         moli: main out logic in, is written too in main and read in logic.
@@ -313,7 +324,7 @@ class Logic():
         }
 
     def normal(self):
-        if micro_switch_active():
+        if micro_switch_active(self):
             print('micro_switch')
             self.state='Fire'
             self.milo['micro_switch']=on
@@ -344,7 +355,7 @@ class Logic():
             elif self.moli['mau']==off or not fan_switch_on():
                 maufans_off(self)
                 self.milo['mau']=off
-            if heat_sensor_active():
+            if heat_sensor_active(self):
                 self.milo['heat_sensor']=on
                 self.heat_trip()
             else:
@@ -362,7 +373,7 @@ class Logic():
         lights_off(self)
         dry_off(self)
         gv_off(self)
-        if not micro_switch_active():
+        if not micro_switch_active(self):
             self.state='Normal'
             self.milo['micro_switch']=off
 
@@ -388,7 +399,7 @@ class Logic():
 
     def trouble(self):
     #heat sensor active
-        if heat_sensor_active() and not self.moli['exhaust']==1:
+        if heat_sensor_active(self) and not self.moli['exhaust']==1:
             self.milo['troubles']['heat_override']=1
         else:
             self.milo['troubles']['heat_override']=0
