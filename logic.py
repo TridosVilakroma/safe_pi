@@ -208,7 +208,6 @@ if os.name == 'nt':
                 return True
         return False
     def micro_switch_active(*args):
-        print(args)
         for i in (i for i in devices if isinstance(i,micro_switch.MicroSwitch)):
             if GPIO.input(i.pin,'m'):
                 return True
@@ -232,6 +231,8 @@ if os.name == 'posix':
                 if GPIO.input(i.pin):
                     if dt>=2:
                         return True
+                    else:
+                        return False
             except ValueError:
                 print('logic.py heat_sensor_active(): pin not valid; skipping"')
                 continue
@@ -245,6 +246,8 @@ if os.name == 'posix':
                 if not GPIO.input(i.pin):
                     if dt>=2:
                         return True
+                    else:
+                        return False
             except ValueError:
                 print('logic.py micro_switch_active(): pin not valid; skipping"')
                 continue
