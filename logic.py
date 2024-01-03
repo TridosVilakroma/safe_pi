@@ -244,15 +244,15 @@ if os.name == 'posix':
         for i in (i for i in devices if isinstance(i,micro_switch.MicroSwitch)):
             try:
                 if not GPIO.input(i.pin):
-                    if dt>=2:
-                        return True
-                    else:
-                        return False
+                    fs.micro_debounce_timer=time.time()
+                    return True
             except ValueError:
                 print('logic.py micro_switch_active(): pin not valid; skipping"')
                 continue
-        fs.micro_debounce_timer=time.time()
-        return False
+        if dt>=2:
+            return False
+        else:
+            return True
     def fan_switch_on():
         for i in (i for i in devices if isinstance(i,switch_fans.SwitchFans)):
             try:
@@ -294,7 +294,7 @@ class Logic():
         self.running=False
         self.shut_off=False
         self.sensor_target=time.time()
-        self.micro_debounce_timer=time.time()
+        self.micro_debounce_timer=time.time()-2
         self.heat_debounce_timer=time.time()
 
         '''two dictionaries are used to share data between two threads.
