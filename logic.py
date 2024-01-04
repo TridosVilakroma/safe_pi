@@ -225,31 +225,35 @@ if os.name == 'nt':
 if os.name == 'posix':
     def heat_sensor_active(logic_instance):
         fs=logic_instance
-        dt=time.time()-fs.heat_debounce_timer
         for i in (i for i in devices if isinstance(i,heat_sensor.HeatSensor)):
             try:
                 if GPIO.input(i.pin):
-                    if dt>=2:
+                    if fs.heat_debounce_timer<=5:
+                        fs.heat_debounce_timer+=1
+                    if fs.heat_debounce_timer>=5:
                         return True
                     else:
                         return False
             except ValueError:
                 print('logic.py heat_sensor_active(): pin not valid; skipping"')
                 continue
-        fs.heat_debounce_timer=time.time()
+        fs.heat_debounce_timer=0
         return False
     def micro_switch_active(logic_instance):
         fs=logic_instance
-        dt=time.time()-fs.micro_debounce_timer
         for i in (i for i in devices if isinstance(i,micro_switch.MicroSwitch)):
             try:
                 if not GPIO.input(i.pin):
-                    fs.micro_debounce_timer=time.time()
+                    #fired
+                    fs.micro_debounce_timer=0
                     return True
             except ValueError:
                 print('logic.py micro_switch_active(): pin not valid; skipping"')
                 continue
-        if dt>=2:
+        #set
+        if fs.micro_debounce_timer<=5:
+            fs.micro_debounce_timer+=1
+        if fs.micro_debounce_timer>=5:
             return False
         else:
             return True
@@ -294,8 +298,8 @@ class Logic():
         self.running=False
         self.shut_off=False
         self.sensor_target=time.time()
-        self.micro_debounce_timer=time.time()-2
-        self.heat_debounce_timer=time.time()
+        self.micro_debounce_timer=5
+        self.heat_debounce_timer=0
 
         '''two dictionaries are used to share data between two threads.
         moli: main out logic in, is written too in main and read in logic.
