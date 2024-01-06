@@ -228,25 +228,35 @@ if os.name == 'posix':
         for i in (i for i in devices if isinstance(i,heat_sensor.HeatSensor)):
             try:
                 if GPIO.input(i.pin):
-                    if fs.heat_debounce_timer<=5:
-                        fs.heat_debounce_timer+=1
-                    if fs.heat_debounce_timer>=5:
+                    #heat detected
+                    if fs.heat_debounce_timer>=-5:
+                        fs.heat_debounce_timer-=1
+                    if fs.heat_debounce_timer<=-5:
                         return True
                     else:
                         return False
             except ValueError:
                 print('logic.py heat_sensor_active(): pin not valid; skipping"')
                 continue
-        fs.heat_debounce_timer=0
-        return False
+        #no heat detected
+        if fs.heat_debounce_timer<=5:
+            fs.heat_debounce_timer+=1
+        if fs.heat_debounce_timer>=5:
+            return False
+        else:
+            return True
     def micro_switch_active(logic_instance):
         fs=logic_instance
         for i in (i for i in devices if isinstance(i,micro_switch.MicroSwitch)):
             try:
                 if not GPIO.input(i.pin):
                     #fired
-                    fs.micro_debounce_timer=0
-                    return True
+                    if fs.micro_debounce_timer>=-5:
+                        fs.micro_debounce_timer-=1
+                    if fs.micro_debounce_timer<=-5:
+                        return True
+                    else:
+                        return False
             except ValueError:
                 print('logic.py micro_switch_active(): pin not valid; skipping"')
                 continue
