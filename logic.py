@@ -232,9 +232,10 @@ if os.name == 'posix':
                     if fs.heat_debounce_timer>=-5:
                         fs.heat_debounce_timer-=1
                     if fs.heat_debounce_timer<=-5:
+                        self.heat_debounce_bool=True
                         return True
                     else:
-                        return False
+                        return self.heat_debounce_bool
             except ValueError:
                 print('logic.py heat_sensor_active(): pin not valid; skipping"')
                 continue
@@ -242,9 +243,10 @@ if os.name == 'posix':
         if fs.heat_debounce_timer<=5:
             fs.heat_debounce_timer+=1
         if fs.heat_debounce_timer>=5:
+            self.heat_debounce_bool=False
             return False
         else:
-            return True
+            return self.heat_debounce_bool
     def micro_switch_active(logic_instance):
         fs=logic_instance
         for i in (i for i in devices if isinstance(i,micro_switch.MicroSwitch)):
@@ -254,9 +256,10 @@ if os.name == 'posix':
                     if fs.micro_debounce_timer>=-5:
                         fs.micro_debounce_timer-=1
                     if fs.micro_debounce_timer<=-5:
+                        self.micro_debounce_bool=True
                         return True
                     else:
-                        return False
+                        return self.micro_debounce_bool
             except ValueError:
                 print('logic.py micro_switch_active(): pin not valid; skipping"')
                 continue
@@ -264,9 +267,10 @@ if os.name == 'posix':
         if fs.micro_debounce_timer<=5:
             fs.micro_debounce_timer+=1
         if fs.micro_debounce_timer>=5:
+            self.micro_debounce_bool=False
             return False
         else:
-            return True
+            return self.micro_debounce_bool
     def fan_switch_on():
         for i in (i for i in devices if isinstance(i,switch_fans.SwitchFans)):
             try:
@@ -309,7 +313,9 @@ class Logic():
         self.shut_off=False
         self.sensor_target=time.time()
         self.micro_debounce_timer=5
-        self.heat_debounce_timer=0
+        self.heat_debounce_timer=5
+        self.micro_debounce_bool=False
+        self.heat_debounce_bool=False
 
         '''two dictionaries are used to share data between two threads.
         moli: main out logic in, is written too in main and read in logic.
