@@ -232,10 +232,10 @@ if os.name == 'posix':
                     if fs.heat_debounce_timer>=-5:
                         fs.heat_debounce_timer-=1
                     if fs.heat_debounce_timer<=-5:
-                        self.heat_debounce_bool=True
+                        fs.heat_debounce_bool=True
                         return True
                     else:
-                        return self.heat_debounce_bool
+                        return fs.heat_debounce_bool
             except ValueError:
                 print('logic.py heat_sensor_active(): pin not valid; skipping"')
                 continue
@@ -243,10 +243,10 @@ if os.name == 'posix':
         if fs.heat_debounce_timer<=5:
             fs.heat_debounce_timer+=1
         if fs.heat_debounce_timer>=5:
-            self.heat_debounce_bool=False
+            fs.heat_debounce_bool=False
             return False
         else:
-            return self.heat_debounce_bool
+            return fs.heat_debounce_bool
     def micro_switch_active(logic_instance):
         fs=logic_instance
         for i in (i for i in devices if isinstance(i,micro_switch.MicroSwitch)):
@@ -256,10 +256,10 @@ if os.name == 'posix':
                     if fs.micro_debounce_timer>=-5:
                         fs.micro_debounce_timer-=1
                     if fs.micro_debounce_timer<=-5:
-                        self.micro_debounce_bool=True
+                        fs.micro_debounce_bool=True
                         return True
                     else:
-                        return self.micro_debounce_bool
+                        return fs.micro_debounce_bool
             except ValueError:
                 print('logic.py micro_switch_active(): pin not valid; skipping"')
                 continue
@@ -267,10 +267,10 @@ if os.name == 'posix':
         if fs.micro_debounce_timer<=5:
             fs.micro_debounce_timer+=1
         if fs.micro_debounce_timer>=5:
-            self.micro_debounce_bool=False
+            fs.micro_debounce_bool=False
             return False
         else:
-            return self.micro_debounce_bool
+            return fs.micro_debounce_bool
     def fan_switch_on():
         for i in (i for i in devices if isinstance(i,switch_fans.SwitchFans)):
             try:
