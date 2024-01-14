@@ -5,7 +5,7 @@ from kivy.config import Config
 from copy import deepcopy
 import segno
 
-import logging
+import logging,logging_config
 logger=logging.getLogger('logger')
 
 from device_classes.exhaust import Exhaust
