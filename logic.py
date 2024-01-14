@@ -1,4 +1,4 @@
-import os,time,json,copy
+import os,time,json,copy,logging
 import device_classes.mau as mau
 import device_classes.exhaust as exhaust
 import device_classes.light as light
@@ -16,6 +16,8 @@ if os.name == 'nt':
     import RPi_test.GPIO as GPIO
 else:
     import RPi.GPIO as GPIO
+
+logger=logging.getLogger('logger')
 
 heat_sensor_timer=300
 #there are only 19 GPIO pins available for input/output.

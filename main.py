@@ -5,6 +5,9 @@ from kivy.config import Config
 from copy import deepcopy
 import segno
 
+import logging
+logger=logging.getLogger('logger')
+
 from device_classes.exhaust import Exhaust
 from device_classes.mau import Mau
 from device_classes.light import Light

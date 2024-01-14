@@ -1,6 +1,8 @@
 from subprocess import run
 from time import sleep
-import os
+import os,logging
+
+logger=logging.getLogger('logger')
 
 # Path and name to the script you are trying to start
 supervisee_path = "/home/pi/Pi-ro-safe/main.py"

@@ -19,9 +19,11 @@ recurrence:    length of Interval
 '''
 
 
-import configparser,os,json
+import configparser,os,json,logging
 from datetime import date,datetime,timedelta
 from dataclasses import dataclass,field
+
+logger=logging.getLogger('logger')
 
 if os.name == 'nt':
     preferences_path='logs/configurations/hood_control.ini'
