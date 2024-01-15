@@ -284,6 +284,7 @@ and pressing the accept button.[/b]
     Batches may be updated
     without notice, or a batch
     may include multiple batches.''',
+'document_screen_name' : "[size=50][color=#ffffff][b][u][i]       Documents       ",
 }
 
 spanish={
