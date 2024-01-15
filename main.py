@@ -120,6 +120,7 @@ gray_seperator_line=r'media/line_gray.png'
 gray_seperator_line_vertical=r'media/line_gray_vertical.png'
 black_seperator_line=r'media/line_black.png'
 settings_icon=r'media/menu_lines.png'
+menu_lines_vertical=r'media/menu_lines_vertical.png'
 red_dot=r'media/red_dot.png'
 opaque_bubble=r'media/opaque_bubble.png'
 uid_qr=r'logs/configurations/uid_qr.png'
@@ -6454,6 +6455,16 @@ class DocumentScreen(Screen):
         self.cols = 2
         self.widgets={}
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
+        self.dock_close_anim=Animation(pos_hint={'center_x':-.175},d=.25,t='out_back')
+        self.dock_open_anim=Animation(pos_hint={'center_x':.175},d=.5,t='in_out_back')
+
+        screen_name=Label(
+            text=current_language['document_screen_name'],
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.15, 'center_y':.925},)
+        self.widgets['screen_name']=screen_name
+        screen_name.ref='document_screen_name'
 
         back=RoundedButton(text="[size=50][b][color=#000000]  Back [/color][/b][/size]",
                     size_hint =(.4, .1),
@@ -6475,93 +6486,123 @@ class DocumentScreen(Screen):
         back_main.ref='report_back_main'
         back_main.bind(on_press=self.Report_back_main)
 
-        doc_pages=PageLayout()
-
-        test1=ScatterImage(
-            source=report_current,
-            size_hint_x = .95,
-            pos_hint = {'center_x':.5, 'y':.18},
-            do_rotation=False,
-            scale_min=.5,
-            scale_max=3.)
-
-        test2=Image(source=report_current)
-
         seperator_line=Image(source=gray_seperator_line,
                     allow_stretch=True,
                     keep_ratio=False,
                     size_hint =(.98, .001),
                     pos_hint = {'x':.01, 'y':.13})
 
+        dock=RoundedColorLayout(
+            bg_color=(.15,.15,.15,.9),
+            size_hint =(.45, .725),
+            pos_hint = {'center_x':.175, 'center_y':.51})
+        self.widgets['dock']=dock
+
+        dock_handle=RoundedButton(
+            size_hint =(.055,.425),
+            pos_hint = {'center_x':.94, 'center_y':.5},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
+            markup=True)
+        self.widgets['dock_handle']=dock_handle
+        dock_handle.bind(on_release=self.dock_handle_func)
+
+        dock_handle_lines=Image(
+            source=menu_lines_vertical,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.0325,.325),
+            pos_hint = {'center_x':.94, 'center_y':.5})
+        self.widgets['dock_handle_lines']=dock_handle_lines
+
+        dock_reports=RoundedButton(
+            text='[size=20][color=#ffffff][b]System Reports',
+            size_hint =(.5,.15),
+            pos_hint = {'center_x':.5, 'center_y':.85},
+            background_down='',
+            background_color=(0,0,0,1),
+            markup=True)
+        self.widgets['dock_reports']=dock_reports
+        dock_reports.bind(state=self._swap_color)
+        dock_reports.bind(on_release=self.dock_reports_func)
+        dock_reports.bind(on_release=self.dock_handle_func)
+
+        dock_maint=RoundedButton(
+            text='[size=20][color=#ffffff][b]Manuals',
+            size_hint =(.5,.15),
+            pos_hint = {'center_x':.5, 'center_y':.65},
+            background_down='',
+            background_color=(0,0,0,1),
+            markup=True)
+        self.widgets['dock_maint']=dock_maint
+        dock_maint.bind(state=self._swap_color)
+        dock_maint.bind(on_release=self.dock_maint_func)
+        dock_maint.bind(on_release=self.dock_handle_func)
+
+        dock_install=RoundedButton(
+            text='[size=20][color=#ffffff][b]Archives',
+            size_hint =(.5,.15),
+            pos_hint = {'center_x':.5, 'center_y':.45},
+            background_down='',
+            background_color=(0,0,0,1),
+            markup=True)
+        self.widgets['dock_install']=dock_install
+        dock_install.bind(state=self._swap_color)
+        dock_install.bind(on_release=self.dock_install_func)
+        dock_install.bind(on_release=self.dock_handle_func)
+
+        dock_logs=RoundedButton(
+            text='[size=20][color=#ffffff][b]Runtime Logs',
+            size_hint =(.5,.15),
+            pos_hint = {'center_x':.5, 'center_y':.25},
+            background_down='',
+            background_color=(0,0,0,1),
+            markup=True)
+        self.widgets['dock_logs']=dock_logs
+        dock_logs.bind(state=self._swap_color)
+        dock_logs.bind(on_release=self.dock_logs_func)
+        dock_logs.bind(on_release=self.dock_handle_func)
+
+
+
+        dock.add_widget(dock_handle)
+        dock.add_widget(dock_handle_lines)
+        dock.add_widget(dock_reports)
+        dock.add_widget(dock_maint)
+        dock.add_widget(dock_install)
+        dock.add_widget(dock_logs)
+
         self.add_widget(bg_image)
-        self.add_widget(test1)
+        self.add_widget(screen_name)
         self.add_widget(seperator_line)
-        # doc_pages.add_widget(test2)
-        # self.add_widget(doc_pages)
-
-        # left_arrow=IconButton(source=left_arrow_image,
-        #                 size_hint =(.4, .25),
-        #                 pos_hint = {'x':-.1, 'center_y':.55})
-        # self.widgets['left_arrow']=left_arrow
-        # left_arrow.bind(on_press=self.left_arrow_func)
-
-        # right_arrow=IconButton(source=right_arrow_image,
-        #                 size_hint =(.4, .25),
-        #                 pos_hint = {'x':.7, 'center_y':.55})
-        # self.widgets['right_arrow']=right_arrow
-        # right_arrow.bind(on_press=self.right_arrow_func)
-
-        # report_scroll=ScrollView(
-        #     bar_width=8,
-        #     bar_margin=20,
-        #     do_scroll_y=True,
-        #     do_scroll_x=False,
-        #     size_hint_y=1,
-        #     size_hint_x=1)
-        # self.widgets['report_scroll']=report_scroll
-
-        # report_image=IconButton(
-        #     source=report_current,
-        #     size_hint_y=2,
-        #     size_hint_x=.95,
-        #     pos_hint = {'center_x':.5, 'y':1})
-
-        # report_scroll2=ScrollView(
-        #     bar_width=8,
-        #     bar_margin=20,
-        #     do_scroll_y=True,
-        #     do_scroll_x=False,
-        #     size_hint_y=1,
-        #     size_hint_x=1)
-        # self.widgets['report_scroll2']=report_scroll2
-
-        # report_image2=IconButton(
-        #     source=report_original,
-        #     size_hint_y=2,
-        #     size_hint_x=.98)
-
-        # report_pages=Carousel(loop=True,
-        # scroll_distance=5000,
-        # scroll_timeout=1,
-        # size_hint =(1, .75),
-        # pos_hint = {'center_x':.5, 'center_y':.60}
-        # )
-        # self.widgets['report_pages']=report_pages
-
-        # stock_photo=Image(source=stock_photo_test)
-
-        
-        # report_scroll.add_widget(report_image)
-        # report_scroll2.add_widget(report_image2)
-
-        # report_pages.add_widget(report_scroll)
-        # report_pages.add_widget(report_scroll2)
-        # report_pages.add_widget(stock_photo)
-        # self.add_widget(report_pages)
         self.add_widget(back)
         self.add_widget(back_main)
-        # self.add_widget(left_arrow)
-        # self.add_widget(right_arrow)
+        self.add_widget(dock)
+
+    def dock_handle_func(self,*args):
+        d=self.widgets['dock']
+        if d.pos_hint['center_x']==.175:
+            self.dock_close_anim.start(self.widgets['dock'])
+        elif d.pos_hint['center_x']==-.175:
+            self.dock_open_anim.start(self.widgets['dock'])
+
+    def dock_reports_func(self,*args):
+        pass
+
+    def dock_maint_func(self,*args):
+        pass
+
+    def dock_install_func(self,*args):
+        pass
+
+    def dock_logs_func(self,*args):
+        pass
+
+    def _swap_color(self,button,*args):
+            if button.state=='down':
+                button.shape_color.rgba=(.05,.05,0,.7)
+            if button.state=='normal':
+                button.shape_color.rgba=(0,0,0,1)
 
     def Report_back (self,button):
         self.parent.transition = SlideTransition(direction='right')
@@ -6569,10 +6610,11 @@ class DocumentScreen(Screen):
     def Report_back_main (self,button):
         self.parent.transition = SlideTransition(direction='down')
         self.manager.current='main'
-    # def left_arrow_func(self,*args):
-    #         self.widgets['report_pages'].load_previous()
-    # def right_arrow_func(self,*args):
-    #         self.widgets['report_pages'].load_next()
+
+    def on_pre_enter(self,*args):
+        w=self.widgets
+        w['dock'].pos_hint={'center_x':.175, 'center_y':.51}
+
 
 class TroubleScreen(Screen):
     def __init__(self, **kwargs):
@@ -11366,7 +11408,7 @@ class Hood_Control(App):
         settings_setter(self.config_)
         Clock.schedule_once(partial(language_setter,config=self.config_))
         self.context_screen=ScreenManager()
-        # self.context_screen.add_widget(AccountScreen(name='account'))
+        self.context_screen.add_widget(DocumentScreen(name='documents'))
         self.context_screen.add_widget(ControlGrid(name='main'))
         self.context_screen.add_widget(ActuationScreen(name='alert'))
         self.context_screen.add_widget(SettingsScreen(name='settings'))
@@ -11375,7 +11417,7 @@ class Hood_Control(App):
         self.context_screen.add_widget(TrainScreen(name='train'))
         self.context_screen.add_widget(PreferenceScreen(name='preferences'))
         self.context_screen.add_widget(PinScreen(name='pin'))
-        self.context_screen.add_widget(DocumentScreen(name='documents'))
+        # self.context_screen.add_widget(DocumentScreen(name='documents'))
         self.context_screen.add_widget(TroubleScreen(name='trouble'))
         self.context_screen.add_widget(MountScreen(name='mount'))
         self.context_screen.add_widget(AccountScreen(name='account'))
