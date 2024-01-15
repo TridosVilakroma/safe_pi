@@ -1,4 +1,4 @@
-import os,json,time,shutil,math,random,subprocess,re,string,importlib
+import os,json,time,shutil,math,random,subprocess,re,string,importlib,ast
 import traceback,errno
 from datetime import datetime,timedelta
 from kivy.config import Config
@@ -6454,8 +6454,9 @@ class DocumentScreen(Screen):
         super(DocumentScreen,self).__init__(**kwargs)
         self.cols = 2
         self.widgets={}
+        self.current_section=''
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
-        self.dock_close_anim=Animation(pos_hint={'center_x':-.175},d=.25,t='out_back')
+        self.dock_close_anim=Animation(pos_hint={'center_x':-.175},d=.5,t='out_back')
         self.dock_open_anim=Animation(pos_hint={'center_x':.175},d=.5,t='in_out_back')
 
         screen_name=Label(
@@ -6563,7 +6564,132 @@ class DocumentScreen(Screen):
         dock_logs.bind(on_release=self.dock_logs_func)
         dock_logs.bind(on_release=self.dock_handle_func)
 
+        container=FloatLayout(
+            size_hint =(.9, .725),
+            pos_hint = {'center_x':.525, 'center_y':.51})
+        self.widgets['container']=container
 
+        #####log files widgets#####
+
+        debug_box=ExpandableRoundedColorLayout(
+            size_hint =(.275, .45),
+            pos_hint = {'center_x':.15, 'center_y':.5},
+            expanded_size=(1,1),
+            expanded_pos = {'center_x':.5, 'center_y':.5},
+            bg_color=(1,1,1,.9))
+        self.widgets['debug_box']=debug_box
+        debug_box.widgets={}
+        debug_box.bind(state=self.bg_color)
+        debug_box.bind(expanded=self.debug_box_populate)
+        debug_box.bind(animating=partial(general.stripargs,debug_box.clear_widgets))
+
+        debug_box_title=Label(
+            text='[size=24][color=#000000][b]Debug Logs',
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['debug_box_title']=debug_box_title
+
+        debug_box_seperator=Image(
+            source=black_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['debug_box_seperator']=debug_box_seperator
+
+        debug_box_x=IconButton(
+            source=overlay_x_icon_black,
+            size_hint=(.1,.1),
+            pos_hint={'x':.90,'y':.88})
+        debug_box_x.bind(on_release=debug_box.shrink)
+        self.widgets['debug_box_x']=debug_box_x
+
+        info_box=ExpandableRoundedColorLayout(
+            size_hint =(.275, .45),
+            pos_hint = {'center_x':.475, 'center_y':.5},
+            expanded_size=(1,1),
+            expanded_pos = {'center_x':.5, 'center_y':.5},
+            bg_color=(1,1,1,.9))
+        self.widgets['info_box']=info_box
+        info_box.widgets={}
+        info_box.bind(state=self.bg_color)
+        info_box.bind(expanded=self.info_box_populate)
+        info_box.bind(animating=partial(general.stripargs,info_box.clear_widgets))
+
+        info_box_title=Label(
+            text='[size=24][color=#000000][b]Info Logs',
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['info_box_title']=info_box_title
+
+        info_box_seperator=Image(
+            source=black_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['info_box_seperator']=info_box_seperator
+
+        info_box_x=IconButton(
+            source=overlay_x_icon_black,
+            size_hint=(.1,.1),
+            pos_hint={'x':.90,'y':.88})
+        info_box_x.bind(on_release=info_box.shrink)
+        self.widgets['info_box_x']=info_box_x
+
+        info_box_scroll=OutlineScroll(
+            size_hint=(.9,.75),
+            pos_hint={'x':.05,'center_y':.425},
+            bg_color=(0,0,0,.1),
+            do_scroll_x=False,
+            do_scroll_y=True)
+        self.widgets['info_box_scroll']=info_box_scroll
+
+        info_box_scroll_layout=GridLayout(
+            size_hint_y=None,
+            cols=1,
+            padding=10,
+            spacing=(1,5))
+        self.widgets['info_box_scroll_layout']=info_box_scroll_layout
+        info_box_scroll_layout.bind(minimum_height=info_box_scroll_layout.setter('height'))
+
+
+
+        error_box=ExpandableRoundedColorLayout(
+            size_hint =(.275, .45),
+            pos_hint = {'center_x':.8, 'center_y':.5},
+            expanded_size=(1,1),
+            expanded_pos = {'center_x':.5, 'center_y':.5},
+            bg_color=(1,1,1,.9))
+        self.widgets['error_box']=error_box
+        error_box.widgets={}
+        error_box.bind(state=self.bg_color)
+        error_box.bind(expanded=self.error_box_populate)
+        error_box.bind(animating=partial(general.stripargs,error_box.clear_widgets))
+
+        error_box_title=Label(
+            text='[size=24][color=#000000][b]Error Logs',
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.5},)
+        self.widgets['error_box_title']=error_box_title
+
+        error_box_seperator=Image(
+            source=black_seperator_line,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.9, .005),
+            pos_hint = {'x':.05, 'y':.85})
+        self.widgets['error_box_seperator']=error_box_seperator
+
+        error_box_x=IconButton(
+            source=overlay_x_icon_black,
+            size_hint=(.1,.1),
+            pos_hint={'x':.90,'y':.88})
+        error_box_x.bind(on_release=error_box.shrink)
+        self.widgets['error_box_x']=error_box_x
 
         dock.add_widget(dock_handle)
         dock.add_widget(dock_handle_lines)
@@ -6572,11 +6698,21 @@ class DocumentScreen(Screen):
         dock.add_widget(dock_install)
         dock.add_widget(dock_logs)
 
+        debug_box.add_widget(debug_box_title)
+        info_box.add_widget(info_box_title)
+        info_box_scroll.add_widget(info_box_scroll_layout)
+        error_box.add_widget(error_box_title)
+
+        # container.add_widget(debug_box)
+        # container.add_widget(info_box)
+        # container.add_widget(error_box)
+
         self.add_widget(bg_image)
         self.add_widget(screen_name)
         self.add_widget(seperator_line)
         self.add_widget(back)
         self.add_widget(back_main)
+        self.add_widget(container)
         self.add_widget(dock)
 
     def dock_handle_func(self,*args):
@@ -6587,22 +6723,185 @@ class DocumentScreen(Screen):
             self.dock_open_anim.start(self.widgets['dock'])
 
     def dock_reports_func(self,*args):
-        pass
+        if self.current_section=='reports':
+            return
+        self.current_section='reports'
+        container_fade_out=Animation(opacity=0,d=.5)
+        container_fade_in=Animation(opacity=1,d=.5)
+        w=self.widgets
+        container=w['container']
+        def _swap_widgets(*args):
+            container.clear_widgets()
+            # container.add_widget(w['debug_box'])
+            # container.add_widget(w['info_box'])
+            # container.add_widget(w['error_box'])
+            container_fade_in.start(container)
+        container_fade_out.start(container)
+        container_fade_out.bind(on_complete=_swap_widgets)
 
     def dock_maint_func(self,*args):
-        pass
+        if self.current_section=='maint':
+            return
+        self.current_section='maint'
+        container_fade_out=Animation(opacity=0,d=.5)
+        container_fade_in=Animation(opacity=1,d=.5)
+        w=self.widgets
+        container=w['container']
+        def _swap_widgets(*args):
+            container.clear_widgets()
+            # container.add_widget(w['debug_box'])
+            # container.add_widget(w['info_box'])
+            # container.add_widget(w['error_box'])
+            container_fade_in.start(container)
+        container_fade_out.start(container)
+        container_fade_out.bind(on_complete=_swap_widgets)
 
     def dock_install_func(self,*args):
-        pass
+        if self.current_section=='install':
+            return
+        self.current_section='install'
+        container_fade_out=Animation(opacity=0,d=.5)
+        container_fade_in=Animation(opacity=1,d=.5)
+        w=self.widgets
+        container=w['container']
+        def _swap_widgets(*args):
+            container.clear_widgets()
+            # container.add_widget(w['debug_box'])
+            # container.add_widget(w['info_box'])
+            # container.add_widget(w['error_box'])
+            container_fade_in.start(container)
+        container_fade_out.start(container)
+        container_fade_out.bind(on_complete=_swap_widgets)
 
     def dock_logs_func(self,*args):
-        pass
+        if self.current_section=='logs':
+            return
+        self.current_section='logs'
+        container_fade_out=Animation(opacity=0,d=.5)
+        container_fade_in=Animation(opacity=1,d=.5)
+        w=self.widgets
+        container=w['container']
+        def _swap_widgets(*args):
+            container.clear_widgets()
+            container.add_widget(w['debug_box'])
+            container.add_widget(w['info_box'])
+            container.add_widget(w['error_box'])
+            container_fade_in.start(container)
+        container_fade_out.start(container)
+        container_fade_out.bind(on_complete=_swap_widgets)
+
+
+    def debug_box_populate(self,*args):
+        w=self.widgets
+        debug_box=w['debug_box']
+        darken=Animation(rgba=(1,1,1,1),d=.5)
+        lighten=Animation(rgba=(1,1,1,.9),d=.5)
+        debug_box.clear_widgets()
+        if debug_box.expanded:
+            darken.start(debug_box.shape_color)
+            w['debug_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            all_widgets=[
+                w['debug_box_title'],
+                w['debug_box_seperator'],
+                w['debug_box_x']]
+            for i in all_widgets:
+                debug_box.add_widget(i)
+        elif not debug_box.expanded:
+            lighten.start(debug_box.shape_color)
+            w['debug_box_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            all_widgets=[
+                w['debug_box_title']]
+            for i in all_widgets:
+                debug_box.add_widget(i)
+
+    def info_box_populate(self,*args):
+        w=self.widgets
+        info_box=w['info_box']
+        darken=Animation(rgba=(1,1,1,1),d=.5)
+        lighten=Animation(rgba=(1,1,1,.9),d=.5)
+        info_box.clear_widgets()
+        w['info_box_scroll_layout'].clear_widgets()
+        if info_box.expanded:
+            darken.start(info_box.shape_color)
+            darken.cancel(info_box)
+            info_path='logs/log_files/info'
+            if os.path.isdir(info_path):
+                for file in os.listdir(info_path):
+                    with open(os.path.join(info_path,file)) as f:
+                        for entry in f:
+                            entry=ast.literal_eval(entry)
+                            entry_text=f"{entry['text']} - [File: {entry['file']}] - [Function: {entry['function']}] - [Time: {entry['time']}]"
+                            s=OutlineScroll(
+                                size_hint=(1,None),
+                                size=(100,50),
+                                # pos_hint={'x':.05,'center_y':.425},
+                                bg_color=(0,0,0,.1),
+                                do_scroll_x=True,
+                                do_scroll_y=False)
+                            # s.bind(minimum_width=s.setter('width'))
+                            l=RoundedLabelColor(
+                                text='[size=24][color=#000000][b][u]'+ entry_text,
+                                bg_color=(1,1,1,0),
+                                markup=True,
+                                size=(500,50),
+                                size_hint=(None,1))
+                            l.bind(texture_size=l.setter('size'))
+                            s.add_widget(l)
+                            w['info_box_scroll_layout'].add_widget(s)
+            w['info_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            all_widgets=[
+                w['info_box_title'],
+                w['info_box_seperator'],
+                w['info_box_x'],
+                w['info_box_scroll']]
+            for i in all_widgets:
+                info_box.add_widget(i)
+        elif not info_box.expanded:
+            lighten.start(info_box.shape_color)
+            w['info_box_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            all_widgets=[
+                w['info_box_title']]
+            for i in all_widgets:
+                info_box.add_widget(i)
+
+    def error_box_populate(self,*args):
+        w=self.widgets
+        error_box=w['error_box']
+        darken=Animation(rgba=(1,1,1,1),d=.5)
+        lighten=Animation(rgba=(1,1,1,.9),d=.5)
+        error_box.clear_widgets()
+        if error_box.expanded:
+            darken.start(error_box.shape_color)
+            w['error_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
+            all_widgets=[
+                w['error_box_title'],
+                w['error_box_seperator'],
+                w['error_box_x']]
+            for i in all_widgets:
+                error_box.add_widget(i)
+        elif not error_box.expanded:
+            lighten.start(error_box.shape_color)
+            w['error_box_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            all_widgets=[
+                w['error_box_title']]
+            for i in all_widgets:
+                error_box.add_widget(i)
 
     def _swap_color(self,button,*args):
             if button.state=='down':
                 button.shape_color.rgba=(.05,.05,0,.7)
             if button.state=='normal':
                 button.shape_color.rgba=(0,0,0,1)
+
+    def bg_color(self,button,*args):
+        if hasattr(button,'expanded'):
+            if button.expanded:
+                return
+        if button.state=='normal':
+            button.shape_color.rgba=(1,1,1,.9)
+        if button.state=='down':
+            if button.shape_color.rgba==[1,1,1,.9]:
+                button.shape_color.rgba=(.9,.9,.9,.8)
 
     def Report_back (self,button):
         self.parent.transition = SlideTransition(direction='right')
@@ -6614,6 +6913,8 @@ class DocumentScreen(Screen):
     def on_pre_enter(self,*args):
         w=self.widgets
         w['dock'].pos_hint={'center_x':.175, 'center_y':.51}
+        w['container'].clear_widgets()
+        self.current_section=''
 
 
 class TroubleScreen(Screen):
@@ -11408,7 +11709,7 @@ class Hood_Control(App):
         settings_setter(self.config_)
         Clock.schedule_once(partial(language_setter,config=self.config_))
         self.context_screen=ScreenManager()
-        self.context_screen.add_widget(DocumentScreen(name='documents'))
+        # self.context_screen.add_widget(DocumentScreen(name='documents'))
         self.context_screen.add_widget(ControlGrid(name='main'))
         self.context_screen.add_widget(ActuationScreen(name='alert'))
         self.context_screen.add_widget(SettingsScreen(name='settings'))
@@ -11417,7 +11718,7 @@ class Hood_Control(App):
         self.context_screen.add_widget(TrainScreen(name='train'))
         self.context_screen.add_widget(PreferenceScreen(name='preferences'))
         self.context_screen.add_widget(PinScreen(name='pin'))
-        # self.context_screen.add_widget(DocumentScreen(name='documents'))
+        self.context_screen.add_widget(DocumentScreen(name='documents'))
         self.context_screen.add_widget(TroubleScreen(name='trouble'))
         self.context_screen.add_widget(MountScreen(name='mount'))
         self.context_screen.add_widget(AccountScreen(name='account'))
