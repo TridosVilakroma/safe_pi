@@ -6827,6 +6827,7 @@ class DocumentScreen(Screen):
         darken=Animation(rgba=(1,1,1,1),d=.5)
         lighten=Animation(rgba=(1,1,1,.9),d=.5)
         debug_box.clear_widgets()
+        w['debug_box_scroll_layout'].clear_widgets()
         if debug_box.expanded:
             darken.start(debug_box.shape_color)
             debug_path='logs/log_files/debug'
@@ -6924,6 +6925,7 @@ class DocumentScreen(Screen):
         darken=Animation(rgba=(1,1,1,1),d=.5)
         lighten=Animation(rgba=(1,1,1,.9),d=.5)
         error_box.clear_widgets()
+        w['error_box_scroll_layout'].clear_widgets()
         if error_box.expanded:
             darken.start(error_box.shape_color)
             error_path='logs/log_files/errors'
