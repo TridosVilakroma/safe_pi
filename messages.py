@@ -197,12 +197,12 @@ Press the restart button to continue.''',
             try:
                 self.config['timestamps']
             except (configparser.NoSectionError,configparser.NoOptionError,KeyError):
-                print('messages.py refresh_active_messages(): hood_control.ini missing [timestamps] section')
+                logger.exception('messages.py refresh_active_messages(): hood_control.ini missing [timestamps] section')
                 break
             try:
                 self.config['timestamps'][f'{message.name}']
             except (configparser.NoSectionError,configparser.NoOptionError,KeyError):
-                print(f'messages.py refresh_active_messages(): hood_control.ini missing <{message.name}> key')
+                logger.exception(f'messages.py refresh_active_messages(): hood_control.ini missing <{message.name}> key')
                 continue
 
             if datetime.now()>message.recurrence+datetime.fromisoformat(self.config['timestamps'][f'{message.name}']):

@@ -399,7 +399,7 @@ class trouble_template(Button):
             self.text=f'''[size=24][b]{current_language[self.trouble_tag]}[/b][/size]
             [size=18][i]{trouble_text}[/i][/size][size=30][color=#de2500][i][ref={self.ref_tag}]{link_text}[/ref][/i][/color][/size]'''
         except KeyError:
-                    print(f'main.py CLASS=trouble_template translate():  {self} has no entry in selected lanuage dict')
+                    logger.exception(f'main.py CLASS=trouble_template translate():  {self} has no entry in selected lanuage dict')
 
 class ScrollItemTemplate(Button):
     def __init__(self,Item_tag,Item_text='',link_text=None,ref_tag=None,color=(245/250, 216/250, 41/250,.85),**kwargs):
@@ -1041,7 +1041,7 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
                 widget_carousel.add_widget(self.place_holder)
                 widget_carousel.index=-1
         else:
-            print('main.py Messenger switch_parent(): Messenger object has no parent')
+            logger.debug('main.py Messenger switch_parent(): Messenger object has no parent')
 
     def expand(self,*args):
         anim=Animation(size_hint=(.9,.8),d=self.anim_d,t='in_back')
@@ -1476,7 +1476,7 @@ class BigWheelClock(Carousel):
                 if os.name=='posix':
                         os.system(f'sudo date -s {h}:{m}{p}')
                 else:
-                    print('main.py BigWheelClock _set_sys_time(): \n  >>time set: ',f'{h}:{str(m).zfill(2)}{p}')
+                    logger.debug('main.py BigWheelClock _set_sys_time(): \n  >>time set: ',f'{h}:{str(m).zfill(2)}{p}')
 
     def _create_clock(self,*args):
         Clock.schedule_once(self._set_sys_time, 2)
@@ -2418,8 +2418,7 @@ class PinLock(RoundedColorLayoutModal):
                 return
             self.callback()
         except TypeError as e:
-            print(f'main.py PinLock unlock(): callback {self.callback} failed to execute')
-            print('error: ',repr(e))
+            logger.exception(f'main.py PinLock unlock(): callback {self.callback} failed to execute')
 
     def clear(self,*args):
         if hasattr(self,'parent'):
@@ -2608,7 +2607,7 @@ class ControlGrid(Screen):
             logic.fs.moli['lights']=0
 
     def _keyboard_closed(self):
-        print("main.py ControlGrid _keyboard_closed(): keyboard unbound")
+        logger.info("main.py ControlGrid _keyboard_closed(): keyboard unbound")
 
     def __init__(self, **kwargs):
         super(ControlGrid, self).__init__(**kwargs)
@@ -3238,7 +3237,7 @@ class ActuationScreen(Screen):
     def acknowledge_func(self,button,*args):
         if self.widgets['acknowledge'].state=='normal':
             return
-        print('actuation acknowledged')
+        logger.info('actuation acknowledged')
         self.anime.cancel_all(self.widgets['alert'])
         self.widgets['alert'].bg_color=(249/250, 25/250, 25/250,.85)
         # self.widgets['alert'].text=current_language['alert_acknowledged']
@@ -4475,15 +4474,15 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
     def new_device_save(self,current_device,*args):
         toast=App.get_running_app().notifications.toast
         if current_device.name in [general.strip_markup(i.text) for i in self.widgets['device_layout'].children]:
-            print("main.new_device_save(): can not save device; device name already taken")
+            logger.error("main.new_device_save(): can not save device; device name already taken")
             toast('[b][size=20]Device name already exists','error')
             return False
         if current_device.name=="default" or re.search('^\s*$',current_device.name):
-            print("main.new_device_save(): can not save device without name")
+            logger.error("main.new_device_save(): can not save device without name")
             toast('[b][size=20]Can not save without\ndevice name','error')
             return False
         if current_device.pin==0 or all((not isinstance(current_device.pin,int), current_device.type!='Manometer')):
-            print("main.new_device_save(): can not save device without pin designation")
+            logger.error("main.new_device_save(): can not save device without pin designation")
             toast('[b][size=20]Can not save without\npin designation','error')
             return False
         data={
@@ -4770,17 +4769,17 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         adv_pin_select=w['edit_advanced_device_pin']
         if device.name!=current_device.name and \
             current_device.name in [general.strip_markup(i.text) for i in self.widgets['device_layout'].children]:
-            print("main.edit_device_save(): can not save device; device name already taken")
+            logger.error("main.edit_device_save(): can not save device; device name already taken")
             toast('[b][size=20]Device name already exists','error')
             return
         if current_device.name=="default" or re.search('^\s*$',current_device.name):
-            print("main.edit_device_save(): can not save device without name")
+            logger.error("main.edit_device_save(): can not save device without name")
             toast('[b][size=20]Can not save without\ndevice name','error')
             return
         if current_device.pin==0 or \
             all((not isinstance(current_device.pin,int), current_device.type!='Manometer')) or \
             all((pin_select.text=='Select GPIO Pin',adv_pin_select.text=='Select GPIO Pin')):
-            print("main.edit_device_save(): can not save device without pin designation")
+            logger.error("main.edit_device_save(): can not save device without pin designation")
             toast('[b][size=20]Can not save without\npin designation','error')
             return
         data={
@@ -4896,7 +4895,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                 self.widgets['device_layout'].add_widget(device)
                 device.bind(on_release=partial(self.info_func,i))
         else:
-            print("main.py aggregate_devices(): no devices")
+            logger.info("main.py aggregate_devices(): no devices")
             self.widgets['device_layout'].clear_widgets()
             self.widgets['device_layout'].add_widget(self.widgets['device_details'])
         new_device=RoundedScrollItemTemplate(
@@ -6703,10 +6702,6 @@ class DocumentScreen(Screen):
         info_box_scroll.add_widget(info_box_scroll_layout)
         error_box.add_widget(error_box_title)
 
-        # container.add_widget(debug_box)
-        # container.add_widget(info_box)
-        # container.add_widget(error_box)
-
         self.add_widget(bg_image)
         self.add_widget(screen_name)
         self.add_widget(seperator_line)
@@ -7221,7 +7216,7 @@ class MountScreen(Screen):
                 #strip path out of returned list (multiple selection possible, hence a list to contain them, although not used here)
                 src=self.widgets['file_selector_external'].selection[0]
             except IndexError:
-                print('main.py MountScreen import_button_func(): src not selected')
+                logger.exception('main.py MountScreen import_button_func(): src not selected')
                 self.widgets['import_unique_text'].text="[size=20][color=#ffffff]You must make a selection from external storage to import[/color][/size]"
                 return
             if self.widgets['file_selector_internal'].selection:
@@ -7236,7 +7231,7 @@ class MountScreen(Screen):
                 if os.path.isdir(dst):
                     dst=os.path.join(dst,os.path.basename(os.path.normpath(src)))
                 else:
-                    print('main.py MountScreen import_button_func(): can not copy dir over file')
+                    logger.error('main.py MountScreen import_button_func(): can not copy dir over file')
                     self.widgets['import_unique_text'].text="[size=20][color=#ffffff]Can not overwrite a file with a folder[/color][/size]"
                     return
             try:
@@ -7328,7 +7323,7 @@ class MountScreen(Screen):
                 #strip path out of returned list (multiple selection possible, hence a list to contain them, although not used here)
                 src=self.widgets['file_selector_internal'].selection[0]
             except IndexError:
-                print('main.py MountScreen export_button_func(): src not selected')
+                logger.exception('main.py MountScreen export_button_func(): src not selected')
                 self.widgets['export_unique_text'].text="[size=20][color=#ffffff]You must make a selection from internal storage to export[/color][/size]"
                 return
             if self.widgets['file_selector_external'].selection:
@@ -7343,7 +7338,7 @@ class MountScreen(Screen):
                 if os.path.isdir(dst):
                     dst=os.path.join(dst,os.path.basename(os.path.normpath(src)))
                 else:
-                    print('main.py MountScreen export_button_func(): can not copy dir over file')
+                    logger.error('main.py MountScreen export_button_func(): can not copy dir over file')
                     self.widgets['export_unique_text'].text="[size=20][color=#ffffff]Can not overwrite a file with a folder[/color][/size]"
                     return
             try:
@@ -8792,7 +8787,7 @@ class AccountScreen(Screen):
                 with open(preferences_path,'w') as configfile:
                     config.write(configfile)
                 qr_data=server.uid+stripped_link_code
-                print(qr_data)
+                logger.debug(qr_data)
                 self.generate_uid_qr(qr_data)
                 w['side_bar_add_qr_image'].reload()
                 return
@@ -11555,7 +11550,7 @@ def listen(app_object,*args):
                     try:
                         i.dismiss()
                     except KeyError:
-                        print("main.listen()#micro switch: pop.dismiss() error")
+                        logger.exception("main.listen()#micro switch: pop.dismiss() error")
 
             logic.fs.moli['maint_override']=0
         elif event_log['micro_switch']==0:
@@ -11754,7 +11749,7 @@ class Hood_Control(App):
         Clock.schedule_once(_reorder,0)
 
     def exit_check(*args):
-        print('main.py Hood_control.exit_check(): on_request_close')
+        logger.info('main.py Hood_control.exit_check(): on_request_close')
         # return True  # block app's exit
         return False  # let the app close
 
@@ -11783,7 +11778,7 @@ def language_setter(*args,config=None):
                 try:
                     widget.text=current_language[str(widget.ref)]
                 except KeyError:
-                    print(f'main.py lanuguage_setter():  {widget} has no entry in selected lanuage dict')
+                    logger.exception(f'main.py lanuguage_setter():  {widget} has no entry in selected lanuage dict')
     if config:
         global current_language
         lang_pref=config['preferences']['language']
@@ -11798,22 +11793,22 @@ def logic_supervisor(*args):
     global logic_control
     if logic_control.is_alive():
         return
-    print('main.py logic_supervisor(): logic thread restart attempted')
+    logger.error('main.py logic_supervisor(): logic thread stopped working')
+    logger.info('main.py logic_supervisor(): logic thread restart attempted')
     logic_control = Thread(target=logic.logic,daemon=True)
     logic_control.start()
 
 try:
     Hood_Control().run()
 except KeyboardInterrupt:
-    print('Keyboard Inturrupt')
-    traceback.print_exc()
+    logger.exception('Keyboard Inturrupt')
 except:
-    traceback.print_exc()
+    logger.exception('Hood_Control stopped running')
 finally:
     logic.save_devices()
-    print("devices saved")
+    logger.debug("devices saved")
     logic.clean_exit()
-    print("pins set as inputs")
+    logger.debug("pins set as inputs")
     server.clean_exit()
-    print("streams closed")
+    logger.debug("streams closed")
     quit()

@@ -41,7 +41,7 @@ def get_devices():
                 data = json.load(read_file)
             return data
         except FileNotFoundError:
-            print("logic.get_devices().load_devices(): FileNotFoundError; Creating file")
+            logger.exception("logic.get_devices().load_devices(): FileNotFoundError; Creating file")
             with open(rf"logs/devices/device_list.json","w+") as read_file:
                 data={}
                 json.dump(data, read_file,indent=0)
@@ -56,9 +56,9 @@ def get_devices():
                 available_pins.remove(i.pin)
                 set_pin_mode(i)
             elif i.pin==0:
-                print(f"logic.get_devices(): {i}.pin == 0")
+                logger.info(f"logic.get_devices(): {i}.pin == 0")
             else:
-                print(f"logic.get_devices(): {i}.pin using {i.pin} as advanced pin")
+                logger.info(f"logic.get_devices(): {i}.pin using {i.pin} as advanced pin")
                 set_pin_mode(i)
             devices.append(i)
 
@@ -73,9 +73,9 @@ def set_pin_mode(device):
             elif device.trigger=="low":
                 GPIO.setup(device.pin, GPIO.OUT,initial=GPIO.HIGH)
         else:
-            print(f"logic.set_pin_mode(): {device}.mode is not \"in\" or \"out\"")
+            logger.error(f"logic.set_pin_mode(): {device}.mode is not \"in\" or \"out\"")
     except:
-        print(f"logic.set_pin_mode(): {device.pin} not valid; skipping")
+        logger.exception(f"logic.set_pin_mode(): {device.pin} not valid; skipping")
 
 def exfans_on(Logic_instance):
     for i in (i for i in devices if isinstance(i,exhaust.Exhaust)):
@@ -191,14 +191,14 @@ def pin_off(pin):
     try:
         func = GPIO.gpio_function(pin)
     except ValueError:
-        print(f'logic.py pin_off(): {pin} not valid in BOARD mode; skipping"')
+        logger.exception(f'logic.py pin_off(): {pin} not valid in BOARD mode; skipping"')
         return
 
     try:
         if func==GPIO.OUT:
             GPIO.output(pin,off)
     except RuntimeError:
-        print('logic.py pin_off(): pin not set up as output; skipping"')
+        logger.exception('logic.py pin_off(): pin not set up as output; skipping"')
         return
 
 dry_contact=12
@@ -239,7 +239,7 @@ if os.name == 'posix':
                     else:
                         return fs.heat_debounce_bool
             except ValueError:
-                print('logic.py heat_sensor_active(): pin not valid; skipping"')
+                logger.exception('logic.py heat_sensor_active(): pin not valid; skipping"')
                 continue
         #no heat detected
         if fs.heat_debounce_timer<=5:
@@ -263,7 +263,7 @@ if os.name == 'posix':
                     else:
                         return fs.micro_debounce_bool
             except ValueError:
-                print('logic.py micro_switch_active(): pin not valid; skipping"')
+                logger.exception('logic.py micro_switch_active(): pin not valid; skipping"')
                 continue
         #set
         if fs.micro_debounce_timer<=5:
@@ -279,7 +279,7 @@ if os.name == 'posix':
                 if GPIO.input(i.pin):
                     return True
             except ValueError:
-                print('logic.py fan_switch_on(): pin not valid; skipping"')
+                logger.exception('logic.py fan_switch_on(): pin not valid; skipping"')
                 continue
         return False
     def light_switch_on():
@@ -288,7 +288,7 @@ if os.name == 'posix':
                 if GPIO.input(i.pin):
                     return True
             except ValueError:
-                print('logic.py light_switch_on(): pin not valid; skipping"')
+                logger.exception('logic.py light_switch_on(): pin not valid; skipping"')
                 continue
         return False
 def clean_exit():
@@ -350,7 +350,7 @@ class Logic():
 
     def normal(self):
         if micro_switch_active(self):
-            print('micro_switch')
+            logger.info('micro switch released')
             self.state='Fire'
             self.milo['micro_switch']=on
         elif self.moli['maint_override']==1:
@@ -405,7 +405,7 @@ class Logic():
     def heat_trip(self):
         self.sensor_target=time.time()+heat_sensor_timer
         self.aux_state.append('heat_sensor')
-        print('heat trip')
+        logger.info('heat sensor trip')
 
     def heat_sensor(self):
             if self.sensor_target>=time.time():
@@ -413,7 +413,7 @@ class Logic():
                 maufans_on(self)
                 self.milo['exhaust']=on
                 self.milo['mau']=on
-                print('heat timer active')
+                logger.debug('heat timer active')
             else:
                 if self.moli['exhaust']==off and self.moli['mau']==off:
                     exfans_off(self)
@@ -454,20 +454,20 @@ class Logic():
         try:
             server.toggleDevice(server.devices.exhaust , self.milo['exhaust'])
         except Exception as e:
-            print(f'logic.py server_update(): {e}')
+            logger.exception(f'logic.py server_update(): {e}')
         try:
             server.toggleDevice(server.devices.lights, self.milo['lights'])
         except Exception as e:
-            print(f'logic.py server_update(): {e}')
+            logger.exception(f'logic.py server_update(): {e}')
         self.last_server_state=copy.deepcopy(self.milo)
 
     def state_manager(self):
         if self.state=='Fire':
             self.fire()
-            print("fired state")
+            logger.debug("fired state")
         elif self.state=='Normal':
             self.normal()
-            # print("normal state")
+            # logger.debug("normal state")
 
     def auxillary(self):
         self.trouble()
@@ -482,7 +482,7 @@ class Logic():
             try:
                 GPIO.setup(i,GPIO.IN,pull_up_down = GPIO.PUD_DOWN)
             except (ValueError,RuntimeError):
-                print(f'logic.py <Logic> set_pins(): {i} not valid; removing"')
+                logger.exception(f'logic.py <Logic> set_pins(): {i} not valid; removing"')
                 _remove.append(i)
                 continue
         for i in _remove:
@@ -494,7 +494,7 @@ class Logic():
                 if GPIO.gpio_function(pin)==GPIO.OUT:
                     GPIO.output(pin,state)
             except (ValueError,RuntimeError):
-                print(f'logic.py <Logic> set_pins(): pin: {pin},state: {state} invalid; skipping')
+                logger.exception(f'logic.py <Logic> set_pins(): pin: {pin},state: {state} invalid; skipping')
                 continue
         self.pin_states={}
 
