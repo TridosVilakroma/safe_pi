@@ -5146,8 +5146,8 @@ class PreferenceScreen(Screen):
         commission=RoundedButton(text=current_language['commission'],
                         size_hint =(1, 1),
                         pos_hint = {'x':.01, 'y':.5},
-                        background_down='',
-                        disabled=True,
+                        background_normal='',
+                        # disabled=True,
                         background_color=(100/250, 100/250, 100/250,.9),
                         markup=True)
         self.widgets['commission']=commission
@@ -6604,6 +6604,23 @@ class DocumentScreen(Screen):
         debug_box_x.bind(on_release=debug_box.shrink)
         self.widgets['debug_box_x']=debug_box_x
 
+        debug_box_scroll=OutlineScroll(
+            size_hint=(.9,.75),
+            pos_hint={'x':.05,'center_y':.425},
+            bg_color=(0,0,0,.1),
+            do_scroll_x=False,
+            do_scroll_y=True)
+        self.widgets['debug_box_scroll']=debug_box_scroll
+
+        debug_box_scroll_layout=GridLayout(
+            size_hint_y=None,
+            cols=1,
+            padding=10,
+            spacing=(1,5))
+        self.widgets['debug_box_scroll_layout']=debug_box_scroll_layout
+        debug_box_scroll_layout.bind(minimum_height=debug_box_scroll_layout.setter('height'))
+
+
         info_box=ExpandableRoundedColorLayout(
             size_hint =(.275, .45),
             pos_hint = {'center_x':.475, 'center_y':.5},
@@ -6690,6 +6707,22 @@ class DocumentScreen(Screen):
         error_box_x.bind(on_release=error_box.shrink)
         self.widgets['error_box_x']=error_box_x
 
+        error_box_scroll=OutlineScroll(
+            size_hint=(.9,.75),
+            pos_hint={'x':.05,'center_y':.425},
+            bg_color=(0,0,0,.1),
+            do_scroll_x=False,
+            do_scroll_y=True)
+        self.widgets['error_box_scroll']=error_box_scroll
+
+        error_box_scroll_layout=GridLayout(
+            size_hint_y=None,
+            cols=1,
+            padding=10,
+            spacing=(1,5))
+        self.widgets['error_box_scroll_layout']=error_box_scroll_layout
+        error_box_scroll_layout.bind(minimum_height=error_box_scroll_layout.setter('height'))
+
         dock.add_widget(dock_handle)
         dock.add_widget(dock_handle_lines)
         dock.add_widget(dock_reports)
@@ -6698,9 +6731,11 @@ class DocumentScreen(Screen):
         dock.add_widget(dock_logs)
 
         debug_box.add_widget(debug_box_title)
+        debug_box_scroll.add_widget(debug_box_scroll_layout)
         info_box.add_widget(info_box_title)
         info_box_scroll.add_widget(info_box_scroll_layout)
         error_box.add_widget(error_box_title)
+        error_box_scroll.add_widget(error_box_scroll_layout)
 
         self.add_widget(bg_image)
         self.add_widget(screen_name)
@@ -6794,11 +6829,36 @@ class DocumentScreen(Screen):
         debug_box.clear_widgets()
         if debug_box.expanded:
             darken.start(debug_box.shape_color)
+            debug_path='logs/log_files/debug'
+            if os.path.isdir(debug_path):
+                for file in os.listdir(debug_path):
+                    with open(os.path.join(debug_path,file)) as f:
+                        for entry in f:
+                            entry=ast.literal_eval(entry)
+                            entry_text=f"{entry['text']} - [File: {entry['file']}] - [Function: {entry['function']}] - [Time: {entry['time']}]"
+                            s=OutlineScroll(
+                                size_hint=(1,None),
+                                size=(100,50),
+                                # pos_hint={'x':.05,'center_y':.425},
+                                bg_color=(0,0,0,.1),
+                                do_scroll_x=True,
+                                do_scroll_y=False)
+                            # s.bind(minimum_width=s.setter('width'))
+                            l=RoundedLabelColor(
+                                text='[size=24][color=#000000][b][u]'+ entry_text,
+                                bg_color=(1,1,1,0),
+                                markup=True,
+                                size=(500,50),
+                                size_hint=(None,1))
+                            l.bind(texture_size=l.setter('size'))
+                            s.add_widget(l)
+                            w['debug_box_scroll_layout'].add_widget(s)
             w['debug_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
                 w['debug_box_title'],
                 w['debug_box_seperator'],
-                w['debug_box_x']]
+                w['debug_box_x'],
+                w['debug_box_scroll']]
             for i in all_widgets:
                 debug_box.add_widget(i)
         elif not debug_box.expanded:
@@ -6818,7 +6878,6 @@ class DocumentScreen(Screen):
         w['info_box_scroll_layout'].clear_widgets()
         if info_box.expanded:
             darken.start(info_box.shape_color)
-            darken.cancel(info_box)
             info_path='logs/log_files/info'
             if os.path.isdir(info_path):
                 for file in os.listdir(info_path):
@@ -6867,11 +6926,36 @@ class DocumentScreen(Screen):
         error_box.clear_widgets()
         if error_box.expanded:
             darken.start(error_box.shape_color)
+            error_path='logs/log_files/errors'
+            if os.path.isdir(error_path):
+                for file in os.listdir(error_path):
+                    with open(os.path.join(error_path,file)) as f:
+                        for entry in f:
+                            entry=ast.literal_eval(entry)
+                            _caught_exception='' if 'exc_info' not in entry else ' - [Exception: '+entry['exc_info'].replace('\n', ' ').replace('\r', '')+']'
+                            _caught_exception = (_caught_exception[:750] + '..') if len(_caught_exception) > 750 else _caught_exception
+                            entry_text=f"{entry['text']} - [Level: {entry['level']}] - [File: {entry['file']}] - [Function: {entry['function']}] - [Time: {entry['time']}]{_caught_exception}"
+                            s=OutlineScroll(
+                                size_hint=(1,None),
+                                size=(100,50),
+                                bg_color=(0,0,0,.1),
+                                do_scroll_x=True,
+                                do_scroll_y=False)
+                            l=RoundedLabelColor(
+                                text='[size=24][color=#000000][b][u]'+ entry_text,
+                                bg_color=(1,1,1,0),
+                                markup=True,
+                                size=(500,50),
+                                size_hint=(None,1))
+                            l.bind(texture_size=l.setter('size'))
+                            s.add_widget(l)
+                            w['error_box_scroll_layout'].add_widget(s)
             w['error_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
                 w['error_box_title'],
                 w['error_box_seperator'],
-                w['error_box_x']]
+                w['error_box_x'],
+                w['error_box_scroll']]
             for i in all_widgets:
                 error_box.add_widget(i)
         elif not error_box.expanded:
