@@ -6609,7 +6609,8 @@ class DocumentScreen(Screen):
             pos_hint={'x':.05,'center_y':.425},
             bg_color=(0,0,0,.1),
             do_scroll_x=False,
-            do_scroll_y=True)
+            do_scroll_y=True,
+            bar_color=(0,0,0,1))
         self.widgets['debug_box_scroll']=debug_box_scroll
 
         debug_box_scroll_layout=GridLayout(
@@ -6660,7 +6661,8 @@ class DocumentScreen(Screen):
             pos_hint={'x':.05,'center_y':.425},
             bg_color=(0,0,0,.1),
             do_scroll_x=False,
-            do_scroll_y=True)
+            do_scroll_y=True,
+            bar_color=(0,0,0,1))
         self.widgets['info_box_scroll']=info_box_scroll
 
         info_box_scroll_layout=GridLayout(
@@ -6712,7 +6714,8 @@ class DocumentScreen(Screen):
             pos_hint={'x':.05,'center_y':.425},
             bg_color=(0,0,0,.1),
             do_scroll_x=False,
-            do_scroll_y=True)
+            do_scroll_y=True,
+            bar_color=(0,0,0,1))
         self.widgets['error_box_scroll']=error_box_scroll
 
         error_box_scroll_layout=GridLayout(
@@ -6834,26 +6837,19 @@ class DocumentScreen(Screen):
             if os.path.isdir(debug_path):
                 for file in os.listdir(debug_path):
                     with open(os.path.join(debug_path,file)) as f:
-                        for entry in f:
+                        for index,entry in reversed(list(enumerate(f))):
                             entry=ast.literal_eval(entry)
-                            entry_text=f"{entry['text']} - [File: {entry['file']}] - [Function: {entry['function']}] - [Time: {entry['time']}]"
-                            s=OutlineScroll(
-                                size_hint=(1,None),
-                                size=(100,50),
-                                # pos_hint={'x':.05,'center_y':.425},
-                                bg_color=(0,0,0,.1),
-                                do_scroll_x=True,
-                                do_scroll_y=False)
-                            # s.bind(minimum_width=s.setter('width'))
+                            entry_text=f"\n  [b]Time:[/b] {entry['time']}  \n\n  [i][size=26]{entry['text']}[/size][/i]  \n\n  [b]File:[/b] {entry['file']}  \n  [b]Function:[/b] {entry['function']}  \n"
+                            color=(1,1,1,1) if index%2==0 else (0,0,0,.2)
                             l=RoundedLabelColor(
-                                text='[size=24][color=#000000][b][u]'+ entry_text,
-                                bg_color=(1,1,1,0),
+                                text='[size=24][color=#000000]'+ entry_text,
+                                bg_color=color,
                                 markup=True,
                                 size=(500,50),
-                                size_hint=(None,1))
+                                size_hint=(None,None))
                             l.bind(texture_size=l.setter('size'))
-                            s.add_widget(l)
-                            w['debug_box_scroll_layout'].add_widget(s)
+                            l.bind(size=l.setter('text_size'))
+                            w['debug_box_scroll_layout'].add_widget(l)
             w['debug_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
                 w['debug_box_title'],
@@ -6883,26 +6879,19 @@ class DocumentScreen(Screen):
             if os.path.isdir(info_path):
                 for file in os.listdir(info_path):
                     with open(os.path.join(info_path,file)) as f:
-                        for entry in f:
+                        for index,entry in reversed(list(enumerate(f))):
                             entry=ast.literal_eval(entry)
-                            entry_text=f"{entry['text']} - [File: {entry['file']}] - [Function: {entry['function']}] - [Time: {entry['time']}]"
-                            s=OutlineScroll(
-                                size_hint=(1,None),
-                                size=(100,50),
-                                # pos_hint={'x':.05,'center_y':.425},
-                                bg_color=(0,0,0,.1),
-                                do_scroll_x=True,
-                                do_scroll_y=False)
-                            # s.bind(minimum_width=s.setter('width'))
+                            entry_text=f"\n  [b]Time:[/b] {entry['time']}  \n\n  [i][size=26]{entry['text']}[/size][/i]  \n\n  [b]File:[/b] {entry['file']}  \n  [b]Function:[/b] {entry['function']}  \n"
+                            color=(1,1,1,1) if index%2==0 else (0,0,0,.2)
                             l=RoundedLabelColor(
-                                text='[size=24][color=#000000][b][u]'+ entry_text,
-                                bg_color=(1,1,1,0),
+                                text='[size=24][color=#000000]'+ entry_text,
+                                bg_color=color,
                                 markup=True,
                                 size=(500,50),
-                                size_hint=(None,1))
+                                size_hint=(None,None))
                             l.bind(texture_size=l.setter('size'))
-                            s.add_widget(l)
-                            w['info_box_scroll_layout'].add_widget(s)
+                            l.bind(size=l.setter('text_size'))
+                            w['info_box_scroll_layout'].add_widget(l)
             w['info_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
                 w['info_box_title'],
@@ -6932,26 +6921,19 @@ class DocumentScreen(Screen):
             if os.path.isdir(error_path):
                 for file in os.listdir(error_path):
                     with open(os.path.join(error_path,file)) as f:
-                        for entry in f:
+                        for index,entry in reversed(list(enumerate(f))):
                             entry=ast.literal_eval(entry)
-                            _caught_exception='' if 'exc_info' not in entry else ' - [Exception: '+entry['exc_info'].replace('\n', ' ').replace('\r', '')+']'
-                            _caught_exception = (_caught_exception[:750] + '..') if len(_caught_exception) > 750 else _caught_exception
-                            entry_text=f"{entry['text']} - [Level: {entry['level']}] - [File: {entry['file']}] - [Function: {entry['function']}] - [Time: {entry['time']}]{_caught_exception}"
-                            s=OutlineScroll(
-                                size_hint=(1,None),
-                                size=(100,50),
-                                bg_color=(0,0,0,.1),
-                                do_scroll_x=True,
-                                do_scroll_y=False)
+                            entry_text=f"\n  [b]Time:[/b] {entry['time']}  \n\n  [i][size=26]{entry['text']}[/size][/i]  \n\n  [b]File:[/b] {entry['file']}  \n  [b]Function:[/b] {entry['function']}  \n"
+                            color=(1,1,1,1) if index%2==0 else (0,0,0,.2)
                             l=RoundedLabelColor(
-                                text='[size=24][color=#000000][b][u]'+ entry_text,
-                                bg_color=(1,1,1,0),
+                                text='[size=24][color=#000000]'+ entry_text,
+                                bg_color=color,
                                 markup=True,
                                 size=(500,50),
-                                size_hint=(None,1))
+                                size_hint=(None,None))
                             l.bind(texture_size=l.setter('size'))
-                            s.add_widget(l)
-                            w['error_box_scroll_layout'].add_widget(s)
+                            l.bind(size=l.setter('text_size'))
+                            w['error_box_scroll_layout'].add_widget(l)
             w['error_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
                 w['error_box_title'],
@@ -11889,6 +11871,7 @@ try:
 except KeyboardInterrupt:
     logger.exception('Keyboard Inturrupt')
 except:
+    traceback.print_exc()
     logger.exception('Hood_Control stopped running')
 finally:
     logic.save_devices()
