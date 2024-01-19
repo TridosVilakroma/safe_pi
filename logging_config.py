@@ -14,10 +14,10 @@ class JsonFormatter(logging.Formatter):
     @param str time_format: time.strftime() format string. Default: "%Y-%m-%dT%H:%M:%S"
     @param str msec_format: Microsecond formatting. Appended at the end. Default: "%s.%03dZ"
     """
-    def __init__(self, fmt_dict: dict = None, time_format: str = "%Y-%m-%dT%H:%M:%S", msec_format: str = "%s.%03dZ"):
+    def __init__(self, fmt_dict: dict = None, time_format: str = "%I:%M:%S %p"+" "*30+"%m/%d/%Y"):
         self.fmt_dict = fmt_dict if fmt_dict is not None else {"message": "message"}
         self.default_time_format = time_format
-        self.default_msec_format = msec_format
+        self.default_msec_format = ''
         self.datefmt = None
 
     def usesTime(self) -> bool:
