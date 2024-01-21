@@ -68,6 +68,9 @@ from kivy.clock import Clock,mainthread
 from functools import partial
 from kivy.uix.behaviors import ButtonBehavior,DragBehavior
 from kivy.uix.scrollview import ScrollView
+from kivy.uix.recycleview import RecycleView
+from kivy.uix.recycleview.views import RecycleDataViewBehavior
+from kivy.uix.recycleboxlayout import RecycleLayout,RecycleBoxLayout
 from kivy.graphics import Rectangle, Color, Line, Bezier
 from kivy.properties import ListProperty,StringProperty,NumericProperty,ColorProperty,OptionProperty,BooleanProperty,ObjectProperty
 import configparser
@@ -576,7 +579,7 @@ class RoundedLabelColor(Label):
     def on_bg_color(self, *args):
         #before __init__ is called the bg_color changes, so we wait untill __init__() to proceed
         if hasattr(self,'shape_color'):
-            self.shape_color.rgb=self.bg_color
+            self.shape_color.rgba=self.bg_color
 
 class ImageGhost(Image):
         def __init__(self,touch, **kwargs):
@@ -2588,6 +2591,41 @@ class ResizeLabel(Label):
     def __init__(self, **kwargs):
         super(ResizeLabel,self).__init__(**kwargs)
 
+class FileRecycleView(RecycleView):
+    def __init__(self, **kwargs):
+        super(FileRecycleView,self).__init__(**kwargs)
+        layout=self.FileRecycleViewLayout()
+        self.add_widget(layout)
+        self.viewclass=self.FileRecycleViewLabel
+
+
+    class FileRecycleViewLayout(RecycleBoxLayout):
+        def __init__(self, **kwargs):
+            super(FileRecycleView.FileRecycleViewLayout,self).__init__(
+                **kwargs,
+                default_size=(0, 250),
+                default_size_hint=(1, None),
+                size_hint_y=None,
+                orientation='vertical')
+            self.bind(minimum_height=self._min)
+
+        def _min(self, inst, val):
+            self.height = val
+
+    class FileRecycleViewLabel(RecycleDataViewBehavior, RoundedLabelColor):
+        def __init__(self, **kwargs):
+            super(FileRecycleView.FileRecycleViewLabel,self).__init__(
+                **kwargs,
+                markup=True,
+                size_hint=(1,1))
+            self.bind(size=self.setter('text_size'))
+
+        def refresh_view_attrs(self, rv, index, data):
+            self.set_color(data['color'])
+            return super(FileRecycleView.FileRecycleViewLabel,self).refresh_view_attrs(rv, index, data)
+
+        def set_color(self,color,*args):
+            self.bg_color=color
 
 #<<<<<<<<<<>>>>>>>>>>#
 
@@ -6604,23 +6642,10 @@ class DocumentScreen(Screen):
         debug_box_x.bind(on_release=debug_box.shrink)
         self.widgets['debug_box_x']=debug_box_x
 
-        debug_box_scroll=OutlineScroll(
+        debug_box_scroll=FileRecycleView(
             size_hint=(.9,.75),
-            pos_hint={'x':.05,'center_y':.425},
-            bg_color=(0,0,0,.1),
-            do_scroll_x=False,
-            do_scroll_y=True,
-            bar_color=(0,0,0,1))
+            pos_hint={'x':.05,'center_y':.425})
         self.widgets['debug_box_scroll']=debug_box_scroll
-
-        debug_box_scroll_layout=GridLayout(
-            size_hint_y=None,
-            cols=1,
-            padding=10,
-            spacing=(1,5))
-        self.widgets['debug_box_scroll_layout']=debug_box_scroll_layout
-        debug_box_scroll_layout.bind(minimum_height=debug_box_scroll_layout.setter('height'))
-
 
         info_box=ExpandableRoundedColorLayout(
             size_hint =(.275, .45),
@@ -6656,24 +6681,10 @@ class DocumentScreen(Screen):
         info_box_x.bind(on_release=info_box.shrink)
         self.widgets['info_box_x']=info_box_x
 
-        info_box_scroll=OutlineScroll(
+        info_box_scroll=FileRecycleView(
             size_hint=(.9,.75),
-            pos_hint={'x':.05,'center_y':.425},
-            bg_color=(0,0,0,.1),
-            do_scroll_x=False,
-            do_scroll_y=True,
-            bar_color=(0,0,0,1))
+            pos_hint={'x':.05,'center_y':.425})
         self.widgets['info_box_scroll']=info_box_scroll
-
-        info_box_scroll_layout=GridLayout(
-            size_hint_y=None,
-            cols=1,
-            padding=10,
-            spacing=(1,5))
-        self.widgets['info_box_scroll_layout']=info_box_scroll_layout
-        info_box_scroll_layout.bind(minimum_height=info_box_scroll_layout.setter('height'))
-
-
 
         error_box=ExpandableRoundedColorLayout(
             size_hint =(.275, .45),
@@ -6709,22 +6720,10 @@ class DocumentScreen(Screen):
         error_box_x.bind(on_release=error_box.shrink)
         self.widgets['error_box_x']=error_box_x
 
-        error_box_scroll=OutlineScroll(
+        error_box_scroll=FileRecycleView(
             size_hint=(.9,.75),
-            pos_hint={'x':.05,'center_y':.425},
-            bg_color=(0,0,0,.1),
-            do_scroll_x=False,
-            do_scroll_y=True,
-            bar_color=(0,0,0,1))
+            pos_hint={'x':.05,'center_y':.425})
         self.widgets['error_box_scroll']=error_box_scroll
-
-        error_box_scroll_layout=GridLayout(
-            size_hint_y=None,
-            cols=1,
-            padding=10,
-            spacing=(1,5))
-        self.widgets['error_box_scroll_layout']=error_box_scroll_layout
-        error_box_scroll_layout.bind(minimum_height=error_box_scroll_layout.setter('height'))
 
         dock.add_widget(dock_handle)
         dock.add_widget(dock_handle_lines)
@@ -6734,11 +6733,8 @@ class DocumentScreen(Screen):
         dock.add_widget(dock_logs)
 
         debug_box.add_widget(debug_box_title)
-        debug_box_scroll.add_widget(debug_box_scroll_layout)
         info_box.add_widget(info_box_title)
-        info_box_scroll.add_widget(info_box_scroll_layout)
         error_box.add_widget(error_box_title)
-        error_box_scroll.add_widget(error_box_scroll_layout)
 
         self.add_widget(bg_image)
         self.add_widget(screen_name)
@@ -6830,26 +6826,18 @@ class DocumentScreen(Screen):
         darken=Animation(rgba=(1,1,1,1),d=.5)
         lighten=Animation(rgba=(1,1,1,.9),d=.5)
         debug_box.clear_widgets()
-        w['debug_box_scroll_layout'].clear_widgets()
         if debug_box.expanded:
             darken.start(debug_box.shape_color)
             debug_path='logs/log_files/debug'
+            w['info_box_scroll'].data=[]
             if os.path.isdir(debug_path):
                 for file in os.listdir(debug_path):
                     with open(os.path.join(debug_path,file)) as f:
                         for index,entry in reversed(list(enumerate(f))):
                             entry=ast.literal_eval(entry)
-                            entry_text=f"\n  [b]Time:[/b] {entry['time']}  \n\n  [i][size=26]{entry['text']}[/size][/i]  \n\n  [b]File:[/b] {entry['file']}  \n  [b]Function:[/b] {entry['function']}  \n"
-                            color=(1,1,1,1) if index%2==0 else (0,0,0,.2)
-                            l=RoundedLabelColor(
-                                text='[size=24][color=#000000]'+ entry_text,
-                                bg_color=color,
-                                markup=True,
-                                size=(500,50),
-                                size_hint=(None,None))
-                            l.bind(texture_size=l.setter('size'))
-                            l.bind(size=l.setter('text_size'))
-                            w['debug_box_scroll_layout'].add_widget(l)
+                            entry_text=f"\n  [size=24][color=#000000][b]Time:[/b] {entry['time']}  \n\n  [i][size=26]{entry['text']}[/size][/i]  \n\n  [b]File:[/b] {entry['file']}  \n  [b]Function:[/b] {entry['function']}  \n"
+                            color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
+                            w['debug_box_scroll'].data.append({'text':entry_text,'color':color})
             w['debug_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
                 w['debug_box_title'],
@@ -6872,26 +6860,18 @@ class DocumentScreen(Screen):
         darken=Animation(rgba=(1,1,1,1),d=.5)
         lighten=Animation(rgba=(1,1,1,.9),d=.5)
         info_box.clear_widgets()
-        w['info_box_scroll_layout'].clear_widgets()
         if info_box.expanded:
             darken.start(info_box.shape_color)
             info_path='logs/log_files/info'
+            w['info_box_scroll'].data=[]
             if os.path.isdir(info_path):
                 for file in os.listdir(info_path):
                     with open(os.path.join(info_path,file)) as f:
                         for index,entry in reversed(list(enumerate(f))):
                             entry=ast.literal_eval(entry)
-                            entry_text=f"\n  [b]Time:[/b] {entry['time']}  \n\n  [i][size=26]{entry['text']}[/size][/i]  \n\n  [b]File:[/b] {entry['file']}  \n  [b]Function:[/b] {entry['function']}  \n"
-                            color=(1,1,1,1) if index%2==0 else (0,0,0,.2)
-                            l=RoundedLabelColor(
-                                text='[size=24][color=#000000]'+ entry_text,
-                                bg_color=color,
-                                markup=True,
-                                size=(500,50),
-                                size_hint=(None,None))
-                            l.bind(texture_size=l.setter('size'))
-                            l.bind(size=l.setter('text_size'))
-                            w['info_box_scroll_layout'].add_widget(l)
+                            entry_text=f"\n  [size=24][color=#000000][b]Time:[/b] {entry['time']}  \n\n  [i][size=26]{entry['text']}[/size][/i]  \n\n  [b]File:[/b] {entry['file']}  \n  [b]Function:[/b] {entry['function']}  \n"
+                            color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
+                            w['info_box_scroll'].data.append({'text':entry_text,'color':color})
             w['info_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
                 w['info_box_title'],
@@ -6914,26 +6894,18 @@ class DocumentScreen(Screen):
         darken=Animation(rgba=(1,1,1,1),d=.5)
         lighten=Animation(rgba=(1,1,1,.9),d=.5)
         error_box.clear_widgets()
-        w['error_box_scroll_layout'].clear_widgets()
         if error_box.expanded:
             darken.start(error_box.shape_color)
             error_path='logs/log_files/errors'
+            w['info_box_scroll'].data=[]
             if os.path.isdir(error_path):
                 for file in os.listdir(error_path):
                     with open(os.path.join(error_path,file)) as f:
                         for index,entry in reversed(list(enumerate(f))):
                             entry=ast.literal_eval(entry)
-                            entry_text=f"\n  [b]Time:[/b] {entry['time']}  \n\n  [i][size=26]{entry['text']}[/size][/i]  \n\n  [b]File:[/b] {entry['file']}  \n  [b]Function:[/b] {entry['function']}  \n"
-                            color=(1,1,1,1) if index%2==0 else (0,0,0,.2)
-                            l=RoundedLabelColor(
-                                text='[size=24][color=#000000]'+ entry_text,
-                                bg_color=color,
-                                markup=True,
-                                size=(500,50),
-                                size_hint=(None,None))
-                            l.bind(texture_size=l.setter('size'))
-                            l.bind(size=l.setter('text_size'))
-                            w['error_box_scroll_layout'].add_widget(l)
+                            entry_text=f"\n  [size=24][color=#000000][b]Time:[/b] {entry['time']}  \n\n  [i][size=26]{entry['text']}[/size][/i]  \n\n  [b]File:[/b] {entry['file']}  \n  [b]Function:[/b] {entry['function']}  \n"
+                            color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
+                            w['error_box_scroll'].data.append({'text':entry_text,'color':color})
             w['error_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
                 w['error_box_title'],
