@@ -61,3 +61,15 @@ def strip_markup(text):
         s = [x for x in s if x != '']
         s = ''.join([x for x in s if '[' not in x])
         return s
+
+def pad_str(_string,_length):
+    '''returns _string with padding
+    
+    texture size is not uniform for all chars,
+    white space being the big offender at roughly
+    half the  width once a texture is created.
+    `pad_str` calculates necessary white space
+    to fill in the same visual width of missing chars.
+    '''
+    padding=_length-len(_string)
+    return _string+' '*int(padding*2)
