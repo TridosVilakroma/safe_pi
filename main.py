@@ -6835,7 +6835,12 @@ class DocumentScreen(Screen):
                     with open(os.path.join(debug_path,file)) as f:
                         for index,entry in reversed(list(enumerate(f))):
                             entry=ast.literal_eval(entry)
-                            entry_text=f"\n  [size=24][color=#000000][b]Time:[/b] {entry['time']}  \n\n  [i][size=26]{entry['text']}[/size][/i]  \n\n  [b]File:[/b] {entry['file']}  \n  [b]Function:[/b] {entry['function']}  \n"
+                            _time=f"[b]Time:[/b] {entry['time']}"
+                            _text=f"[i][size=26]{entry['text']}[/size][/i]"
+                            _file=f"[b]File:[/b] {entry['file']}"
+                            _func=f"[b]Function:[/b] {entry['function']}"
+                            _line=f"[b]Line:[/b] {entry['line']}"
+                            entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n    {_text}  \n\n    {general.pad_str(_file,40)}{_line} \n    {_func}  \n"
                             color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
                             w['debug_box_scroll'].data.append({'text':entry_text,'color':color})
             w['debug_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
@@ -6869,7 +6874,11 @@ class DocumentScreen(Screen):
                     with open(os.path.join(info_path,file)) as f:
                         for index,entry in reversed(list(enumerate(f))):
                             entry=ast.literal_eval(entry)
-                            entry_text=f"\n  [size=24][color=#000000][b]Time:[/b] {entry['time']}  \n\n  [i][size=26]{entry['text']}[/size][/i]  \n\n  [b]File:[/b] {entry['file']}  \n  [b]Function:[/b] {entry['function']}  \n"
+                            _time=f"[b]Time:[/b] {entry['time']}"
+                            _text=f"[i][size=26]{entry['text']}[/size][/i]"
+                            _file=f"[b]File:[/b] {entry['file']}"
+                            _func=f"[b]Function:[/b] {entry['function']}"
+                            entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n\n    {_text}  \n\n\n    {_file} \n"
                             color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
                             w['info_box_scroll'].data.append({'text':entry_text,'color':color})
             w['info_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
@@ -6903,9 +6912,21 @@ class DocumentScreen(Screen):
                     with open(os.path.join(error_path,file)) as f:
                         for index,entry in reversed(list(enumerate(f))):
                             entry=ast.literal_eval(entry)
-                            entry_text=f"\n  [size=24][color=#000000][b]Time:[/b] {entry['time']}  \n\n  [i][size=26]{entry['text']}[/size][/i]  \n\n  [b]File:[/b] {entry['file']}  \n  [b]Function:[/b] {entry['function']}  \n"
+                            _markup="\n    [size=20][color=#000000]"
+                            _time=f"[b]Time:[/b] {entry['time']}"
+                            _text=f"[i][size=26]{entry['text']}[/size][/i]"
+                            _file=f"[b]File:[/b] {entry['file']}"
+                            _func=f"[b]Function:[/b] {entry['function']}"
+                            _line=f"[b]Line:[/b] {entry['line']}"
+                            _level=f"[b]Level:[/b] {entry['level']}"
+                            _exc=bool('exc_info' in entry)
+                            entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n    {_text}  \n\n    {general.pad_str(_file,49)}{_line} \n    {general.pad_str(_func,47)}{_level}  \n"
                             color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
                             w['error_box_scroll'].data.append({'text':entry_text,'color':color})
+                            if _exc:
+                                _caught_exception='    '.join(entry['exc_info'].splitlines(True))
+                                t=_markup+str('  '.join(_caught_exception.splitlines(True)[-9:]))+'\n'
+                                w['error_box_scroll'].data.append({'text':t,'color':color})
             w['error_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
                 w['error_box_title'],
