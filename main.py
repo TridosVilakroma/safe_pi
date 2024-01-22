@@ -6829,7 +6829,7 @@ class DocumentScreen(Screen):
         if debug_box.expanded:
             darken.start(debug_box.shape_color)
             debug_path='logs/log_files/debug'
-            w['info_box_scroll'].data=[]
+            w['debug_box_scroll'].data=[]
             if os.path.isdir(debug_path):
                 for file in os.listdir(debug_path):
                     with open(os.path.join(debug_path,file)) as f:
@@ -6906,7 +6906,7 @@ class DocumentScreen(Screen):
         if error_box.expanded:
             darken.start(error_box.shape_color)
             error_path='logs/log_files/errors'
-            w['info_box_scroll'].data=[]
+            w['error_box_scroll'].data=[]
             if os.path.isdir(error_path):
                 for file in os.listdir(error_path):
                     with open(os.path.join(error_path,file)) as f:
