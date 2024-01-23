@@ -6643,7 +6643,7 @@ class DocumentScreen(Screen):
         self.widgets['debug_box_x']=debug_box_x
 
         debug_box_scroll=FileRecycleView(
-            size_hint=(.9,.75),
+            size_hint=(.9,.8485),
             pos_hint={'x':.05,'center_y':.425})
         self.widgets['debug_box_scroll']=debug_box_scroll
 
@@ -6682,7 +6682,7 @@ class DocumentScreen(Screen):
         self.widgets['info_box_x']=info_box_x
 
         info_box_scroll=FileRecycleView(
-            size_hint=(.9,.75),
+            size_hint=(.9,.8485),
             pos_hint={'x':.05,'center_y':.425})
         self.widgets['info_box_scroll']=info_box_scroll
 
@@ -6721,7 +6721,7 @@ class DocumentScreen(Screen):
         self.widgets['error_box_x']=error_box_x
 
         error_box_scroll=FileRecycleView(
-            size_hint=(.9,.75),
+            size_hint=(.9,.8485),
             pos_hint={'x':.05,'center_y':.425})
         self.widgets['error_box_scroll']=error_box_scroll
 
