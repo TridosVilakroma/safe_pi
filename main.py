@@ -1,4 +1,5 @@
-import os,json,time,shutil,math,random,subprocess,re,string,importlib,ast
+import os,json,time,shutil,math,random,subprocess
+import re,string,importlib,ast,glob,pathlib
 import traceback,errno
 from datetime import datetime,timedelta
 from kivy.config import Config
@@ -2626,6 +2627,75 @@ class FileRecycleView(RecycleView):
 
         def set_color(self,color,*args):
             self.bg_color=color
+
+class DenseRoundedColorLayout(RoundedColorLayout):
+    '''Does not allow touch to pass through'''
+
+    # Layouts do not intercept touch events,
+    # however with a colored background
+    # the assumption is that it is blocking
+    # widgets behind it, so we explicitly
+    # capture the touch to meet expectations
+
+    def __init__(self, bg_color=(0.1, 0.1, 0.1, 0.95), **kwargs):
+        super(DenseRoundedColorLayout,self).__init__(bg_color, **kwargs)
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            super(DenseRoundedColorLayout,self).on_touch_down(touch)
+            return True
+        return super(DenseRoundedColorLayout,self).on_touch_down(touch)
+
+class OutlineModalScroll(ScrollView):
+    def __init__(self,bg_color=(0,0,0,1), **kwargs):
+        super(OutlineModalScroll,self).__init__(**kwargs)
+        self.x_btn=IconButton(
+            source=overlay_x_icon,
+            size_hint=(.1,.1),
+            pos_hint={'x':.90,'y':.88})
+        self.x_btn.bind(on_release=self.clear)
+        self.bind(pos=self.update_rect)
+        self.bind(size=self.update_rect)
+        with self.canvas:
+                    Color(*bg_color)
+                    self.rect = Rectangle(pos=self.center,size=(self.width,self.height))
+
+    def update_rect(self, *args):
+        self.rect.pos = self.pos
+        self.rect.size = (self.size[0], self.size[1])
+
+    def on_parent(self,_self,parent):
+        if parent:
+            self.scroll_y=.8
+            self.last_parent=parent
+            self._dim=LabelColor(bg_color=(0,0,0,.65))
+            parent.add_widget(self._dim)
+            Clock.schedule_once(lambda *args:parent.add_widget(self.x_btn))
+        else:
+            if self._dim in self.last_parent.children:
+                self.last_parent.remove_widget(self._dim)
+            if self.x_btn in self.last_parent.children:
+                self.last_parent.remove_widget(self.x_btn)
+
+    def clear(self,*args):
+        if hasattr(self,'parent'):
+            if self.parent is None:
+                return
+            self.parent.remove_widget(self)
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            touch.grab(self)
+        super(OutlineModalScroll,self).on_touch_down(touch)
+        return True
+
+    def on_touch_up(self, touch):
+        if not self.collide_point(*touch.pos):
+            if touch.grab_current is self:
+                touch.ungrab(self)
+            self.clear()
+        super(OutlineModalScroll,self).on_touch_up(touch)
+        return True
 
 #<<<<<<<<<<>>>>>>>>>>#
 
@@ -6530,7 +6600,7 @@ class DocumentScreen(Screen):
                     size_hint =(.98, .001),
                     pos_hint = {'x':.01, 'y':.13})
 
-        dock=RoundedColorLayout(
+        dock=DenseRoundedColorLayout(
             bg_color=(.15,.15,.15,.9),
             size_hint =(.45, .725),
             pos_hint = {'center_x':.175, 'center_y':.51})
@@ -6605,6 +6675,56 @@ class DocumentScreen(Screen):
             size_hint =(.9, .725),
             pos_hint = {'center_x':.525, 'center_y':.51})
         self.widgets['container']=container
+
+        #####state report widgets#####
+
+        report_image=Image(
+            source=report_current,
+            nocache=True)
+        self.widgets['report_image']=report_image
+
+        scroll_layout=RelativeLayout(
+            size_hint_y=2.5,
+            size_hint_x=.95)
+        self.widgets['scroll_layout']=scroll_layout
+
+        report_scroll=OutlineModalScroll(
+            bg_color=(0,0,0,0),
+            bar_width=8,
+            do_scroll_y=True,
+            do_scroll_x=False,
+            size_hint_y=.865,
+            size_hint_x=.95,
+            pos_hint = {'center_x':.5, 'center_y':.565})
+        report_scroll.bar_color=(245/250, 216/250, 41/250,.75)
+        report_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
+        self.widgets['report_scroll']=report_scroll
+
+        report_selector_scroll=OutlineScroll(
+            bg_color=(.25,.25,.25,.75),
+            bar_width=8,
+            do_scroll_y=True,
+            do_scroll_x=False,
+            size_hint_y=1,
+            size_hint_x=1,
+            pos_hint = {'center_x':.5, 'center_y':.5})
+        report_selector_scroll.bar_color=(245/250, 216/250, 41/250,.75)
+        report_selector_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
+        self.widgets['report_selector_scroll']=report_selector_scroll
+
+        report_selector_layout=GridLayout(
+            size_hint_y=None,
+            size_hint_x=1,
+            cols=3,
+            padding=30,
+            spacing=(10,10),
+            pos_hint = {'center_x':.5, 'center_y':.5})
+        self.widgets['report_selector_layout']=report_selector_layout
+        report_selector_layout.bind(minimum_height=report_selector_layout.setter('height'))
+
+        #####manual widgets#####
+
+        #####archive widgets#####
 
         #####log files widgets#####
 
@@ -6725,6 +6845,10 @@ class DocumentScreen(Screen):
             pos_hint={'x':.05,'center_y':.425})
         self.widgets['error_box_scroll']=error_box_scroll
 
+        scroll_layout.add_widget(report_image)
+        report_scroll.add_widget(scroll_layout)
+        report_selector_scroll.add_widget(report_selector_layout)
+
         dock.add_widget(dock_handle)
         dock.add_widget(dock_handle_lines)
         dock.add_widget(dock_reports)
@@ -6754,17 +6878,57 @@ class DocumentScreen(Screen):
     def dock_reports_func(self,*args):
         if self.current_section=='reports':
             return
+        _curr_report_found=False
+        _old_reports_found=False
         self.current_section='reports'
         container_fade_out=Animation(opacity=0,d=.5)
         container_fade_in=Animation(opacity=1,d=.5)
         w=self.widgets
         container=w['container']
+        w['report_selector_layout'].clear_widgets()
+
+        if os.path.exists('logs/sys_report/report.jpg'):
+            _curr_report_found=True
+            curr_repot=RoundedButton(
+                    background_color=(1,1,1,1),
+                    size_hint=(1,None),
+                    height=Window.height/7,
+                    background_normal='',
+                    text='[color=#000000][size=18]Current Report',
+                    markup=True)
+            curr_repot.bind(on_release=lambda *args:setattr(w['report_image'],'source',report_current))
+            curr_repot.bind(on_release=lambda *args:self.add_widget(w['report_scroll']))
+            w['report_selector_layout'].add_widget(curr_repot)
+
+        _report_paths = [f for f in glob.glob("logs/documents/system_reports/*.jpg")]
+        if len(_report_paths)>0:
+            _old_reports_found=True
+        for i in _report_paths:
+            b=RoundedButton(
+                background_color=(1,1,1,1),
+                size_hint=(1,None),
+                height=Window.height/7,
+                background_normal='',
+                text='[color=#000000][size=18]'+pathlib.Path(i).stem,
+                markup=True)
+            b.bind(on_release=lambda *args:setattr(w['report_image'],'source',i))
+            b.bind(on_release=lambda *args:self.add_widget(w['report_scroll']))
+            w['report_selector_layout'].add_widget(b)
+
+        if not (_curr_report_found or _old_reports_found):
+            empty_label=RoundedLabelColor(
+                size_hint=(1,None),
+                height=Window.height/7,
+                bg_color=(1,1,1,1),
+                text='[color=#000000][size=28][b]System reports not found',
+                markup=True)
+            w['report_selector_layout'].add_widget(empty_label)
+
         def _swap_widgets(*args):
             container.clear_widgets()
-            # container.add_widget(w['debug_box'])
-            # container.add_widget(w['info_box'])
-            # container.add_widget(w['error_box'])
+            container.add_widget(w['report_selector_scroll'])
             container_fade_in.start(container)
+
         container_fade_out.start(container)
         container_fade_out.bind(on_complete=_swap_widgets)
 
