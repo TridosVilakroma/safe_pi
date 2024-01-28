@@ -954,7 +954,7 @@ class ClockText(ButtonBehavior,LabelColor):
         elif self.opacity==1:
             self.fade_out()
 
-    def fade_in(self):
+    def fade_in(self,*args):
         self.add_parent()
         anim=Animation(opacity=1,d=self.anim_length)
         anim.start(self)
@@ -988,9 +988,17 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
         self.anim_d=.25
         self.place_holder=Label()
         self.bind(on_release=self.undock)
+        self.docked=True
+
+    def on_parent(self,_self,parent,*args):
+        if parent:
+            return
+        wc=App.get_running_app().context_screen.get_screen('main').widgets['widget_carousel']
+        wc.opacity=0
 
     def undock(self,*args):
         if self.size_hint==[1,1]:
+            self.docked=False
             cg=App.get_running_app().context_screen.get_screen('main')
             cgw=cg.widgets
             cl=cgw['clock_label']
@@ -1065,6 +1073,7 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
     def align_bottom(self,*args):
         anim=Animation(pos_hint={'center_x':.5,'center_y':.265},d=self.anim_d,t='in_back')
         anim.bind(on_complete=self.fill_slide)
+        anim.bind(on_complete=lambda *args:setattr(self,'docked',True))
         anim.start(self)
 
     def opaque(self,*args):
@@ -1233,12 +1242,18 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
             or random.randint(0,45)-messages.active_messages[0].gravity<=0:
                 cg.widget_fade()
                 cl.fade()
-                Clock.schedule_once(cg.widget_fade,5)
+                self.evoke_fade_in_1=Clock.schedule_once(cg.widget_fade,5)
                 self.clock_stack['widget_fade']=cg.widget_fade
-                Clock.schedule_once(cl.fade,5)
+                self.evoke_fade_in_2=Clock.schedule_once(cl.fade,5)
                 self.clock_stack['fade']=cl.fade
                 if wc.opacity==0:
                     cg.widgets['widget_carousel'].index=1
+
+    def cancel_evoke_fade_in(self,*args):
+        if hasattr(self,'self.evoke_fade_in_1'):
+            self.evoke_fade_in_1.cancel()
+        if hasattr(self,'self.evoke_fade_in_2'):
+            self.evoke_fade_in_2.cancel()
 
     def schedule_refresh(self,*args):
         self.pop_wid_event=Clock.schedule_once(self.populate_widgets,1)
@@ -3024,6 +3039,7 @@ class ControlGrid(Screen):
                 if self.widgets['widget_carousel'].opacity!=1:
                     return
                 self.widgets['widget_carousel'].fade_out()
+
     def open_settings(self,button):
         self.parent.transition = SlideTransition(direction='right')
         self.manager.current='settings'
@@ -3034,17 +3050,43 @@ class ControlGrid(Screen):
         self.language_overlay()
     def update_msg_card(self,*args):
         self.widgets['message_label'].text=f'[size=50][color=#ffffff][b]{messages.active_messages[0].card}'
+
     def msg_icon_func (self,button):
-        wc=App.get_running_app().context_screen.get_screen('main').widgets['widget_carousel']
-        if self.widgets['clock_label'].opacity!=1:
+        w=self.widgets
+        if not w['messenger_button'].docked:
+            #should be inaccessible..
             return
-        if self.widgets['messenger_button'].pos_hint=={'center_x':.5,'center_y':.55}:
-            return
-        self.widget_fade()
-        wc.skip_bounce=True
-        if self.widgets['clock_label'].time_size==120:
+        if w['clock_label'].time_size==120 and w['clock_label'].opacity==1:
+            #nothing animated, all set in standard positions
+            w['clock_label'].animate()
+            self.widget_fade()
             self.widgets['widget_carousel'].index=1
-        self.widgets['clock_label'].animate()
+            Clock.schedule_once(w['messenger_button'].undock,.5)
+        if w['clock_label'].time_size==120 and w['clock_label'].opacity==0:
+            #evoke message triggered
+            w['clock_label']._delete_clock()
+            w['messenger_button'].cancel_evoke_fade_in()
+            w['clock_label'].animated=True
+            w['clock_label'].rotate()
+            w['clock_label'].slide()
+            w['clock_label'].text_shrink()
+            w['clock_label'].morph()
+            w['clock_label'].add_parent()
+            Clock.schedule_once(w['clock_label'].fade_in,.25)
+            w['messenger_button'].undock()
+        if w['clock_label'].time_size==35 and w['clock_label'].opacity==1:
+            #widget carousel being accessed
+            w['clock_label']._delete_clock()
+            if w['widget_carousel'].index==0:
+                #carousel current is clock setter
+                w['widget_carousel'].load_slide(w['messenger_button'])
+                Clock.schedule_once(w['messenger_button'].undock,.55)
+            elif w['widget_carousel'].index==1:
+                #carousel current is message button
+                w['messenger_button'].undock()
+
+
+
     def on_pre_leave(self, *args):
         self.widgets['messenger_button'].redock()
     def msg_icon_notifications(self,*args):
