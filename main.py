@@ -1019,10 +1019,7 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
             self.lighten()
             msg.clear_widgets()
             cgw['message_label'].text=f'[size=50][color=#ffffff][b]{messages.active_messages[0].card}'
-            if cl.opacity==1:
-                cl._create_clock()
-            else:
-                cl._return()
+            cl._return()
 
     def switch_parent(self,*args):
         cg=App.get_running_app().context_screen.get_screen('main')
@@ -1480,7 +1477,7 @@ class BigWheelClock(Carousel):
                 if os.name=='posix':
                         os.system(f'sudo date -s {h}:{m}{p}')
                 else:
-                    logger.debug('main.py BigWheelClock _set_sys_time(): \n  >>time set: ',f'{h}:{str(m).zfill(2)}{p}')
+                    logger.debug(f'main.py BigWheelClock _set_sys_time(): \n  >>time set: {h}:{str(m).zfill(2)}{p}')
 
     def _create_clock(self,*args):
         Clock.schedule_once(self._set_sys_time, 2)
