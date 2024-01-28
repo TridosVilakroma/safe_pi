@@ -12012,7 +12012,7 @@ class Hood_Control(App):
             Window.add_widget(self.notifications)
         Clock.schedule_once(_reorder,0)
 
-    def exit_check(*args):
+    def exit_check(*args,**kwargs):
         logger.info('main.py Hood_control.exit_check(): on_request_close')
         # return True  # block app's exit
         return False  # let the app close
