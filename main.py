@@ -6723,10 +6723,10 @@ class DocumentScreen(Screen):
             nocache=True)
         self.widgets['report_image']=report_image
 
-        scroll_layout=RelativeLayout(
+        report_scroll_layout=RelativeLayout(
             size_hint_y=2.5,
             size_hint_x=.95)
-        self.widgets['scroll_layout']=scroll_layout
+        self.widgets['report_scroll_layout']=report_scroll_layout
 
         report_scroll=OutlineModalScroll(
             bg_color=(0,0,0,0),
@@ -6764,7 +6764,95 @@ class DocumentScreen(Screen):
 
         #####manual widgets#####
 
+        manual_image=Image(
+            source=report_current,
+            nocache=True)
+        self.widgets['manual_image']=manual_image
+
+        manual_scroll_layout=RelativeLayout(
+            size_hint_y=2.5,
+            size_hint_x=.95)
+        self.widgets['manual_scroll_layout']=manual_scroll_layout
+
+        manual_scroll=OutlineModalScroll(
+            bg_color=(0,0,0,0),
+            bar_width=8,
+            do_scroll_y=True,
+            do_scroll_x=False,
+            size_hint_y=.865,
+            size_hint_x=.95,
+            pos_hint = {'center_x':.5, 'center_y':.565})
+        manual_scroll.bar_color=(245/250, 216/250, 41/250,.75)
+        manual_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
+        self.widgets['manual_scroll']=manual_scroll
+
+        manual_selector_scroll=OutlineScroll(
+            bg_color=(.25,.25,.25,.75),
+            bar_width=8,
+            do_scroll_y=True,
+            do_scroll_x=False,
+            size_hint_y=1,
+            size_hint_x=1,
+            pos_hint = {'center_x':.5, 'center_y':.5})
+        manual_selector_scroll.bar_color=(245/250, 216/250, 41/250,.75)
+        manual_selector_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
+        self.widgets['manual_selector_scroll']=manual_selector_scroll
+
+        manual_selector_layout=GridLayout(
+            size_hint_y=None,
+            size_hint_x=1,
+            cols=3,
+            padding=30,
+            spacing=(10,10),
+            pos_hint = {'center_x':.5, 'center_y':.5})
+        self.widgets['manual_selector_layout']=manual_selector_layout
+        manual_selector_layout.bind(minimum_height=manual_selector_layout.setter('height'))
+
         #####archive widgets#####
+
+        archive_image=Image(
+            source=report_current,
+            nocache=True)
+        self.widgets['archive_image']=archive_image
+
+        archive_scroll_layout=RelativeLayout(
+            size_hint_y=2.5,
+            size_hint_x=.95)
+        self.widgets['archive_scroll_layout']=archive_scroll_layout
+
+        archive_scroll=OutlineModalScroll(
+            bg_color=(0,0,0,0),
+            bar_width=8,
+            do_scroll_y=True,
+            do_scroll_x=False,
+            size_hint_y=.865,
+            size_hint_x=.95,
+            pos_hint = {'center_x':.5, 'center_y':.565})
+        archive_scroll.bar_color=(245/250, 216/250, 41/250,.75)
+        archive_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
+        self.widgets['archive_scroll']=archive_scroll
+
+        archive_selector_scroll=OutlineScroll(
+            bg_color=(.25,.25,.25,.75),
+            bar_width=8,
+            do_scroll_y=True,
+            do_scroll_x=False,
+            size_hint_y=1,
+            size_hint_x=1,
+            pos_hint = {'center_x':.5, 'center_y':.5})
+        archive_selector_scroll.bar_color=(245/250, 216/250, 41/250,.75)
+        archive_selector_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
+        self.widgets['archive_selector_scroll']=archive_selector_scroll
+
+        archive_selector_layout=GridLayout(
+            size_hint_y=None,
+            size_hint_x=1,
+            cols=3,
+            padding=30,
+            spacing=(10,10),
+            pos_hint = {'center_x':.5, 'center_y':.5})
+        self.widgets['archive_selector_layout']=archive_selector_layout
+        archive_selector_layout.bind(minimum_height=archive_selector_layout.setter('height'))
 
         #####log files widgets#####
 
@@ -6885,9 +6973,17 @@ class DocumentScreen(Screen):
             pos_hint={'x':.05,'center_y':.425})
         self.widgets['error_box_scroll']=error_box_scroll
 
-        scroll_layout.add_widget(report_image)
-        report_scroll.add_widget(scroll_layout)
+        report_scroll_layout.add_widget(report_image)
+        report_scroll.add_widget(report_scroll_layout)
         report_selector_scroll.add_widget(report_selector_layout)
+
+        manual_scroll_layout.add_widget(manual_image)
+        manual_scroll.add_widget(manual_scroll_layout)
+        manual_selector_scroll.add_widget(manual_selector_layout)
+
+        archive_scroll_layout.add_widget(archive_image)
+        archive_scroll.add_widget(archive_scroll_layout)
+        archive_selector_scroll.add_widget(archive_selector_layout)
 
         dock.add_widget(dock_handle)
         dock.add_widget(dock_handle_lines)
@@ -6973,36 +7069,88 @@ class DocumentScreen(Screen):
         container_fade_out.bind(on_complete=_swap_widgets)
 
     def dock_maint_func(self,*args):
-        if self.current_section=='maint':
+        if self.current_section=='manuals':
             return
-        self.current_section='maint'
+        _old_manuals_found=False
+        self.current_section='manuals'
         container_fade_out=Animation(opacity=0,d=.5)
         container_fade_in=Animation(opacity=1,d=.5)
         w=self.widgets
         container=w['container']
+        w['manual_selector_layout'].clear_widgets()
+
+        _manual_paths = [f for f in glob.glob("logs/documents/manuals/*.jpg")]
+        if len(_manual_paths)>0:
+            _old_manuals_found=True
+        for i in _manual_paths:
+            b=RoundedButton(
+                background_color=(1,1,1,1),
+                size_hint=(1,None),
+                height=Window.height/7,
+                background_normal='',
+                text='[color=#000000][size=18]'+pathlib.Path(i).stem,
+                markup=True)
+            b.bind(on_release=lambda *args:setattr(w['manual_image'],'source',i))
+            b.bind(on_release=lambda *args:self.add_widget(w['manual_scroll']))
+            w['manual_selector_layout'].add_widget(b)
+
+        if not _old_manuals_found:
+            empty_label=RoundedLabelColor(
+                size_hint=(1,None),
+                height=Window.height/7,
+                bg_color=(1,1,1,1),
+                text='[color=#000000][size=28][b]No manuals found',
+                markup=True)
+            w['manual_selector_layout'].add_widget(empty_label)
+
         def _swap_widgets(*args):
             container.clear_widgets()
-            # container.add_widget(w['debug_box'])
-            # container.add_widget(w['info_box'])
-            # container.add_widget(w['error_box'])
+            container.add_widget(w['manual_selector_scroll'])
             container_fade_in.start(container)
+
         container_fade_out.start(container)
         container_fade_out.bind(on_complete=_swap_widgets)
 
     def dock_install_func(self,*args):
-        if self.current_section=='install':
+        if self.current_section=='archives':
             return
-        self.current_section='install'
+        _old_archives_found=False
+        self.current_section='archives'
         container_fade_out=Animation(opacity=0,d=.5)
         container_fade_in=Animation(opacity=1,d=.5)
         w=self.widgets
         container=w['container']
+        w['archive_selector_layout'].clear_widgets()
+
+        _archive_paths = [f for f in glob.glob("logs/documents/archives/*.jpg")]
+        if len(_archive_paths)>0:
+            _old_archives_found=True
+        for i in _archive_paths:
+            b=RoundedButton(
+                background_color=(1,1,1,1),
+                size_hint=(1,None),
+                height=Window.height/7,
+                background_normal='',
+                text='[color=#000000][size=18]'+pathlib.Path(i).stem,
+                markup=True)
+            b.bind(on_release=lambda *args:setattr(w['archive_image'],'source',i))
+            b.bind(on_release=lambda *args:self.add_widget(w['archive_scroll']))
+            w['archive_selector_layout'].add_widget(b)
+
+        if not _old_archives_found:
+            empty_label=RoundedLabelColor(
+                size_hint=(1,None),
+                height=Window.height/7,
+                bg_color=(1,1,1,1),
+                text='[color=#000000][size=28][b]Archived documents not found',
+                markup=True)
+            w['archive_selector_layout'].add_widget(empty_label)
+
         def _swap_widgets(*args):
             container.clear_widgets()
-            # container.add_widget(w['debug_box'])
-            # container.add_widget(w['info_box'])
-            # container.add_widget(w['error_box'])
+            container.add_widget(w['archive_selector_scroll'])
             container_fade_in.start(container)
+
         container_fade_out.start(container)
         container_fade_out.bind(on_complete=_swap_widgets)
 
