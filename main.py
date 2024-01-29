@@ -2640,7 +2640,7 @@ class FileRecycleView(RecycleView):
         def set_color(self,color,*args):
             self.bg_color=color
 
-class DenseRoundedColorLayout(RoundedColorLayout):
+class DenseRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
     '''Does not allow touch to pass through'''
 
     # Layouts do not intercept touch events,
@@ -2650,7 +2650,7 @@ class DenseRoundedColorLayout(RoundedColorLayout):
     # capture the touch to meet expectations
 
     def __init__(self, bg_color=(0.1, 0.1, 0.1, 0.95), **kwargs):
-        super(DenseRoundedColorLayout,self).__init__(bg_color, **kwargs)
+        super(DenseRoundedColorLayout,self).__init__(bg_color=bg_color, **kwargs)
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
@@ -6644,6 +6644,7 @@ class DocumentScreen(Screen):
             size_hint =(.45, .725),
             pos_hint = {'center_x':.175, 'center_y':.51})
         self.widgets['dock']=dock
+        dock.bind(on_release=self.dock_handle_func)
 
         dock_handle=RoundedButton(
             size_hint =(.055,.425),
