@@ -2678,7 +2678,7 @@ class OutlineModalScroll(ScrollView):
 
     def on_parent(self,_self,parent):
         if parent:
-            self.scroll_y=.8
+            self.scroll_y=1
             self.last_parent=parent
             self._dim=LabelColor(bg_color=(0,0,0,.65))
             parent.add_widget(self._dim)
@@ -2696,18 +2696,17 @@ class OutlineModalScroll(ScrollView):
             self.parent.remove_widget(self)
 
     def on_touch_down(self, touch):
-        if self.collide_point(*touch.pos):
-            touch.grab(self)
         super(OutlineModalScroll,self).on_touch_down(touch)
         return True
 
     def on_touch_up(self, touch):
-        if not self.collide_point(*touch.pos):
-            if touch.grab_current is self:
-                touch.ungrab(self)
-            self.clear()
-        super(OutlineModalScroll,self).on_touch_up(touch)
-        return True
+        if super(OutlineModalScroll,self).on_touch_up(touch):
+            return True
+        self.clear()
+        return False
+
+class FloatImage(FloatLayout,Image):
+    pass
 
 #<<<<<<<<<<>>>>>>>>>>#
 
@@ -3885,6 +3884,34 @@ class ReportScreen(Screen):
         self.add_widget(back)
         self.add_widget(back_main)
         self.add_widget(seperator_line)
+
+    def archive_report(self,*args):
+        report_image=FloatImage(
+            nocache=True,
+            size_hint=(None,None))
+
+        def resize(*args):
+            if report_image.texture==None:
+                return
+            report_image.size=report_image.texture.size
+            print(report_image.size,report_image.texture.size)
+
+        report_image.bind(texture=resize)
+        report_image.source=report_current
+
+        date_label=DisplayLabel(
+            text='',
+            markup=True,
+            size_hint =(.13, .01),
+            pos_hint = {'center_x':.875, 'center_y':.945})
+
+        config=App.get_running_app().config_
+        saved_date=config["documents"]["inspection_date"]
+        date_label.text=f'[size=32][color=#000000]{saved_date}[/color]'
+
+        report_image.add_widget(date_label)
+        Clock.schedule_once(lambda *args:report_image.export_to_png(f'logs/documents/system_reports/{saved_date}.jpg',0))
+
 
     def check_pending(self):
         if App.get_running_app().report_pending==False:
@@ -6578,18 +6605,22 @@ class PinScreen(Screen):
         self.widgets['display'].update_text(self.pin)
     def enter_func(self,button):
         if self.date_flag:
-            self.date_flag=0
-            config=self.root.config_
-            month=self.pin[0:2]
-            day=self.pin[2:4]
-            year=self.pin[4:8]
-            config.set('documents','inspection_date',f'{month}-{day}-{year}')
-            timestamp=datetime.now()
-            timestamp=timestamp.replace(day=1,month=int(month),year=int(year))
-            config.set('timestamps','System Inspection',f'{timestamp }')
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
-            App.get_running_app().notifications.toast(f'[b][size=20]Inspection date set to\n    {month}-{day}-{year}')
+            try:
+                App.get_running_app().context_screen.get_screen('report').archive_report()
+                self.date_flag=0
+                config=self.root.config_
+                month=self.pin[0:2]
+                day=self.pin[2:4]
+                year=self.pin[4:8]
+                config.set('documents','inspection_date',f'{month}-{day}-{year}')
+                timestamp=datetime.now()
+                timestamp=timestamp.replace(day=1,month=int(month),year=int(year))
+                config.set('timestamps','System Inspection',f'{timestamp }')
+                with open(preferences_path,'w') as configfile:
+                    config.write(configfile)
+                App.get_running_app().notifications.toast(f'[b][size=20]Inspection date set to\n    {month}-{day}-{year}')
+            except:
+                logger.exception('Setting Report Date Failed')
         elif hasattr(pindex.Pindex,f'p{self.pin}'):
             eval(f'pindex.Pindex.p{self.pin}(self)')
         self.pin=''
@@ -6729,6 +6760,7 @@ class DocumentScreen(Screen):
         self.widgets['report_scroll_layout']=report_scroll_layout
 
         report_scroll=OutlineModalScroll(
+            scroll_timeout=100000,
             bg_color=(0,0,0,0),
             bar_width=8,
             do_scroll_y=True,
@@ -7037,6 +7069,7 @@ class DocumentScreen(Screen):
             w['report_selector_layout'].add_widget(curr_repot)
 
         _report_paths = [f for f in glob.glob("logs/documents/system_reports/*.jpg")]
+        _report_paths += [f for f in glob.glob("logs/documents/system_reports/*.png")]
         if len(_report_paths)>0:
             _old_reports_found=True
         for i in _report_paths:
@@ -7047,7 +7080,7 @@ class DocumentScreen(Screen):
                 background_normal='',
                 text='[color=#000000][size=18]'+pathlib.Path(i).stem,
                 markup=True)
-            b.bind(on_release=lambda *args:setattr(w['report_image'],'source',i))
+            b.bind(on_release=lambda _,i=i:setattr(w['report_image'],'source',i))
             b.bind(on_release=lambda *args:self.add_widget(w['report_scroll']))
             w['report_selector_layout'].add_widget(b)
 
