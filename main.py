@@ -3894,7 +3894,6 @@ class ReportScreen(Screen):
             if report_image.texture==None:
                 return
             report_image.size=report_image.texture.size
-            print(report_image.size,report_image.texture.size)
 
         report_image.bind(texture=resize)
         report_image.source=report_current
@@ -3902,7 +3901,33 @@ class ReportScreen(Screen):
         date_label=DisplayLabel(
             text='',
             markup=True,
-            size_hint =(.13, .01),
+            size_hint =(.13, .013),
+            pos_hint = {'center_x':.875, 'center_y':.945})
+
+        config=App.get_running_app().config_
+        saved_date=config.get("documents","inspection_date",fallback='Original')
+        date_label.text=f'[size=32][color=#000000]{saved_date}[/color]'
+
+        report_image.add_widget(date_label)
+        Clock.schedule_once(lambda *args:report_image.export_to_png(f'logs/documents/system_reports/{saved_date}.jpg',0))
+
+    def create_current_report(self,*args):
+        report_image=FloatImage(
+            nocache=True,
+            size_hint=(None,None))
+
+        def resize(*args):
+            if report_image.texture==None:
+                return
+            report_image.size=report_image.texture.size
+
+        report_image.bind(texture=resize)
+        report_image.source=report_current
+
+        date_label=DisplayLabel(
+            text='',
+            markup=True,
+            size_hint =(.13, .013),
             pos_hint = {'center_x':.875, 'center_y':.945})
 
         config=App.get_running_app().config_
@@ -3910,7 +3935,7 @@ class ReportScreen(Screen):
         date_label.text=f'[size=32][color=#000000]{saved_date}[/color]'
 
         report_image.add_widget(date_label)
-        Clock.schedule_once(lambda *args:report_image.export_to_png(f'logs/documents/system_reports/{saved_date}.jpg',0))
+        Clock.schedule_once(lambda *args:report_image.export_to_png('logs/sys_report/report.jpg',0))
 
 
     def check_pending(self):
@@ -3933,7 +3958,6 @@ class ReportScreen(Screen):
         if report_state=='KY':
             layout.clear_widgets()
             layout.add_widget(w['report_image'])
-            layout.add_widget(w['date_label'])
         elif report_state=='TN':
             if hasattr(w['tn_label'],'parent'):
                 if w['tn_label'].parent!=None:
@@ -6618,9 +6642,11 @@ class PinScreen(Screen):
                 config.set('timestamps','System Inspection',f'{timestamp }')
                 with open(preferences_path,'w') as configfile:
                     config.write(configfile)
+                App.get_running_app().context_screen.get_screen('report').create_current_report()
                 App.get_running_app().notifications.toast(f'[b][size=20]Inspection date set to\n    {month}-{day}-{year}')
             except:
                 logger.exception('Setting Report Date Failed')
+                App.get_running_app().notifications.toast('[b][size=20]Report Creation Error[/b][/size]\nAdditional error info logged','critical')
         elif hasattr(pindex.Pindex,f'p{self.pin}'):
             eval(f'pindex.Pindex.p{self.pin}(self)')
         self.pin=''
@@ -6765,9 +6791,9 @@ class DocumentScreen(Screen):
             bar_width=8,
             do_scroll_y=True,
             do_scroll_x=False,
-            size_hint_y=.865,
+            size_hint_y=1,
             size_hint_x=.95,
-            pos_hint = {'center_x':.5, 'center_y':.565})
+            pos_hint = {'center_x':.5, 'center_y':.5})
         report_scroll.bar_color=(245/250, 216/250, 41/250,.75)
         report_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
         self.widgets['report_scroll']=report_scroll
@@ -7057,16 +7083,16 @@ class DocumentScreen(Screen):
 
         if os.path.exists('logs/sys_report/report.jpg'):
             _curr_report_found=True
-            curr_repot=RoundedButton(
+            curr_report=RoundedButton(
                     background_color=(1,1,1,1),
                     size_hint=(1,None),
                     height=Window.height/7,
                     background_normal='',
                     text='[color=#000000][size=18]Current Report',
                     markup=True)
-            curr_repot.bind(on_release=lambda *args:setattr(w['report_image'],'source',report_current))
-            curr_repot.bind(on_release=lambda *args:self.add_widget(w['report_scroll']))
-            w['report_selector_layout'].add_widget(curr_repot)
+            curr_report.bind(on_release=lambda *args:setattr(w['report_image'],'source',report_current))
+            curr_report.bind(on_release=lambda *args:self.add_widget(w['report_scroll']))
+            w['report_selector_layout'].add_widget(curr_report)
 
         _report_paths = [f for f in glob.glob("logs/documents/system_reports/*.jpg")]
         _report_paths += [f for f in glob.glob("logs/documents/system_reports/*.png")]
