@@ -3871,6 +3871,8 @@ class ReportScreen(Screen):
         self.add_widget(seperator_line)
 
     def archive_report(self,*args):
+        if not os.path.exists('logs/sys_report/report.jpg'):
+            return False
         report_image=FloatImage(
             nocache=True,
             size_hint=(None,None))
@@ -3895,8 +3897,11 @@ class ReportScreen(Screen):
 
         report_image.add_widget(date_label)
         Clock.schedule_once(lambda *args:report_image.export_to_png(f'logs/documents/system_reports/{saved_date}.jpg',0))
+        return True
 
     def create_current_report(self,*args):
+        if not os.path.exists('logs/sys_report/report.jpg'):
+            return False
         report_image=FloatImage(
             nocache=True,
             size_hint=(None,None))
@@ -3921,8 +3926,11 @@ class ReportScreen(Screen):
 
         report_image.add_widget(date_label)
         Clock.schedule_once(lambda *args:report_image.export_to_png('logs/sys_report/report.jpg',0))
+        return True
 
     def imprint_state_labels(self,*args):
+        if not os.path.exists('logs/sys_report/report.jpg'):
+            return False
         report_image=FloatImage(
             nocache=True,
             size_hint=(None,None))
@@ -3955,6 +3963,7 @@ class ReportScreen(Screen):
         report_image.add_widget(st_label)
         report_image.add_widget(st_zip_label)
         Clock.schedule_once(lambda *args:report_image.export_to_png('logs/sys_report/report.jpg',0))
+        return True
 
     def check_pending(self):
         if App.get_running_app().report_pending==False:
@@ -6463,8 +6472,10 @@ class PinScreen(Screen):
             with open(preferences_path,'w') as configfile:
                 config.write(configfile)
             try:
-                App.get_running_app().context_screen.get_screen('report').imprint_state_labels()
-                App.get_running_app().notifications.toast(f'[size=20]Report state set:\n\n[b]{st}','info')
+                if App.get_running_app().context_screen.get_screen('report').imprint_state_labels():
+                    App.get_running_app().notifications.toast(f'[size=20]Report state set:\n\n[b]{st}','info')
+                else:
+                    App.get_running_app().notifications.toast(f'[size=20]No Report Found','warning')
             except:
                 logger.exception('Failed to set state')
                 App.get_running_app().notifications.toast(f'[size=20]Failed to set state:\n\n[b]{st}','critical')
@@ -6635,7 +6646,10 @@ class PinScreen(Screen):
     def enter_func(self,button):
         if self.date_flag:
             try:
-                App.get_running_app().context_screen.get_screen('report').archive_report()
+                if App.get_running_app().context_screen.get_screen('report').archive_report():
+                    App.get_running_app().notifications.toast(f'[size=20]Current Report Archived','info')
+                else:
+                    App.get_running_app().notifications.toast(f'[size=20]No Report Found/Archived','warning')
                 self.date_flag=0
                 config=self.root.config_
                 month=self.pin[0:2]
@@ -6647,8 +6661,10 @@ class PinScreen(Screen):
                 config.set('timestamps','System Inspection',f'{timestamp }')
                 with open(preferences_path,'w') as configfile:
                     config.write(configfile)
-                App.get_running_app().context_screen.get_screen('report').create_current_report()
-                App.get_running_app().notifications.toast(f'[b][size=20]Inspection date set to\n    {month}-{day}-{year}')
+                if App.get_running_app().context_screen.get_screen('report').create_current_report():
+                    App.get_running_app().notifications.toast(f'[b][size=20]Inspection date set to\n    {month}-{day}-{year}')
+                else:
+                    App.get_running_app().notifications.toast(f'[size=20]No Report Found/Updated','warning')
             except:
                 logger.exception('Setting Report Date Failed')
                 App.get_running_app().notifications.toast('[b][size=20]Report Creation Error[/b][/size]\nAdditional error info logged','critical')
