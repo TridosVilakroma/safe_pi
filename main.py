@@ -2663,8 +2663,8 @@ class OutlineModalScroll(ScrollView):
         super(OutlineModalScroll,self).__init__(**kwargs)
         self.x_btn=IconButton(
             source=overlay_x_icon,
-            size_hint=(.1,.1),
-            pos_hint={'x':.90,'y':.88})
+            size_hint=(.08,.08),
+            pos_hint={'x':.92,'y':.88})
         self.x_btn.bind(on_release=self.clear)
         self.bind(pos=self.update_rect)
         self.bind(size=self.update_rect)
@@ -3858,23 +3858,8 @@ class ReportScreen(Screen):
                     pos_hint = {'x':.01, 'y':.13})
         self.widgets['seperator_line']=seperator_line
 
-        tn_label=DisplayLabel(
-            text='[b][color=#000000][size=16]TN',
-            markup=True,
-            size_hint =(.05, .01),
-            pos_hint = {'center_x':.425, 'center_y':.77425})
-        self.widgets['tn_label']=tn_label
-
-        tn_zip_label=DisplayLabel(
-            text='[b][color=#000000][size=16]TN',
-            markup=True,
-            size_hint =(.02225, .01),
-            pos_hint = {'center_x':.7675, 'center_y':.7875})
-        self.widgets['tn_zip_label']=tn_zip_label
-
         self.add_widget(bg_image)
         scroll_layout.add_widget(report_image)
-        scroll_layout.add_widget(date_label)
         report_scroll.add_widget(scroll_layout)
         if report_image.texture:
             self.add_widget(report_scroll)
@@ -3937,6 +3922,39 @@ class ReportScreen(Screen):
         report_image.add_widget(date_label)
         Clock.schedule_once(lambda *args:report_image.export_to_png('logs/sys_report/report.jpg',0))
 
+    def imprint_state_labels(self,*args):
+        report_image=FloatImage(
+            nocache=True,
+            size_hint=(None,None))
+
+        def resize(*args):
+            if report_image.texture==None:
+                return
+            report_image.size=report_image.texture.size
+
+        report_image.bind(texture=resize)
+        report_image.source=report_current
+
+        st_label=DisplayLabel(
+            text='',
+            markup=True,
+            size_hint =(.05, .013),
+            pos_hint = {'center_x':.4225, 'center_y':.8555})
+
+        st_zip_label=DisplayLabel(
+            text='',
+            markup=True,
+            size_hint =(.02225, .013),
+            pos_hint = {'center_x':.76775, 'center_y':.874})
+
+        config=App.get_running_app().config_
+        report_state=config.get("config","report_state",fallback='KY')
+        st_label.text=f'[color=#000000][size=32]{report_state}'
+        st_zip_label.text=f'[b][color=#000000][size=26]{report_state}'
+
+        report_image.add_widget(st_label)
+        report_image.add_widget(st_zip_label)
+        Clock.schedule_once(lambda *args:report_image.export_to_png('logs/sys_report/report.jpg',0))
 
     def check_pending(self):
         if App.get_running_app().report_pending==False:
@@ -3950,46 +3968,21 @@ class ReportScreen(Screen):
                 self.widgets['scroll_layout'].add_widget(self.widgets['pending_watermark2'])
                 self.widgets['scroll_layout'].add_widget(self.widgets['pending_watermark3'])
 
-    def add_state_labels(self,*args):
-        w=self.widgets
-        layout=w['scroll_layout']
-        config=App.get_running_app().config_
-        report_state=config.get("config","report_state",fallback='KY')
-        if report_state=='KY':
-            layout.clear_widgets()
-            layout.add_widget(w['report_image'])
-        elif report_state=='TN':
-            if hasattr(w['tn_label'],'parent'):
-                if w['tn_label'].parent!=None:
-                    return
-            if hasattr(w['tn_zip_label'],'parent'):
-                if w['tn_zip_label'].parent!=None:
-                    return
-            layout.add_widget(w['tn_label'])
-            layout.add_widget(w['tn_zip_label'])
-
-    def on_enter(self):
-        self.check_pending()
     def on_pre_enter(self):
-        self.add_state_labels()
-        self.date_setter()
-        self.widgets['report_image'].reload()
+        self.check_pending()
         self.refresh_widget()
-    def Report_back (self,button):
+    def on_leave(self, *args):
         self.widgets['report_scroll'].scroll_y=1
+    def Report_back (self,button):
         self.parent.transition = SlideTransition(direction='up')
         self.manager.current='settings'
     def Report_back_main (self,button):
-        self.widgets['report_scroll'].scroll_y=1
         self.parent.transition = SlideTransition(direction='left')
         self.manager.current='main'
-    def date_setter(self):
-        report_date=self.widgets['date_label']
-        config=App.get_running_app().config_
-        saved_date=config["documents"]["inspection_date"]
-        report_date.text=f'[color=#000000]{saved_date}[/color]'
     def refresh_widget(self):
         self.clear_widgets()
+        self.widgets['report_image'].reload()
+        self.widgets['report_scroll'].scroll_y=1
         self.add_widget(self.widgets['bg_image'])
         if self.widgets['report_image'].texture:
             self.add_widget(self.widgets['report_scroll'])
@@ -5835,11 +5828,9 @@ class PreferenceScreen(Screen):
         overlay_menu.open()
 
     def settings_back(self,button):
-        self.widgets['pref_scroll'].scroll_y=1
         self.parent.transition = SlideTransition(direction='down')
         self.manager.current='settings'
     def settings_back_main(self,button):
-        self.widgets['pref_scroll'].scroll_y=1
         self.parent.transition = SlideTransition(direction='left')
         self.manager.current='main'
     def heat_sensor_func(self,button):
@@ -5871,10 +5862,14 @@ class PreferenceScreen(Screen):
     def pins_func(self,button):
         self.parent.transition = SlideTransition(direction='left')
         self.manager.current='pin'
+    def on_pre_enter(self,*args):
+        self.widgets['pref_scroll'].scroll_y=1
     def on_enter(self):
         if self.duration_flag:
             self.duration_flag=0
             self.heat_overlay()
+    def on_leave(self,*args):
+        self.widgets['pref_scroll'].scroll_y=1
 
 class PinScreen(Screen):
     def __init__(self, **kwargs):
@@ -6425,6 +6420,7 @@ class PinScreen(Screen):
         self.widgets['report_state_overlay']=report_state_overlay
         report_state_overlay.ref='report_state_overlay'
         report_state_overlay.widgets['overlay_layout']=report_state_overlay.overlay_layout
+        report_state_overlay.bind(on_pre_open=self.preset_state_spinner)
 
         report_state_text=Label(
             text=current_language['report_state_text'],
@@ -6466,8 +6462,12 @@ class PinScreen(Screen):
             config.set("config","report_state",st)
             with open(preferences_path,'w') as configfile:
                 config.write(configfile)
-            App.get_running_app().context_screen.get_screen('report').add_state_labels()
-            App.get_running_app().notifications.toast(f'[size=20]Report state set:\n\n[b]{st}','info')
+            try:
+                App.get_running_app().context_screen.get_screen('report').imprint_state_labels()
+                App.get_running_app().notifications.toast(f'[size=20]Report state set:\n\n[b]{st}','info')
+            except:
+                logger.exception('Failed to set state')
+                App.get_running_app().notifications.toast(f'[size=20]Failed to set state:\n\n[b]{st}','critical')
             self.widgets['report_state_overlay'].dismiss()
         report_state_confirm.bind(on_release=report_state_confirm_func)
 
@@ -6531,6 +6531,11 @@ class PinScreen(Screen):
         self.add_widget(num_pad)
         self.add_widget(display)
         self.add_widget(seperator_line)
+
+    def preset_state_spinner(self,*args):
+        config=App.get_running_app().config_
+        report_state=config.get("config","report_state",fallback='KY')
+        self.widgets['report_state_input'].text=report_state
 
     def create_clock(self,*args):
         w=self.widgets
@@ -7091,6 +7096,7 @@ class DocumentScreen(Screen):
                     text='[color=#000000][size=18]Current Report',
                     markup=True)
             curr_report.bind(on_release=lambda *args:setattr(w['report_image'],'source',report_current))
+            curr_report.bind(on_release=lambda *args:w['report_image'].reload())
             curr_report.bind(on_release=lambda *args:self.add_widget(w['report_scroll']))
             w['report_selector_layout'].add_widget(curr_report)
 
