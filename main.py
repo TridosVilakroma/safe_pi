@@ -6106,6 +6106,14 @@ class PinScreen(Screen):
         date_cancel.ref='date_cancel'
 
         def date_confirm_func(button):
+            try:
+                if not os.path.exists('logs/sys_report/report.jpg'):
+                    raise FileNotFoundError
+            except FileNotFoundError:
+                logger.exception('Report Image File Missing')
+                App.get_running_app().notifications.toast('[b][size=20]Report Image Error[/b][/size]\nAdditional error info logged','critical')
+                self.widgets['date_overlay'].dismiss()
+                return
             self.date_flag=1
             self.widgets['date_overlay'].dismiss()
             App.get_running_app().notifications.toast(f'[size=20]Date Format:\n\n[b]MMDDYYYY','error')
