@@ -3896,6 +3896,8 @@ class ReportScreen(Screen):
         date_label.text=f'[size=32][color=#000000]{saved_date}[/color]'
 
         report_image.add_widget(date_label)
+        if not os.path.exists('logs/documents/system_reports'):
+            pathlib.Path('logs/documents/system_reports').mkdir(parents=True, exist_ok=True)
         Clock.schedule_once(lambda *args:report_image.export_to_png(f'logs/documents/system_reports/{saved_date}.jpg',0))
         return True
 
