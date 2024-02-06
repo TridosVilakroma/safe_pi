@@ -205,8 +205,12 @@ Press the restart button to continue.''',
                 logger.exception(f'messages.py refresh_active_messages(): hood_control.ini missing <{message.name}> key')
                 continue
 
-            if datetime.now()>message.recurrence+datetime.fromisoformat(self.config['timestamps'][f'{message.name}']):
-                self._active_messages.append(message)
+            try:
+                if datetime.now()>message.recurrence+datetime.fromisoformat(self.config['timestamps'][f'{message.name}']):
+                    self._active_messages.append(message)
+            except ValueError:
+                logger.exception('Failed to append message')
+                continue
 
         self.filter_active_messages()
 
