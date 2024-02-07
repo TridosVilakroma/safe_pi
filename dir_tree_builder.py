@@ -65,9 +65,12 @@ def create_dir_tree(root, tree):
             with open(path, 'w') as f:
                 f.write(value)
 
+def build_logs_tree(*args):
+    create_dir_tree(Path(os.getcwd()),logs_tree)
 
-# Specify the root directory
-root_directory = Path(os.getcwd())
+if __name__=='__main__':
+    # Specify the root directory
+    root_directory = Path(os.getcwd())
 
-# Create the directory tree
-create_dir_tree(root_directory, logs_tree)
+    # Create the directory tree
+    create_dir_tree(root_directory, logs_tree)
