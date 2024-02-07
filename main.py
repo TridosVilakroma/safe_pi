@@ -38,7 +38,7 @@ if os.name=='posix':
     Config.set('graphics', 'borderless', '1')
 
 import kivy
-import logic,lang_dict,pindex,general
+import logic,lang_dict,pindex,utils.general as general
 if os.name == 'nt':
     import RPi_test.GPIO as GPIO
 else:

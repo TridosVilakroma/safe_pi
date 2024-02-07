@@ -1,4 +1,4 @@
-import general,time
+import utils.general as general,time
 from functools import partial
 from notifications.banner import Banner
 from notifications.toast import Toast
