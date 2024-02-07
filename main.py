@@ -9,6 +9,9 @@ import segno
 import logging,logging_config
 logger=logging.getLogger('logger')
 
+import utils.dir_tree_builder
+utils.dir_tree_builder.build_logs_tree()
+
 from device_classes.exhaust import Exhaust
 from device_classes.mau import Mau
 from device_classes.light import Light
