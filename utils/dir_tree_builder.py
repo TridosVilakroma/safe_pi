@@ -1,5 +1,7 @@
 from pathlib import Path
-import os
+import os,logging
+
+logger=logging.getLogger('logger')
 
 default_config='''
 [preferences]
@@ -63,6 +65,7 @@ def create_dir_tree(root, tree):
             if path.exists():
                 continue
             with open(path, 'w') as f:
+                logger.debug(f'creating file: {path.name}')
                 f.write(value)
 
 def build_logs_tree(*args):
