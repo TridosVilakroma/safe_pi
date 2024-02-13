@@ -38,7 +38,9 @@ logs_tree = {
             "device_list.json": "{}"
         },
         "documents":{
-            "system_reports":{}
+            "system_reports":{},
+            "manuals":{},
+            "archives":{}
         },
         "log_files":{
             "debug":{},
