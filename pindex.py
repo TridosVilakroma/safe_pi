@@ -37,3 +37,6 @@ class Pindex:
 
     def p6578(pin_screen):
         pin_screen.widgets['report_state_overlay'].open()
+
+    def p3547(pin_screen):
+        pin_screen.widgets['bcm_board_trans_overlay'].open()
