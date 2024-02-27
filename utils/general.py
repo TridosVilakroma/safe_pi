@@ -1,4 +1,7 @@
-import os,re
+import os,re,logging
+
+logger=logging.getLogger('logger')
+
 def Convert_time(n):
     day = int(n // (24 * 3600))
     n = n % (24 * 3600)
@@ -24,6 +27,10 @@ def file_or_dir(path):
     return ''
 
 def pin_decode(pin_number):
+    '''return str representation of pin.
+
+    str will have both board and bcm modes'''
+
     pin_number=int(pin_number)
 
     index={8:14,10:15,11:17,12:18,
@@ -40,6 +47,26 @@ def pin_decode(pin_number):
     else:bcm_conversion=pin_number
 
     return f'Board: {pin_number} <> BCM: {bcm_conversion}'
+
+def pin_translate(pin_number):
+    '''return board numbering from bcm numbered pin'''
+
+    pin_number=int(pin_number)
+
+    index={ 9:21,10:19,11:23,12:32,
+           13:33,14:8 ,15:10,16:36,
+           17:11,18:12,19:35,20:38,
+           21:40,22:15,23:16,24:18,
+           25:22,26:37,27:13,
+           #advanced pins below
+            0:27, 1:28, 2:3 , 3:5 ,4:7,
+            5:29, 6:31, 7:26, 8:24}
+
+    if pin_number in index:
+        return index[pin_number]
+    else:
+        logger.debug(f'Could not translate {pin_number}')
+        return 0
 
 def stripargs(func,*args,**kwargs):
     '''Strips `*args` and `**kwargs`
