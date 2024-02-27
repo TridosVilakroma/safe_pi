@@ -6499,6 +6499,63 @@ class PinScreen(Screen):
             self.widgets['report_state_overlay'].dismiss()
         report_state_cancel.bind(on_release=report_state_cancel_func)
 
+        bcm_board_trans_overlay=PinPop('bcm_board_trans')
+        self.popups.append(bcm_board_trans_overlay)
+        self.widgets['bcm_board_trans_overlay']=bcm_board_trans_overlay
+        bcm_board_trans_overlay.ref='bcm_board_trans_overlay'
+        bcm_board_trans_overlay.widgets['overlay_layout']=bcm_board_trans_overlay.overlay_layout
+        bcm_board_trans_overlay.bind(on_pre_open=self.preset_state_spinner)
+
+        bcm_board_trans_text=Label(
+            text=current_language['bcm_board_trans_text'],
+            markup=True,
+            size_hint =(1,.6),
+            pos_hint = {'x':0, 'y':.35},)
+        self.widgets['bcm_board_trans_text']=bcm_board_trans_text
+        bcm_board_trans_text.ref='bcm_board_trans_text'
+
+        bcm_board_trans_confirm=RoundedButton(text=current_language['bcm_board_trans_confirm'],
+                        size_hint =(.35, .25),
+                        pos_hint = {'x':.05, 'y':.05},
+                        background_down='',
+                        background_color=(245/250, 216/250, 41/250,.9),
+                        markup=True)
+        self.widgets['bcm_board_trans_confirm']=bcm_board_trans_confirm
+        bcm_board_trans_confirm.ref='bcm_board_trans_confirm'
+
+        bcm_board_trans_cancel=RoundedButton(text=current_language['bcm_board_trans_cancel'],
+                        size_hint =(.35, .25),
+                        pos_hint = {'x':.6, 'y':.05},
+                        background_down='',
+                        background_color=(245/250, 216/250, 41/250,.9),
+                        markup=True)
+        self.widgets['bcm_board_trans_cancel']=bcm_board_trans_cancel
+        bcm_board_trans_cancel.ref='bcm_board_trans_cancel'
+
+        def bcm_board_trans_confirm_func(*args):
+            for device in logic.devices:
+                bcm_pin=device.pin
+                board_pin=general.pin_translate(device.pin)
+                if board_pin==0:
+                    App.get_running_app().notifications.toast(f'[size=20]Invalid translation for\n{device.name}: Pin {bcm_pin}','critical')
+                    logger.error(f'Invalid translation for {device.name}: Pin {bcm_pin}')
+                    continue
+                device.pin=board_pin
+                logic.set_pin_mode(device)
+                device.write()
+                if bcm_pin in logic._available_pins:
+                    logic.available_pins.append(bcm_pin)
+                if board_pin in logic.available_pins:
+                    logic.available_pins.remove(board_pin)
+                logic.available_pins.sort()
+                logic.pin_off(bcm_pin)
+            self.widgets['bcm_board_trans_overlay'].dismiss()
+        bcm_board_trans_confirm.bind(on_release=bcm_board_trans_confirm_func)
+
+        def bcm_board_trans_cancel_func(*args):
+            self.widgets['bcm_board_trans_overlay'].dismiss()
+        bcm_board_trans_cancel.bind(on_release=bcm_board_trans_cancel_func)
+
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_text)
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_confirm)
         self.widgets['reset_overlay'].widgets['overlay_layout'].add_widget(reset_cancel)
@@ -6530,6 +6587,9 @@ class PinScreen(Screen):
         self.widgets['report_state_overlay'].widgets['overlay_layout'].add_widget(report_state_confirm)
         self.widgets['report_state_overlay'].widgets['overlay_layout'].add_widget(report_state_cancel)
         self.widgets['report_state_overlay'].widgets['overlay_layout'].add_widget(report_state_input)
+        self.widgets['bcm_board_trans_overlay'].widgets['overlay_layout'].add_widget(bcm_board_trans_text)
+        self.widgets['bcm_board_trans_overlay'].widgets['overlay_layout'].add_widget(bcm_board_trans_confirm)
+        self.widgets['bcm_board_trans_overlay'].widgets['overlay_layout'].add_widget(bcm_board_trans_cancel)
 
         seperator_line=Image(source=gray_seperator_line,
                     allow_stretch=True,
