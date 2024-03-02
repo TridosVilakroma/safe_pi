@@ -407,6 +407,10 @@ class Logic():
         self.aux_state.append('heat_sensor')
         logger.info('heat sensor trip')
 
+    def heat_timer_clear(self):
+        self.sensor_target=time.time()-1
+        logger.info('heat sensor timer reset')
+
     def heat_sensor(self):
             if self.sensor_target>=time.time():
                 exfans_on(self)
