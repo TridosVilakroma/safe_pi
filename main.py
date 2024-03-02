@@ -4392,6 +4392,13 @@ class DevicesScreen(Screen):
         self.widgets['info_gv_reset']=info_gv_reset
         info_gv_reset.bind(on_press=partial(self.info_gv_reset_func,device))
 
+        info_heat_timer_reset=IconButton(source=reset_valve,
+                        size_hint =(.12, .12),
+                        pos_hint = {'x':.15, 'y':.98})
+        info_heat_timer_reset.color=(1,1,1,.8)
+        self.widgets['info_heat_timer_reset']=info_heat_timer_reset
+        info_heat_timer_reset.bind(on_press=partial(self.info_heat_timer_reset_func,device))
+
         self.widgets['overlay_layout'].add_widget(info_add_icon)
         self.widgets['overlay_layout'].add_widget(delete_icon)
         self.widgets['overlay_layout'].add_widget(info_type)
@@ -4401,12 +4408,17 @@ class DevicesScreen(Screen):
         self.widgets['overlay_layout'].add_widget(info_back_button)
         if isinstance(device,GasValve) :
             self.widgets['overlay_layout'].add_widget(info_gv_reset)
+        if isinstance(device,HeatSensor) :
+            self.widgets['overlay_layout'].add_widget(info_heat_timer_reset)
         if open:
             self.widgets['overlay_menu'].open()
         self.check_admin_mode()
 
     def info_gv_reset_func(self,device,*args):
         device.latched=True
+
+    def info_heat_timer_reset_func(self,device,*args):
+        logic.fs.heat_timer_clear()
 
     def delete_device_overlay(self,device,open=True):
         overlay_menu=self.widgets['overlay_menu']
