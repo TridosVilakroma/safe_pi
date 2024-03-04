@@ -9691,8 +9691,9 @@ class AccountScreen(Screen):
     def side_bar_connect_email_input_clear(self,button,focused,*args):
         si=self.widgets['side_bar_connect_email_input']
         p=si.parent
-        p.remove_widget(si)
-        p.add_widget(si)
+        if p:
+            p.remove_widget(si)
+            p.add_widget(si)
         if focused:
             si.font_size=32
             si.pos_hint={'center_x':.5, 'center_y':.6}
@@ -11806,8 +11807,9 @@ class NetworkScreen(Screen):
     def side_bar_manual_ssid_input_clear(self,button,focused,*args):
         si=self.widgets['side_bar_manual_ssid_input']
         p=si.parent
-        p.remove_widget(si)
-        p.add_widget(si)
+        if p:
+            p.remove_widget(si)
+            p.add_widget(si)
         if focused:
             si.text=''
             si.font_size=32
