@@ -12148,6 +12148,7 @@ def listen(app_object,*args):
 
             logic.fs.moli['maint_override']=0
         elif event_log['micro_switch']==0:
+            App.get_running_app().service_pin_entered=False
             if hasattr(root,'system_banner'):
                 notifications.remove_banner(target=root.system_banner)
                 del root.system_banner
