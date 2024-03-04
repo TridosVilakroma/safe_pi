@@ -23,7 +23,14 @@ def get_ssid():
         return ''
 
 def get_status():
-    process=subprocess.run(['nmcli','-g','state','general'],stdout=subprocess.PIPE)
+    process=subprocess.run(
+        "nmcli -g state,connectivity general | \
+        awk -F':' \
+        '{if ($2 == \"limited\") {{$2 = \"(Limited Access)\" } {print}} \
+        else if ($2 == \"portal\") {{$2 = \"(Behind Portal)\" } {print}} \
+        else {print $1}'",
+        shell=True,
+        stdout=subprocess.PIPE)
     if process.returncode == 0:
         return process.stdout.decode('utf-8').strip()
     else:
