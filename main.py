@@ -5292,15 +5292,15 @@ class PreferenceScreen(Screen):
         self.widgets['scroll_layout']=scroll_layout
         scroll_layout.bind(minimum_height=scroll_layout.setter('height'))
 
-        heat_sensor=RoundedButton(text=current_language['heat_sensor'],
+        advanced_settings=RoundedButton(text=current_language['advanced_settings'],
                         size_hint =(1, 1),
                         #pos_hint = {'x':.01, 'y':.9},
                         background_down='',
                         background_color=(200/250, 200/250, 200/250,.9),
                         markup=True)
-        self.widgets['heat_sensor']=heat_sensor
-        heat_sensor.ref='heat_sensor'
-        heat_sensor.bind(on_release=self.heat_sensor_func)
+        self.widgets['advanced_settings']=advanced_settings
+        advanced_settings.ref='advanced_settings'
+        advanced_settings.bind(on_release=self.advanced_settings_func)
 
         general_settings=RoundedButton(text=current_language['general_settings'],
                         size_hint =(1, 1),
@@ -5432,8 +5432,8 @@ class PreferenceScreen(Screen):
         scroll_layout.add_widget(network)
         scroll_layout.add_widget(account)
         scroll_layout.add_widget(general_settings)
+        scroll_layout.add_widget(advanced_settings)
         scroll_layout.add_widget(clean_mode)
-        scroll_layout.add_widget(heat_sensor)
         scroll_layout.add_widget(train)
         scroll_layout.add_widget(commission)
         scroll_layout.add_widget(about)
@@ -5794,20 +5794,20 @@ class PreferenceScreen(Screen):
             _swap_color(msg_evoke_on)
 
         screensaver_timer_title=Label(text=current_language['screensaver_timer_title'],
-                        pos_hint = {'center_x':.6, 'center_y':.88},
+                        pos_hint = {'center_x':.6, 'center_y':.9},
                         markup=True)
         self.widgets['screensaver_timer_title']=screensaver_timer_title
         screensaver_timer_title.ref='screensaver_timer_title'
 
         screensaver_timer_value=Label(
             text='[size=30][b][color=#ffffff]'+config.get('preferences','screensaver_timeout',fallback='10')+' Minutes',
-            pos_hint = {'center_x':.6, 'center_y':.8},
+            pos_hint = {'center_x':.6, 'center_y':.85},
             markup=True)
         self.widgets['screensaver_timer_value']=screensaver_timer_value
 
         screensaver_timer_setter=Slider(
             size_hint =(.4, .125),
-            pos_hint = {'center_x':.6, 'y':.65},
+            pos_hint = {'center_x':.6, 'y':.72},
             cursor_image=slider_handle_yellow,
             sensitivity='handle',
             min=1,
@@ -5815,6 +5815,30 @@ class PreferenceScreen(Screen):
             step=1,
             value=config.getint('preferences','screensaver_timeout',fallback=10))
         self.widgets['screensaver_timer_setter']=screensaver_timer_setter
+
+        heat_sensor_timer_title=Label(
+            text=current_language['heat_sensor_timer_title'],
+            pos_hint = {'center_x':.6, 'center_y':.58},
+            markup=True)
+        self.widgets['heat_sensor_timer_title']=heat_sensor_timer_title
+        heat_sensor_timer_title.ref='heat_sensor_timer_title'
+
+        heat_sensor_timer_value=Label(
+            text='[size=30][b][color=#ffffff]'+str(int(config.getint('preferences','heat_timer',fallback=300))//60)+' Minutes',
+            pos_hint = {'center_x':.6, 'center_y':.53},
+            markup=True)
+        self.widgets['heat_sensor_timer_value']=heat_sensor_timer_value
+
+        heat_sensor_timer_setter=Slider(
+            size_hint =(.4, .125),
+            pos_hint = {'center_x':.6, 'y':.4},
+            cursor_image=slider_handle_yellow,
+            sensitivity='handle',
+            min=2,
+            max=30,
+            step=1,
+            value=int(config.getint('preferences','heat_timer',fallback=300))//60)
+        self.widgets['heat_sensor_timer_setter']=heat_sensor_timer_setter
 
         def msg_evoke_on_func(button):
             config.set('preferences','evoke','True')
@@ -5844,6 +5868,21 @@ class PreferenceScreen(Screen):
             ScreenSaver.service()
         screensaver_timer_setter.bind(on_touch_up=screensaver_timer_setter_save_func)
 
+        def heat_sensor_timer_setter_display_func(slider,touch,*args):
+            if touch.grab_current != slider:
+                return
+            heat_sensor_timer_value.text='[size=30][b][color=#ffffff]'+str(slider.value)+' Minutes'
+        heat_sensor_timer_setter.bind(on_touch_move=heat_sensor_timer_setter_display_func)
+
+        def heat_sensor_timer_setter_save_func(slider,touch,*args):
+            if touch.grab_current != slider:
+                return
+            logic.heat_sensor_timer=slider.value*60
+            config.set('preferences','heat_timer',str(slider.value*60))
+            with open(preferences_path,'w') as configfile:
+                config.write(configfile)
+        heat_sensor_timer_setter.bind(on_touch_up=heat_sensor_timer_setter_save_func)
+
         def on_dismiss(self,*args):
             overlay_menu.canvas.before.remove_group("msg")
 
@@ -5854,7 +5893,202 @@ class PreferenceScreen(Screen):
         self.widgets['overlay_layout'].add_widget(screensaver_timer_title)
         self.widgets['overlay_layout'].add_widget(screensaver_timer_value)
         self.widgets['overlay_layout'].add_widget(screensaver_timer_setter)
+        self.widgets['overlay_layout'].add_widget(heat_sensor_timer_title)
+        self.widgets['overlay_layout'].add_widget(heat_sensor_timer_value)
+        self.widgets['overlay_layout'].add_widget(heat_sensor_timer_setter)
         overlay_menu.bind(on_dismiss=on_dismiss)
+        overlay_menu.open()
+
+    def advanced_settings_overlay(self):
+        overlay_menu=self.widgets['overlay_menu']
+        overlay_menu.background_color=(0,0,0,.75)
+        overlay_menu.title=''
+        overlay_menu.separator_height=0
+        overlay_menu.auto_dismiss=True
+        self.widgets['overlay_layout'].clear_widgets()
+        self.widgets['overlay_layout'].add_widget(self.widgets['overlay_x'])
+        config=App.get_running_app().config_
+
+        # with overlay_menu.canvas.before:
+        #    overlay_menu.msg_lines=Line(rounded_rectangle=(100, 100, 200, 200, 10, 10, 10, 10, 100),group='msg')
+
+        # def update_lines(*args):
+        #     x=int(overlay_menu.width*.2)
+        #     y=int(overlay_menu.height*.5)
+        #     width=int(overlay_menu.width*.25)
+        #     height=int(overlay_menu.height*.5)
+        #     overlay_menu.msg_lines.rounded_rectangle=(x, y, width, height, 10, 10, 10, 10, 100)
+        # overlay_menu.bind(pos=update_lines, size=update_lines)
+
+        # canvas is drawn to before widgets pos and size are set by parent.
+        # update lines is bound to listen for changes to size and pos so it
+        # can be updated accordingly.
+        # however since the overlay is shared between different menus it does
+        # not update its pos again after the drawing instructions are cleared,
+        # this leads to the lines being drawn wrong again.
+        # we call update_lines() while adding our message widgets to the overlay
+        # to reposition the lines correctly before opening
+        # update_lines()
+
+        # def _swap_color(button,*args):
+        #     if button.state=='down':
+        #         button.bg_color=(245/250, 216/250, 41/250,.85)
+        #     if button.state=='normal':
+        #         button.bg_color=(.5,.5,.5,1)
+
+
+        overlay_title=Label(text=current_language['advanced_settings_overlay'],
+                        pos_hint = {'x':.0, 'y':.5},
+                        markup=True)
+        self.widgets['overlay_title']=overlay_title
+        overlay_title.ref='advanced_settings_overlay'
+
+        # evoke_title=Label(text=current_language['evoke_title'],
+        #                 pos_hint = {'center_x':.2, 'center_y':.87},
+        #                 markup=True)
+        # self.widgets['evoke_title']=evoke_title
+        # evoke_title.ref='evoke_title'
+
+        # msg_evoke_on=RoundedToggleButton(text=current_language['msg_evoke_on'],
+        #                 size_hint =(.2, .125),
+        #                 pos_hint = {'center_x':.2, 'y':.65},
+        #                 background_down='',
+        #                 background_color=(.5,.5,.5,.85),
+        #                 markup=True,
+        #                 group='evoke',
+        #                 allow_no_selection=False)
+        # self.widgets['msg_evoke_on']=msg_evoke_on
+        # msg_evoke_on.ref='msg_evoke_on'
+        # msg_evoke_on.unbind(state=msg_evoke_on.color_swap)
+        # msg_evoke_on.bind(state=_swap_color)
+        # msg_evoke_on.bind(state=msg_evoke_on.color_swap)
+
+        # msg_evoke_off=RoundedToggleButton(text=current_language['msg_evoke_off'],
+        #                 size_hint =(.2, .125),
+        #                 pos_hint = {'center_x':.2, 'y':.45},
+        #                 background_down='',
+        #                 background_color=(.5,.5,.5,.85),
+        #                 markup=True,
+        #                 group='evoke',
+        #                 allow_no_selection=False)
+        # self.widgets['msg_evoke_off']=msg_evoke_off
+        # msg_evoke_off.ref='msg_evoke_off'
+        # msg_evoke_off.unbind(state=msg_evoke_off.color_swap)
+        # msg_evoke_off.bind(state=_swap_color)
+        # msg_evoke_off.bind(state=msg_evoke_off.color_swap)
+
+        # is_evoke=config.getboolean('preferences','evoke')
+        # if is_evoke:
+        #     msg_evoke_on.state='down'
+        #     _swap_color(msg_evoke_off)
+        # else:
+        #     msg_evoke_off.state='down'
+        #     _swap_color(msg_evoke_on)
+
+        # screensaver_timer_title=Label(text=current_language['screensaver_timer_title'],
+        #                 pos_hint = {'center_x':.6, 'center_y':.9},
+        #                 markup=True)
+        # self.widgets['screensaver_timer_title']=screensaver_timer_title
+        # screensaver_timer_title.ref='screensaver_timer_title'
+
+        # screensaver_timer_value=Label(
+        #     text='[size=30][b][color=#ffffff]'+config.get('preferences','screensaver_timeout',fallback='10')+' Minutes',
+        #     pos_hint = {'center_x':.6, 'center_y':.85},
+        #     markup=True)
+        # self.widgets['screensaver_timer_value']=screensaver_timer_value
+
+        # screensaver_timer_setter=Slider(
+        #     size_hint =(.4, .125),
+        #     pos_hint = {'center_x':.6, 'y':.72},
+        #     cursor_image=slider_handle_yellow,
+        #     sensitivity='handle',
+        #     min=1,
+        #     max=30,
+        #     step=1,
+        #     value=config.getint('preferences','screensaver_timeout',fallback=10))
+        # self.widgets['screensaver_timer_setter']=screensaver_timer_setter
+
+        input_filter_timer_title=Label(
+            text=current_language['input_filter_timer_title'],
+            pos_hint = {'center_x':.5, 'center_y':.88},
+            markup=True)
+        self.widgets['input_filter_timer_title']=input_filter_timer_title
+        input_filter_timer_title.ref='input_filter_timer_title'
+
+        input_filter_timer_value=Label(
+            text='[size=30][b][color=#ffffff]'+config.get('preferences','input_filter_timeout',fallback='2'),
+            pos_hint = {'center_x':.5, 'center_y':.83},
+            markup=True)
+        self.widgets['input_filter_timer_value']=input_filter_timer_value
+
+        input_filter_timer_setter=Slider(
+            size_hint =(.4, .125),
+            pos_hint = {'center_x':.5, 'y':.7},
+            cursor_image=slider_handle_yellow,
+            sensitivity='handle',
+            min=1,
+            max=10,
+            step=1,
+            value=config.getint('preferences','input_filter_timeout',fallback=2))
+        self.widgets['input_filter_timer_setter']=input_filter_timer_setter
+
+        # def msg_evoke_on_func(button):
+        #     config.set('preferences','evoke','True')
+        #     with open(preferences_path,'w') as configfile:
+        #         config.write(configfile)
+        # msg_evoke_on.bind(on_release=msg_evoke_on_func)
+
+        # def msg_evoke_off_func(button):
+        #     config.set('preferences','evoke','False')
+        #     with open(preferences_path,'w') as configfile:
+        #         config.write(configfile)
+        # msg_evoke_off.bind(on_release=msg_evoke_off_func)
+
+        # def screensaver_timer_setter_display_func(slider,touch,*args):
+        #     if touch.grab_current != slider:
+        #         return
+        #     screensaver_timer_value.text='[size=30][b][color=#ffffff]'+str(slider.value)+' Minutes'
+        # screensaver_timer_setter.bind(on_touch_move=screensaver_timer_setter_display_func)
+
+        # def screensaver_timer_setter_save_func(slider,touch,*args):
+        #     if touch.grab_current != slider:
+        #         return
+        #     config.set('preferences','screensaver_timeout',str(slider.value))
+        #     with open(preferences_path,'w') as configfile:
+        #         config.write(configfile)
+        #     ScreenSaver.timeout=slider.value*60
+        #     ScreenSaver.service()
+        # screensaver_timer_setter.bind(on_touch_up=screensaver_timer_setter_save_func)
+
+        def input_filter_timer_setter_display_func(slider,touch,*args):
+            if touch.grab_current != slider:
+                return
+            input_filter_timer_value.text='[size=30][b][color=#ffffff]'+str(slider.value)
+        input_filter_timer_setter.bind(on_touch_move=input_filter_timer_setter_display_func)
+
+        def input_filter_timer_setter_save_func(slider,touch,*args):
+            if touch.grab_current != slider:
+                return
+            config.set('preferences','input_filter_timeout',str(slider.value))
+            with open(preferences_path,'w') as configfile:
+                config.write(configfile)
+            logic.input_interference_filter=slider.value
+        input_filter_timer_setter.bind(on_touch_up=input_filter_timer_setter_save_func)
+
+        # def on_dismiss(self,*args):
+        #     overlay_menu.canvas.before.remove_group("msg")
+
+        self.widgets['overlay_layout'].add_widget(overlay_title)
+        # self.widgets['overlay_layout'].add_widget(evoke_title)
+        # self.widgets['overlay_layout'].add_widget(msg_evoke_on)
+        # self.widgets['overlay_layout'].add_widget(msg_evoke_off)
+        # self.widgets['overlay_layout'].add_widget(screensaver_timer_title)
+        # self.widgets['overlay_layout'].add_widget(screensaver_timer_value)
+        # self.widgets['overlay_layout'].add_widget(screensaver_timer_setter)
+        self.widgets['overlay_layout'].add_widget(input_filter_timer_title)
+        self.widgets['overlay_layout'].add_widget(input_filter_timer_value)
+        self.widgets['overlay_layout'].add_widget(input_filter_timer_setter)
+        # overlay_menu.bind(on_dismiss=on_dismiss)
         overlay_menu.open()
 
     def settings_back(self,button):
@@ -5863,9 +6097,11 @@ class PreferenceScreen(Screen):
     def settings_back_main(self,button):
         self.parent.transition = SlideTransition(direction='left')
         self.manager.current='main'
-    def heat_sensor_func(self,button):
+    def advanced_settings_func(self,button):
         self.parent.transition = SlideTransition(direction='left')
-        self.heat_overlay()
+        if App.get_running_app().admin_mode_start>time.time():
+            self.advanced_settings_overlay()
+        else: self.add_widget(PinLock(self.advanced_settings_overlay))
     def general_settings_func(self,button):
         self.general_settings_overlay()
     def train_func (self,button):
