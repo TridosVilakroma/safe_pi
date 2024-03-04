@@ -11039,7 +11039,6 @@ class NetworkScreen(Screen):
         details_box=self.widgets['details_box']
         darken=Animation(rgba=(0,0,0,.95))
         lighten=Animation(rgba=(0,0,0,.85))
-        details_box.clear_widgets()
         if details_box.expanded:
             darken.start(details_box.shape_color)
             w=self.widgets
@@ -11454,12 +11453,12 @@ class NetworkScreen(Screen):
         @mainthread
         def add_spinners():
             db=self.widgets['details_box']
-            db.add_widget(PreLoader(rel_size=.3,ref='1',speed=500))
-            db.add_widget(PreLoader(rel_size=.25,ref='2',speed=850))
-            db.add_widget(PreLoader(rel_size=.2,ref='3',speed=600))
-            db.add_widget(PreLoader(rel_size=.15,ref='4',speed=950))
-            db.add_widget(PreLoader(rel_size=.1,ref='5',speed=700))
-            db.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050))
+            db.add_widget(PreLoader(rel_pos=(.2,.75),rel_size=.075,ref='1',speed=500))
+            db.add_widget(PreLoader(rel_pos=(.2,.75),rel_size=.0625,ref='2',speed=850))
+            db.add_widget(PreLoader(rel_pos=(.2,.75),rel_size=.05,ref='3',speed=600))
+            db.add_widget(PreLoader(rel_pos=(.2,.75),rel_size=.0375,ref='4',speed=950))
+            db.add_widget(PreLoader(rel_pos=(.2,.75),rel_size=.025,ref='5',speed=700))
+            db.add_widget(PreLoader(rel_pos=(.2,.75),rel_size=.0125,ref='6',speed=1050))
 
         @mainthread
         def remove_spinners():
