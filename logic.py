@@ -19,6 +19,8 @@ else:
 
 logger=logging.getLogger('logger')
 
+input_interference_filter=2
+
 heat_sensor_timer=300
 #there are only 19 GPIO pins available for input/output.
 #pins 0-8[BCM] are set as pull-up (use as input exclusively; not outputs)
@@ -231,9 +233,9 @@ if os.name == 'posix':
             try:
                 if GPIO.input(i.pin):
                     #heat detected
-                    if fs.heat_debounce_timer>=-5:
+                    if fs.heat_debounce_timer>=-input_interference_filter:
                         fs.heat_debounce_timer-=1
-                    if fs.heat_debounce_timer<=-5:
+                    if fs.heat_debounce_timer<=-input_interference_filter:
                         fs.heat_debounce_bool=True
                         return True
                     else:
@@ -242,9 +244,9 @@ if os.name == 'posix':
                 logger.exception('logic.py heat_sensor_active(): pin not valid; skipping"')
                 continue
         #no heat detected
-        if fs.heat_debounce_timer<=5:
+        if fs.heat_debounce_timer<=input_interference_filter:
             fs.heat_debounce_timer+=1
-        if fs.heat_debounce_timer>=5:
+        if fs.heat_debounce_timer>=input_interference_filter:
             fs.heat_debounce_bool=False
             return False
         else:
@@ -255,9 +257,9 @@ if os.name == 'posix':
             try:
                 if not GPIO.input(i.pin):
                     #fired
-                    if fs.micro_debounce_timer>=-5:
+                    if fs.micro_debounce_timer>=-input_interference_filter:
                         fs.micro_debounce_timer-=1
-                    if fs.micro_debounce_timer<=-5:
+                    if fs.micro_debounce_timer<=-input_interference_filter:
                         fs.micro_debounce_bool=True
                         return True
                     else:
@@ -266,9 +268,9 @@ if os.name == 'posix':
                 logger.exception('logic.py micro_switch_active(): pin not valid; skipping"')
                 continue
         #set
-        if fs.micro_debounce_timer<=5:
+        if fs.micro_debounce_timer<=input_interference_filter:
             fs.micro_debounce_timer+=1
-        if fs.micro_debounce_timer>=5:
+        if fs.micro_debounce_timer>=input_interference_filter:
             fs.micro_debounce_bool=False
             return False
         else:
@@ -314,8 +316,8 @@ class Logic():
         self.running=False
         self.shut_off=False
         self.sensor_target=time.time()
-        self.micro_debounce_timer=5
-        self.heat_debounce_timer=5
+        self.micro_debounce_timer=input_interference_filter
+        self.heat_debounce_timer=input_interference_filter
         self.micro_debounce_bool=False
         self.heat_debounce_bool=False
 
