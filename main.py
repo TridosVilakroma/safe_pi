@@ -4419,6 +4419,10 @@ class DevicesScreen(Screen):
 
     def info_heat_timer_reset_func(self,device,*args):
         logic.fs.heat_timer_clear()
+        if logic.fs.milo['troubles']['heat_override']==0:
+            App.get_running_app().notifications.toast(f'[size=20]Heat Sensor\Override Cleared','info')
+        elif logic.fs.milo['troubles']['heat_override']==1:
+            App.get_running_app().notifications.toast(f'[size=20]Heat Sensor Active\nFailed to Clear','warning')
 
     def delete_device_overlay(self,device,open=True):
         overlay_menu=self.widgets['overlay_menu']
