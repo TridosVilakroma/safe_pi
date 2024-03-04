@@ -3948,11 +3948,11 @@ class ReportScreen(Screen):
         report_image.bind(texture=resize)
         report_image.source=report_current
 
-        st_label=DisplayLabel(
-            text='',
-            markup=True,
-            size_hint =(.05, .013),
-            pos_hint = {'center_x':.4225, 'center_y':.8555})
+        # st_label=DisplayLabel(
+        #     text='',
+        #     markup=True,
+        #     size_hint =(.05, .013),
+        #     pos_hint = {'center_x':.4225, 'center_y':.8555})
 
         st_zip_label=DisplayLabel(
             text='',
@@ -3962,10 +3962,10 @@ class ReportScreen(Screen):
 
         config=App.get_running_app().config_
         report_state=config.get("config","report_state",fallback='KY')
-        st_label.text=f'[color=#000000][size=32]{report_state}'
+        # st_label.text=f'[color=#000000][size=32]{report_state}'
         st_zip_label.text=f'[b][color=#000000][size=26]{report_state}'
 
-        report_image.add_widget(st_label)
+        # report_image.add_widget(st_label)
         report_image.add_widget(st_zip_label)
         Clock.schedule_once(lambda *args:report_image.export_to_png('logs/sys_report/report.jpg',0))
         return True
@@ -6756,7 +6756,6 @@ class PinScreen(Screen):
         self.widgets['bcm_board_trans_overlay']=bcm_board_trans_overlay
         bcm_board_trans_overlay.ref='bcm_board_trans_overlay'
         bcm_board_trans_overlay.widgets['overlay_layout']=bcm_board_trans_overlay.overlay_layout
-        bcm_board_trans_overlay.bind(on_pre_open=self.preset_state_spinner)
 
         bcm_board_trans_text=Label(
             text=current_language['bcm_board_trans_text'],
