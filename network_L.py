@@ -2,7 +2,7 @@ import subprocess
 
 
 def get_available():
-    process=subprocess.run(['nmcli','-g','SSID','dev','wifi','list','--rescan','yes'],stdout=subprocess.PIPE)
+    process=subprocess.run("nmcli -g SSID dev wifi list --rescan yes | awk '{if (!seen[$0]++) print}'",shell=True,stdout=subprocess.PIPE)
     if process.returncode == 0:
         return process.stdout.decode('utf-8')
     else:
