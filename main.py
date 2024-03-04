@@ -6073,6 +6073,8 @@ class PreferenceScreen(Screen):
             with open(preferences_path,'w') as configfile:
                 config.write(configfile)
             logic.input_interference_filter=slider.value
+            logic.fs.heat_debounce_bool=slider.value
+            logic.fs.micro_debounce_bool=slider.value
         input_filter_timer_setter.bind(on_touch_up=input_filter_timer_setter_save_func)
 
         # def on_dismiss(self,*args):
