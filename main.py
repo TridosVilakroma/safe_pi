@@ -11478,22 +11478,30 @@ class NetworkScreen(Screen):
             self.widgets['details_signal'].text='[b][size=16]'+signal
             self.widgets['details_security'].text='[b][size=16]'+security
 
+        @mainthread
+        def set_pw_hidden():
+            pw=self.widgets['details_password']
+            pw.text='**********'
+            pw.disabled=True
+            self.widgets['details_network_connect'].disabled=False
+            self.widgets['details_ssid_known'].opacity=1
+
+        @mainthread
+        def set_pw_blank():
+            pw=self.widgets['details_password']
+            pw.text=''
+            pw.disabled=False
+            self.widgets['details_network_connect'].disabled=True
+            self.widgets['details_ssid_known'].opacity=0
+
         def _details(ssid,*args):
             self._details_ssid=ssid
             clear_details()
             add_spinners()
             if ssid in network.get_known().splitlines() and not ssid=='':
-                pw=self.widgets['details_password']
-                pw.text='**********'
-                pw.disabled=True
-                self.widgets['details_network_connect'].disabled=False
-                self.widgets['details_ssid_known'].opacity=1
+                set_pw_hidden()
             else:
-                pw=self.widgets['details_password']
-                pw.text=''
-                pw.disabled=False
-                self.widgets['details_network_connect'].disabled=True
-                self.widgets['details_ssid_known'].opacity=0
+                set_pw_blank()
             entry_len=30
             ssid=f'      SSID: {ssid}'
             signal=f'   Signal: {network.get_signal()}/100'
