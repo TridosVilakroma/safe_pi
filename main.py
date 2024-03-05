@@ -7594,7 +7594,14 @@ class DocumentScreen(Screen):
                 for file in os.listdir(debug_path):
                     with open(os.path.join(debug_path,file)) as f:
                         for index,entry in reversed(list(enumerate(f))):
-                            entry=ast.literal_eval(entry)
+                            try:
+                                entry=ast.literal_eval(entry)
+                            except ValueError:
+                                entry={'time':'',
+                                       'text':'[i][size=26]Failed to load debug log',
+                                       'file':'',
+                                       'function':'',
+                                       'line':''}
                             _time=f"[b]Time:[/b] {entry['time']}"
                             _text=f"[i][size=26]{entry['text']}[/size][/i]"
                             _file=f"[b]File:[/b] {entry['file']}"
@@ -7633,7 +7640,13 @@ class DocumentScreen(Screen):
                 for file in os.listdir(info_path):
                     with open(os.path.join(info_path,file)) as f:
                         for index,entry in reversed(list(enumerate(f))):
-                            entry=ast.literal_eval(entry)
+                            try:
+                                entry=ast.literal_eval(entry)
+                            except ValueError:
+                                entry={'time':'',
+                                       'text':'[i][size=26]Failed to load info log',
+                                       'file':'',
+                                       'function':''}
                             _time=f"[b]Time:[/b] {entry['time']}"
                             _text=f"[i][size=26]{entry['text']}[/size][/i]"
                             _file=f"[b]File:[/b] {entry['file']}"
@@ -7671,7 +7684,16 @@ class DocumentScreen(Screen):
                 for file in os.listdir(error_path):
                     with open(os.path.join(error_path,file)) as f:
                         for index,entry in reversed(list(enumerate(f))):
-                            entry=ast.literal_eval(entry)
+                            try:
+                                entry=ast.literal_eval(entry)
+                            except ValueError:
+                                entry={'time':'',
+                                       'text':'[i][size=26]Failed to load error log',
+                                       'file':'',
+                                       'function':'',
+                                       'line':'',
+                                       'level':'',
+                                       'exec_info':''}
                             _markup="\n    [size=20][color=#000000]"
                             _time=f"[b]Time:[/b] {entry['time']}"
                             _text=f"[i][size=26]{entry['text']}[/size][/i]"
