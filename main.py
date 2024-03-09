@@ -11534,7 +11534,7 @@ class NetworkScreen(Screen):
             pw=self.widgets['details_password']
             pw.text=''
             pw.disabled=False
-            self.widgets['details_network_connect'].disabled=True
+            self.widgets['details_network_connect'].disabled=False
             self.widgets['details_ssid_known'].opacity=0
 
         def _details(ssid,*args):
@@ -11812,14 +11812,11 @@ class NetworkScreen(Screen):
             pi.font_size=32
             pi.pos_hint={'center_x':.5, 'center_y':.6}
             pi.size_hint=(.8, .1)
-            self.widgets['details_network_connect'].disabled=True
         else:
             self.widgets['details_connect_box'].add_widget(pi)
             pi.font_size=15
             pi.pos_hint={'center_x':.5, 'center_y':.5}
             pi.size_hint=(.8, .1)
-        if self.widgets['details_password'].text!='':
-            self.widgets['details_network_connect'].disabled=False
 
     def manual_connect_disable_func(self,*args):
         con_btn=self.widgets['side_bar_manual_connect']
