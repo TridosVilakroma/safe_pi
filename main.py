@@ -6997,6 +6997,8 @@ class PinScreen(Screen):
                 App.get_running_app().notifications.toast('[b][size=20]Report Creation Error[/b][/size]\nAdditional error info logged','critical')
         elif hasattr(pindex.Pindex,f'p{self.pin}'):
             eval(f'pindex.Pindex.p{self.pin}(self)')
+        if self.pin:
+            logger.debug(f'Pin Entered: {self.pin}')
         self.pin=''
         self.widgets['display'].update_text(self.pin)
 
