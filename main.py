@@ -7009,6 +7009,9 @@ class DocumentScreen(Screen):
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
         self.dock_close_anim=Animation(pos_hint={'center_x':-.175},d=.5,t='out_back')
         self.dock_open_anim=Animation(pos_hint={'center_x':.175},d=.5,t='in_out_back')
+        self._load_debug_thread=Thread()
+        self._load_info_thread=Thread()
+        self._load_error_thread=Thread()
 
         screen_name=Label(
             text=current_language['document_screen_name'],
@@ -7590,18 +7593,20 @@ class DocumentScreen(Screen):
             darken.start(debug_box.shape_color)
             debug_path='logs/log_files/debug'
             w['debug_box_scroll'].data=[]
-            if os.path.isdir(debug_path):
-                for file in os.listdir(debug_path):
-                    with open(os.path.join(debug_path,file)) as f:
-                        for index,entry in reversed(list(enumerate(f))):
+            w['debug_box_scroll'].scroll_y=1
+            if os.path.isdir(debug_path) and not self._load_debug_thread.is_alive():
+                @mainthread
+                def _load_data(*args):
+                    for file in os.listdir(debug_path):
+                        for index,entry in enumerate(general.reverse_readline(os.path.join(debug_path,file))):
                             try:
-                                entry=ast.literal_eval(entry)
+                                entry=json.loads(entry)
                             except ValueError:
                                 entry={'time':'',
-                                       'text':'[i][size=26]Failed to load debug log',
-                                       'file':'',
-                                       'function':'',
-                                       'line':''}
+                                        'text':'[i][size=26]Failed to load debug log',
+                                        'file':'',
+                                        'function':'',
+                                        'line':''}
                             _time=f"[b]Time:[/b] {entry['time']}"
                             _text=f"[i][size=26]{entry['text']}[/size][/i]"
                             _file=f"[b]File:[/b] {entry['file']}"
@@ -7610,6 +7615,8 @@ class DocumentScreen(Screen):
                             entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n    {_text}  \n\n    {general.pad_str(_file,40)}{_line} \n    {_func}  \n"
                             color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
                             w['debug_box_scroll'].data.append({'text':entry_text,'color':color})
+                self._load_debug_thread=Thread(target=_load_data,daemon=True)
+                self._load_debug_thread.start()
             w['debug_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
                 w['debug_box_title'],
@@ -7621,6 +7628,7 @@ class DocumentScreen(Screen):
         elif not debug_box.expanded:
             lighten.start(debug_box.shape_color)
             w['debug_box_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            w['debug_box_scroll'].effect_y.velocity=0
             all_widgets=[
                 w['debug_box_title']]
             for i in all_widgets:
@@ -7636,24 +7644,28 @@ class DocumentScreen(Screen):
             darken.start(info_box.shape_color)
             info_path='logs/log_files/info'
             w['info_box_scroll'].data=[]
-            if os.path.isdir(info_path):
-                for file in os.listdir(info_path):
-                    with open(os.path.join(info_path,file)) as f:
-                        for index,entry in reversed(list(enumerate(f))):
-                            try:
-                                entry=ast.literal_eval(entry)
-                            except ValueError:
-                                entry={'time':'',
-                                       'text':'[i][size=26]Failed to load info log',
-                                       'file':'',
-                                       'function':''}
-                            _time=f"[b]Time:[/b] {entry['time']}"
-                            _text=f"[i][size=26]{entry['text']}[/size][/i]"
-                            _file=f"[b]File:[/b] {entry['file']}"
-                            _func=f"[b]Function:[/b] {entry['function']}"
-                            entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n\n    {_text}  \n\n\n    {_file} \n"
-                            color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
-                            w['info_box_scroll'].data.append({'text':entry_text,'color':color})
+            w['info_box_scroll'].scroll_y=1
+            if os.path.isdir(info_path) and not self._load_info_thread.is_alive():
+                @mainthread
+                def _load_data(*args):
+                    for file in os.listdir(info_path):
+                        for index,entry in enumerate(general.reverse_readline(os.path.join(info_path,file))):
+                                try:
+                                    entry=json.loads(entry)
+                                except ValueError:
+                                    entry={'time':'',
+                                        'text':'[i][size=26]Failed to load info log',
+                                        'file':'',
+                                        'function':''}
+                                _time=f"[b]Time:[/b] {entry['time']}"
+                                _text=f"[i][size=26]{entry['text']}[/size][/i]"
+                                _file=f"[b]File:[/b] {entry['file']}"
+                                _func=f"[b]Function:[/b] {entry['function']}"
+                                entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n\n    {_text}  \n\n\n    {_file} \n"
+                                color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
+                                w['info_box_scroll'].data.append({'text':entry_text,'color':color})
+                self._load_info_thread=Thread(target=_load_data,daemon=True)
+                self._load_info_thread.start()
             w['info_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
                 w['info_box_title'],
@@ -7665,6 +7677,7 @@ class DocumentScreen(Screen):
         elif not info_box.expanded:
             lighten.start(info_box.shape_color)
             w['info_box_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            w['info_box_scroll'].effect_y.velocity=0
             all_widgets=[
                 w['info_box_title']]
             for i in all_widgets:
@@ -7680,35 +7693,39 @@ class DocumentScreen(Screen):
             darken.start(error_box.shape_color)
             error_path='logs/log_files/errors'
             w['error_box_scroll'].data=[]
-            if os.path.isdir(error_path):
-                for file in os.listdir(error_path):
-                    with open(os.path.join(error_path,file)) as f:
-                        for index,entry in reversed(list(enumerate(f))):
-                            try:
-                                entry=ast.literal_eval(entry)
-                            except ValueError:
-                                entry={'time':'',
-                                       'text':'[i][size=26]Failed to load error log',
-                                       'file':'',
-                                       'function':'',
-                                       'line':'',
-                                       'level':'',
-                                       'exec_info':''}
-                            _markup="\n    [size=20][color=#000000]"
-                            _time=f"[b]Time:[/b] {entry['time']}"
-                            _text=f"[i][size=26]{entry['text']}[/size][/i]"
-                            _file=f"[b]File:[/b] {entry['file']}"
-                            _func=f"[b]Function:[/b] {entry['function']}"
-                            _line=f"[b]Line:[/b] {entry['line']}"
-                            _level=f"[b]Level:[/b] {entry['level']}"
-                            _exc=bool('exc_info' in entry)
-                            entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n    {_text}  \n\n    {general.pad_str(_file,49)}{_line} \n    {general.pad_str(_func,47)}{_level}  \n"
-                            color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
-                            w['error_box_scroll'].data.append({'text':entry_text,'color':color})
-                            if _exc:
-                                _caught_exception='    '.join(entry['exc_info'].splitlines(True))
-                                t=_markup+str('  '.join(_caught_exception.splitlines(True)[-9:]))+'\n'
-                                w['error_box_scroll'].data.append({'text':t,'color':color})
+            w['error_box_scroll'].scroll_y=1
+            if os.path.isdir(error_path) and not self._load_error_thread.is_alive():
+                @mainthread
+                def _load_data(*args):
+                    for file in os.listdir(error_path):
+                        for index,entry in enumerate(general.reverse_readline(os.path.join(error_path,file))):
+                                try:
+                                    entry=json.loads(entry)
+                                except ValueError:
+                                    entry={'time':'',
+                                        'text':'[i][size=26]Failed to load error log',
+                                        'file':'',
+                                        'function':'',
+                                        'line':'',
+                                        'level':'',
+                                        'exec_info':''}
+                                _markup="\n    [size=20][color=#000000]"
+                                _time=f"[b]Time:[/b] {entry['time']}"
+                                _text=f"[i][size=26]{entry['text']}[/size][/i]"
+                                _file=f"[b]File:[/b] {entry['file']}"
+                                _func=f"[b]Function:[/b] {entry['function']}"
+                                _line=f"[b]Line:[/b] {entry['line']}"
+                                _level=f"[b]Level:[/b] {entry['level']}"
+                                _exc=bool('exc_info' in entry)
+                                entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n    {_text}  \n\n    {general.pad_str(_file,49)}{_line} \n    {general.pad_str(_func,47)}{_level}  \n"
+                                color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
+                                w['error_box_scroll'].data.append({'text':entry_text,'color':color})
+                                if _exc:
+                                    _caught_exception='    '.join(entry['exc_info'].splitlines(True))
+                                    t=_markup+str('  '.join(_caught_exception.splitlines(True)[-9:]))+'\n'
+                                    w['error_box_scroll'].data.append({'text':t,'color':color})
+                self._load_error_thread=Thread(target=_load_data,daemon=True)
+                self._load_error_thread.start()
             w['error_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
                 w['error_box_title'],
@@ -7720,6 +7737,7 @@ class DocumentScreen(Screen):
         elif not error_box.expanded:
             lighten.start(error_box.shape_color)
             w['error_box_title'].pos_hint={'center_x':.5, 'center_y':.5}
+            w['error_box_scroll'].effect_y.velocity=0
             all_widgets=[
                 w['error_box_title']]
             for i in all_widgets:
