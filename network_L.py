@@ -129,10 +129,13 @@ def scan_wifi():
 def is_wifi_available(ssid: str):
     return ssid in [x.split(':')[0] for x in scan_wifi()]
 
-def connect_to(ssid: str, password: str):
+def connect_to(ssid: str, password: str = ''):
     if not is_wifi_available(ssid):
         return False
-    subprocess.call(['nmcli', 'd', 'wifi', 'connect', ssid, 'password', password])
+    if password=='':
+        subprocess.call(['nmcli', 'd', 'wifi', 'connect', ssid])
+    else:
+        subprocess.call(['nmcli', 'd', 'wifi', 'connect', ssid, 'password', password])
     return get_ssid() == ssid
 
 def connect_to_saved(ssid: str,*args):
