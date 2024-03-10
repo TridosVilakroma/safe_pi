@@ -7575,11 +7575,12 @@ class DocumentScreen(Screen):
         container_fade_in=Animation(opacity=1,d=.5)
         w=self.widgets
         container=w['container']
+        log_boxes=[w['debug_box'],w['info_box'],w['error_box']]
         def _swap_widgets(*args):
             container.clear_widgets()
-            container.add_widget(w['debug_box'])
-            container.add_widget(w['info_box'])
-            container.add_widget(w['error_box'])
+            for i in log_boxes:
+                if i.expanded:i.shrink()
+                container.add_widget(i)
             container_fade_in.start(container)
         container_fade_out.start(container)
         container_fade_out.bind(on_complete=_swap_widgets)
