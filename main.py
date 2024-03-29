@@ -4723,6 +4723,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             "trigger":current_device.trigger.lower()}
         with open(rf"logs/devices/{current_device.name}.json","w+") as write_file:
             json.dump(data, write_file,indent=0)
+        with open(rf"logs/devices/backups/{current_device.name}.json","w+") as write_file:
+            json.dump(data, write_file,indent=0)
         with open(rf"logs/devices/device_list.json","r+") as read_file:
             d_list=json.load(read_file)
             d_list[current_device.name]=current_device.device_types[current_device.type]
@@ -5026,6 +5028,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         if device.name!=current_device.name:
             os.rename(rf"logs/devices/{device.name}.json",rf"logs/devices/{current_device.name}.json")
         with open(rf"logs/devices/{current_device.name}.json","w") as write_file:
+            json.dump(data, write_file,indent=0)
+        with open(rf"logs/devices/backups/{current_device.name}.json","w") as write_file:
             json.dump(data, write_file,indent=0)
         with open(rf"logs/devices/device_list.json","r+") as read_file:
             d_list=json.load(read_file)
