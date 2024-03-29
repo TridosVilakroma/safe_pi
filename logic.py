@@ -79,6 +79,13 @@ def set_pin_mode(device):
     except:
         logger.exception(f"logic.set_pin_mode(): {device.pin} not valid; skipping")
 
+def loading_errors():
+    for i in devices:
+        if hasattr(i,'load_error'):
+            if i.load_error:
+                return True
+    return False
+
 def exfans_on(Logic_instance):
     for i in (i for i in devices if isinstance(i,exhaust.Exhaust)):
         if i.pin!=0:
@@ -329,7 +336,8 @@ class Logic():
             'heat_override':0,
             'short_duration':0,
             'gv_trip':0,
-            'actuation':0
+            'actuation':0,
+            'load_errors':0
         }
 
         self.moli={
@@ -449,6 +457,11 @@ class Logic():
             self.milo['troubles']['actuation']=1
         else:
             self.milo['troubles']['actuation']=0
+    #device load fail
+        if loading_errors():
+            self.milo['troubles']['load_errors']=1
+        else:
+            self.milo['troubles']['load_errors']=0
 
     def server_update(self,*args):
         if self.last_server_state==self.milo:
