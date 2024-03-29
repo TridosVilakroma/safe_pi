@@ -35,7 +35,8 @@ logs_tree = {
             "pushed_messages.json": "{}"
             },
         "devices": {
-            "device_list.json": "{}"
+            "device_list.json": "{}",
+            "backups":{}
         },
         "documents":{
             "system_reports":{},
