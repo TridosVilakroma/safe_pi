@@ -4368,6 +4368,12 @@ class DevicesScreen(Screen):
             pos_hint = {'x':.1, 'y':.55},
             markup=True)
 
+        info_loading_error=MinimumBoundingLabel(text=f"[size=18]Device failed to load all details correctly[/size]",
+                color=(0,0,0,1),
+                pos_hint = {'center_x':.5, 'y':.3},
+                markup=True)
+        self.widgets['info_loading_error']=info_loading_error
+
         info_admin_hint=MinimumBoundingLabel(text=f"[size=18]Enable Admin mode to edit device[/size]",
                 color=(0,0,0,1),
                 pos_hint = {'center_x':.5, 'y':.2},
@@ -4406,6 +4412,9 @@ class DevicesScreen(Screen):
         self.widgets['overlay_layout'].add_widget(info_run_time)
         self.widgets['overlay_layout'].add_widget(info_trigger)
         self.widgets['overlay_layout'].add_widget(info_back_button)
+        if hasattr(device,'load_error'):
+            if device.load_error:
+                self.widgets['overlay_layout'].add_widget(info_loading_error)
         if isinstance(device,GasValve) :
             self.widgets['overlay_layout'].add_widget(info_gv_reset)
         if isinstance(device,HeatSensor) :
@@ -5003,12 +5012,17 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             logger.error("main.edit_device_save(): can not save device without pin designation")
             toast('[b][size=20]Can not save without\npin designation','error')
             return
+        if current_device.trigger not in ('low','high'):
+            logger.error("main.edit_device_save(): can not save device without trigger state")
+            toast('[b][size=20]Can not save without\ntrigger state','error')
+            return
         data={
             "device_name":current_device.name,
             "gpio_pin":current_device.pin,
             "run_time":current_device.run_time,
             "color":current_device.color,
-            "trigger":current_device.trigger}
+            "trigger":current_device.trigger,
+            "load_error":False}
         if device.name!=current_device.name:
             os.rename(rf"logs/devices/{device.name}.json",rf"logs/devices/{current_device.name}.json")
         with open(rf"logs/devices/{current_device.name}.json","w") as write_file:
@@ -5033,6 +5047,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             device.pin=current_device.pin
             logic.set_pin_mode(device)
         device.trigger = current_device.trigger
+        device.load_error = False
         self.aggregate_devices()
         self.info_overlay(device,open=False)
 
@@ -5115,6 +5130,9 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                 device=RoundedScrollItemTemplate(i.name,color=i.color)
                 self.widgets['device_layout'].add_widget(device)
                 device.bind(on_release=partial(self.info_func,i))
+                if hasattr(i,'load_error'):
+                    if i.load_error:
+                        device.add_widget(NotificationBadge((-.1375,.7)))
         else:
             logger.info("main.py aggregate_devices(): no devices")
             self.widgets['device_layout'].clear_widgets()
@@ -12561,6 +12579,28 @@ def listen(app_object,*args):
             if 'actuation_trouble' in troubles_screen.widgets:
                 trouble_display.remove_widget(troubles_screen.widgets['actuation_trouble'])
                 del troubles_screen.widgets['actuation_trouble']
+
+    #device load errors
+        if trouble_log['load_errors']==1:
+            if 'load_errors' not in troubles_screen.widgets:
+                load_errors=trouble_template('load_errors_trouble_title',
+                'load_errors_trouble_body',
+                link_text='load_errors_trouble_link',ref_tag='load_errors_trouble')
+                load_errors.ref='load_errors'
+
+                def load_errors_func(*args):
+                    app_object.transition = SlideTransition(direction='up')
+                    app_object.current='devices'
+
+                load_errors.bind(on_release=load_errors_func)
+                load_errors.bind(on_ref_press=load_errors_func)
+                troubles_screen.widgets['load_errors']=load_errors
+                troubles_screen.widgets['load_errors'].bind(texture_size=lambda instance, value: setattr(instance, 'height', value[1]))
+                trouble_display.add_widget(load_errors)
+        elif trouble_log['actuation']==0:
+            if 'load_errors' in troubles_screen.widgets:
+                trouble_display.remove_widget(troubles_screen.widgets['load_errors'])
+                del troubles_screen.widgets['load_errors']
 
 def listen_to_UpdateService(*args):
     screen_manager=App.get_running_app().context_screen
