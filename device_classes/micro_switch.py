@@ -54,6 +54,21 @@ class MicroSwitch():
             logger.exception('Failed to read device data')
             self.load_error=True
             data={}
+        if not data:
+            data=self.read_backup()
+            if data:
+                data['load_error']=True
+                return data
+        return data
+
+    def read_backup(self):
+        try:
+            with open(rf"logs/devices/backups/{self.name}.json","r") as read_file:
+                data = json.load(read_file)
+        except (json.decoder.JSONDecodeError,FileNotFoundError,OSError):
+            logger.exception('Failed to read device data')
+            self.load_error=True
+            data={}
         return data
 
     def on(self):
