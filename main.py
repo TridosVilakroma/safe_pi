@@ -1,3 +1,6 @@
+if __name__!='__main__':
+    from sys import exit
+    exit()
 import os,json,time,shutil,math,random,subprocess
 import re,string,importlib,ast,glob,pathlib
 import traceback,errno
@@ -9,6 +12,7 @@ import segno
 import logging,logging_config
 logger=logging.getLogger('logger')
 
+import utils.multiprocess_funcs
 import utils.dir_tree_builder
 utils.dir_tree_builder.build_logs_tree()
 
@@ -64,6 +68,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.slider import Slider
 from kivy.core.window import Window
 from threading import Thread
+from multiprocessing import Process
 from kivy.uix.screenmanager import NoTransition
 from kivy.uix.screenmanager import SlideTransition
 from kivy.uix.screenmanager import FallOutTransition
@@ -7033,7 +7038,7 @@ class DocumentScreen(Screen):
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
         self.dock_close_anim=Animation(pos_hint={'center_x':-.175},d=.5,t='out_back')
         self.dock_open_anim=Animation(pos_hint={'center_x':.175},d=.5,t='in_out_back')
-        self._load_debug_thread=Thread()
+        self._load_debug_thread=Process()
         self._load_info_thread=Thread()
         self._load_error_thread=Thread()
 
@@ -7620,27 +7625,28 @@ class DocumentScreen(Screen):
             w['debug_box_scroll'].data=[]
             w['debug_box_scroll'].scroll_y=1
             if os.path.isdir(debug_path) and not self._load_debug_thread.is_alive():
-                @mainthread
-                def _load_data(*args):
-                    for file in os.listdir(debug_path):
-                        for index,entry in enumerate(general.reverse_readline(os.path.join(debug_path,file))):
-                            try:
-                                entry=json.loads(entry)
-                            except ValueError:
-                                entry={'time':'',
-                                        'text':'[i][size=26]Failed to load debug log',
-                                        'file':'',
-                                        'function':'',
-                                        'line':''}
-                            _time=f"[b]Time:[/b] {entry['time']}"
-                            _text=f"[i][size=26]{entry['text']}[/size][/i]"
-                            _file=f"[b]File:[/b] {entry['file']}"
-                            _func=f"[b]Function:[/b] {entry['function']}"
-                            _line=f"[b]Line:[/b] {entry['line']}"
-                            entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n    {_text}  \n\n    {general.pad_str(_file,40)}{_line} \n    {_func}  \n"
-                            color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
-                            w['debug_box_scroll'].data.append({'text':entry_text,'color':color})
-                self._load_debug_thread=Thread(target=_load_data,daemon=True)
+                # def _load_data(*args):
+                #     for file in os.listdir(debug_path):
+                #         for index,entry in enumerate(general.reverse_readline(os.path.join(debug_path,file))):
+                #             try:
+                #                 entry=json.loads(entry)
+                #             except ValueError:
+                #                 entry={'time':'',
+                #                         'text':'[i][size=26]Failed to load debug log',
+                #                         'file':'',
+                #                         'function':'',
+                #                         'line':''}
+                #             _time=f"[b]Time:[/b] {entry['time']}"
+                #             _text=f"[i][size=26]{entry['text']}[/size][/i]"
+                #             _file=f"[b]File:[/b] {entry['file']}"
+                #             _func=f"[b]Function:[/b] {entry['function']}"
+                #             _line=f"[b]Line:[/b] {entry['line']}"
+                #             entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n    {_text}  \n\n    {general.pad_str(_file,40)}{_line} \n    {_func}  \n"
+                #             color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
+                #             w['debug_box_scroll'].data.append({'text':entry_text,'color':color})
+                self._load_debug_thread=Process(
+                    target=utils.multiprocess_funcs._load_debug_data(debug_path,w['debug_box_scroll'].data),
+                    daemon=True)
                 self._load_debug_thread.start()
             w['debug_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
