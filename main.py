@@ -12489,7 +12489,7 @@ def listen(app_object,*args):
         troubles_screen=app_object.get_screen('trouble')
         trouble_display=troubles_screen.widgets['trouble_layout']
 
-        if 1 in trouble_log.values():#if any troubles detected
+        if 1 in {i[0]:i[1] for i in trouble_log.items() if i[0] != 'short_duration'}.values():#if any troubles detected; short duration no longer trouble
             main_screen.widgets['trouble_button'].source=trouble_icon
             main_screen.widgets['trouble_button'].color=(1,1,1,1)
             if 'trouble_details' in troubles_screen.widgets:
@@ -12531,32 +12531,15 @@ def listen(app_object,*args):
                 trouble_display.remove_widget(troubles_screen.widgets['heat_trouble'])
                 del troubles_screen.widgets['heat_trouble']
     #short duration trouble
+                #banner only trouble
         if trouble_log['short_duration']==1:
             if app_object.current!='alert':
-                if 'duration_trouble' not in troubles_screen.widgets:
+                if not hasattr(root,'short_duration_trouble_banner'):
                     root.short_duration_trouble_banner=notifications.banner('[i][size=20]Heat sensor override duration set to test mode')
-                    duration_trouble=trouble_template('duration_trouble_title',
-                    'duration_trouble_body',
-                    link_text='duration_trouble_link',ref_tag='duration_trouble')
-                    duration_trouble.ref='duration_trouble'
-
-                    def duration_overlay(*args):
-                        app_object.get_screen('preferences').duration_flag=1
-                        app_object.transition = SlideTransition(direction='up')
-                        app_object.current='preferences'
-
-                    duration_trouble.bind(on_release=duration_overlay)
-                    duration_trouble.bind(on_ref_press=duration_overlay)
-                    troubles_screen.widgets['duration_trouble']=duration_trouble
-                    troubles_screen.widgets['duration_trouble'].bind(texture_size=lambda instance, value: setattr(instance, 'height', value[1]))
-                    trouble_display.add_widget(duration_trouble)
         elif trouble_log['short_duration']==0:
-            if 'duration_trouble' in troubles_screen.widgets:
-                if hasattr(root,'short_duration_trouble_banner'):
-                    notifications.remove_banner(root.short_duration_trouble_banner)
-                    delattr(root,'short_duration_trouble_banner')
-                trouble_display.remove_widget(troubles_screen.widgets['duration_trouble'])
-                del troubles_screen.widgets['duration_trouble']
+            if hasattr(root,'short_duration_trouble_banner'):
+                notifications.remove_banner(root.short_duration_trouble_banner)
+                delattr(root,'short_duration_trouble_banner')
 
     #gas valve trip trouble
         if trouble_log['gv_trip']==1:
