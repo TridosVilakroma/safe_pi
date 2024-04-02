@@ -1827,9 +1827,12 @@ class PreLoader(CircularProgressBar):
         if 'ref' in kwargs:
             self.ref=kwargs.pop('ref')
         else:self.ref='preloader'
+        if 'color' in kwargs:
+            _color=kwargs.pop('color')
+        else:_color=(1,1,1,1)
 
         super().__init__(**kwargs)
-        self._progress_colour=(1,1,1,1)
+        self._progress_colour=_color
         self.background_colour=(1,1,1,0)
         self.rel_x=rel_pos[0]
         self.rel_y=rel_pos[1]
@@ -7613,20 +7616,41 @@ class DocumentScreen(Screen):
         debug_box=w['debug_box']
         darken=Animation(rgba=(1,1,1,1),d=.5)
         lighten=Animation(rgba=(1,1,1,.9),d=.5)
-        debug_box.clear_widgets()
         if debug_box.expanded:
             darken.start(debug_box.shape_color)
             debug_path='logs/log_files/debug'
             w['debug_box_scroll'].data=[]
             w['debug_box_scroll'].scroll_y=1
+
             if os.path.isdir(debug_path) and not self._load_debug_thread.is_alive():
+
+                @mainthread
+                def add_spinners():
+                    debug_box.add_widget(PreLoader(rel_size=.3,ref='1',speed=500,color=(0,0,0,1)))
+                    debug_box.add_widget(PreLoader(rel_size=.25,ref='2',speed=850,color=(0,0,0,1)))
+                    debug_box.add_widget(PreLoader(rel_size=.2,ref='3',speed=600,color=(0,0,0,1)))
+                    debug_box.add_widget(PreLoader(rel_size=.15,ref='4',speed=950,color=(0,0,0,1)))
+                    debug_box.add_widget(PreLoader(rel_size=.1,ref='5',speed=700,color=(0,0,0,1)))
+                    debug_box.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050,color=(0,0,0,1)))
+
+                @mainthread
+                def remove_spinners():
+                    for i in range(6):
+                        if str(i+1) in debug_box.widgets:
+                            debug_box.remove_widget(debug_box.widgets[str(i+1)])
+
                 @mainthread
                 def _set_data(_data,*args):
                     for i in _data:
                         w['debug_box_scroll'].data.append(i)
+                    remove_spinners()
+
                 def _load_data(*args):
+                    file_list=os.listdir(debug_path)
+                    if len(file_list)>1:
+                        add_spinners()
                     _data=[]
-                    for file in os.listdir(debug_path):
+                    for file in file_list:
                         for index,entry in enumerate(general.reverse_readline(os.path.join(debug_path,file))):
                             try:
                                 entry=json.loads(entry)
@@ -7645,8 +7669,10 @@ class DocumentScreen(Screen):
                             color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
                             _data.append({'text':entry_text,'color':color})
                     _set_data(_data)
+
                 self._load_debug_thread=Thread(target=_load_data,daemon=True)
                 self._load_debug_thread.start()
+
             w['debug_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
                 w['debug_box_title'],
@@ -7669,20 +7695,40 @@ class DocumentScreen(Screen):
         info_box=w['info_box']
         darken=Animation(rgba=(1,1,1,1),d=.5)
         lighten=Animation(rgba=(1,1,1,.9),d=.5)
-        info_box.clear_widgets()
         if info_box.expanded:
             darken.start(info_box.shape_color)
             info_path='logs/log_files/info'
             w['info_box_scroll'].data=[]
             w['info_box_scroll'].scroll_y=1
+
             if os.path.isdir(info_path) and not self._load_info_thread.is_alive():
+
+                @mainthread
+                def add_spinners():
+                    info_box.add_widget(PreLoader(rel_size=.3,ref='1',speed=500,color=(0,0,0,1)))
+                    info_box.add_widget(PreLoader(rel_size=.25,ref='2',speed=850,color=(0,0,0,1)))
+                    info_box.add_widget(PreLoader(rel_size=.2,ref='3',speed=600,color=(0,0,0,1)))
+                    info_box.add_widget(PreLoader(rel_size=.15,ref='4',speed=950,color=(0,0,0,1)))
+                    info_box.add_widget(PreLoader(rel_size=.1,ref='5',speed=700,color=(0,0,0,1)))
+                    info_box.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050,color=(0,0,0,1)))
+
+                @mainthread
+                def remove_spinners():
+                    for i in range(6):
+                        if str(i+1) in info_box.widgets:
+                            info_box.remove_widget(info_box.widgets[str(i+1)])
+
                 @mainthread
                 def _set_data(_data,*args):
                     for i in _data:
                         w['info_box_scroll'].data.append(i)
+                    remove_spinners()
                 def _load_data(*args):
+                    file_list=os.listdir(info_path)
+                    if len(file_list)>1:
+                        add_spinners()
                     _data=[]
-                    for file in os.listdir(info_path):
+                    for file in file_list:
                         for index,entry in enumerate(general.reverse_readline(os.path.join(info_path,file))):
                                 try:
                                     entry=json.loads(entry)
@@ -7699,8 +7745,10 @@ class DocumentScreen(Screen):
                                 color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
                                 _data.append({'text':entry_text,'color':color})
                     _set_data(_data)
+
                 self._load_info_thread=Thread(target=_load_data,daemon=True)
                 self._load_info_thread.start()
+
             w['info_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
                 w['info_box_title'],
@@ -7723,20 +7771,40 @@ class DocumentScreen(Screen):
         error_box=w['error_box']
         darken=Animation(rgba=(1,1,1,1),d=.5)
         lighten=Animation(rgba=(1,1,1,.9),d=.5)
-        error_box.clear_widgets()
         if error_box.expanded:
             darken.start(error_box.shape_color)
             error_path='logs/log_files/errors'
             w['error_box_scroll'].data=[]
             w['error_box_scroll'].scroll_y=1
+
             if os.path.isdir(error_path) and not self._load_error_thread.is_alive():
+
+                @mainthread
+                def add_spinners():
+                    error_box.add_widget(PreLoader(rel_size=.3,ref='1',speed=500,color=(0,0,0,1)))
+                    error_box.add_widget(PreLoader(rel_size=.25,ref='2',speed=850,color=(0,0,0,1)))
+                    error_box.add_widget(PreLoader(rel_size=.2,ref='3',speed=600,color=(0,0,0,1)))
+                    error_box.add_widget(PreLoader(rel_size=.15,ref='4',speed=950,color=(0,0,0,1)))
+                    error_box.add_widget(PreLoader(rel_size=.1,ref='5',speed=700,color=(0,0,0,1)))
+                    error_box.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050,color=(0,0,0,1)))
+
+                @mainthread
+                def remove_spinners():
+                    for i in range(6):
+                        if str(i+1) in error_box.widgets:
+                            error_box.remove_widget(error_box.widgets[str(i+1)])
+
                 @mainthread
                 def _set_data(_data,*args):
                     for i in _data:
                         w['error_box_scroll'].data.append(i)
+                    remove_spinners()
                 def _load_data(*args):
+                    file_list=os.listdir(error_path)
+                    if len(file_list)>1:
+                        add_spinners()
                     _data=[]
-                    for file in os.listdir(error_path):
+                    for file in file_list:
                         for index,entry in enumerate(general.reverse_readline(os.path.join(error_path,file))):
                                 try:
                                     entry=json.loads(entry)
@@ -7764,8 +7832,10 @@ class DocumentScreen(Screen):
                                     t=_markup+str('  '.join(_caught_exception.splitlines(True)[-9:]))+'\n'
                                     _data.append({'text':t,'color':color})
                     _set_data(_data)
+
                 self._load_error_thread=Thread(target=_load_data,daemon=True)
                 self._load_error_thread.start()
+
             w['error_box_title'].pos_hint={'center_x':.5, 'center_y':.925}
             all_widgets=[
                 w['error_box_title'],
