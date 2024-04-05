@@ -7645,6 +7645,21 @@ class DocumentScreen(Screen):
                         w['debug_box_scroll'].data.append(i)
                     remove_spinners()
 
+                def data_chunker(_data,*args):
+                    chnk_size=1000
+                    amt_chunks=-(len(_data)//-chnk_size)#cieling division through negation
+                    if amt_chunks>1:
+                        chunk=_data[:chnk_size]
+                        remaining_data=_data[chnk_size:]
+                    else:
+                        chunk=_data
+                        remaining_data=None
+                    def load_chunk(_chunk,*args):
+                        _set_data(_chunk)
+                        if remaining_data:
+                            Clock.schedule_once(partial(data_chunker,remaining_data),5)
+                    load_chunk(chunk)
+
                 def _load_data(*args):
                     file_list=os.listdir(debug_path)
                     if len(file_list)>1:
@@ -7668,7 +7683,9 @@ class DocumentScreen(Screen):
                             entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n    {_text}  \n\n    {general.pad_str(_file,40)}{_line} \n    {_func}  \n"
                             color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
                             _data.append({'text':entry_text,'color':color})
-                    _set_data(_data)
+                    if len(_data)<=8000:
+                        return _set_data(_data)
+                    data_chunker(_data)
 
                 self._load_debug_thread=Thread(target=_load_data,daemon=True)
                 self._load_debug_thread.start()
