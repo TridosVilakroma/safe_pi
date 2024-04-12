@@ -7040,6 +7040,8 @@ class DocumentScreen(Screen):
         self._load_debug_thread=Thread()
         self._load_info_thread=Thread()
         self._load_error_thread=Thread()
+        self.data_processed_event=threading.Event()
+        self.stop_loading=threading.Event()
 
         screen_name=Label(
             text=current_language['document_screen_name'],
@@ -7640,8 +7642,6 @@ class DocumentScreen(Screen):
                         if str(i+1) in debug_box.widgets:
                             debug_box.remove_widget(debug_box.widgets[str(i+1)])
 
-                data_processed_event=threading.Event()
-
                 def adjust_scroll(_scroll_y,data_len,*args):
                     _scroll=w['debug_box_scroll']
                     if _scroll._touch:
@@ -7673,7 +7673,7 @@ class DocumentScreen(Screen):
                     for i in _data:
                         _scroll.data.append(i)
                     if last_chunk:
-                        data_processed_event.set()
+                        self.data_processed_event.set()
                     remove_spinners()
                     Clock.schedule_once(partial(adjust_scroll,_scroll_y,data_len), -1)
 
@@ -7690,20 +7690,23 @@ class DocumentScreen(Screen):
                     def load_chunk(_chunk,*args):
                         if remaining_data:
                             _set_data(_chunk)
-                            time.sleep(_process_interval)
+                            if self.stop_loading.wait(_process_interval):
+                                self.data_processed_event.set()
+                                return
                             data_chunker(remaining_data)
                         else:
                             _set_data(_chunk,last_chunk=True)
-                            time.sleep(_process_interval)
+                            if self.stop_loading.wait(_process_interval):
+                                self.data_processed_event.set()
+                                return
                     load_chunk(chunk)
 
                 def _load_data(*args):
                     file_list=os.listdir(debug_path)
-                    if len(file_list)>1:
-                        add_spinners()
+                    add_spinners()
                     _data=[]
                     for file in file_list:
-                        data_processed_event.clear()
+                        self.data_processed_event.clear()
                         for index,entry in enumerate(general.reverse_readline(os.path.join(debug_path,file))):
                             try:
                                 entry=json.loads(entry)
@@ -7722,7 +7725,12 @@ class DocumentScreen(Screen):
                             color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
                             _data.append({'text':entry_text,'color':color})
                         data_chunker(_data)
-                        data_processed_event.wait()
+                        self.data_processed_event.wait()
+                        if self.stop_loading:
+                            self.stop_loading.clear()
+                            print('exit early')
+                            return
+                        else: print('not yet')
 
                 self._load_debug_thread=Thread(target=_load_data,daemon=True)
                 self._load_debug_thread.start()
@@ -7736,6 +7744,8 @@ class DocumentScreen(Screen):
             for i in all_widgets:
                 debug_box.add_widget(i)
         elif not debug_box.expanded:
+            self.stop_loading.set()
+            self.data_processed_event.set()
             lighten.start(debug_box.shape_color)
             w['debug_box_title'].pos_hint={'center_x':.5, 'center_y':.5}
             w['debug_box_scroll'].effect_y.velocity=0
