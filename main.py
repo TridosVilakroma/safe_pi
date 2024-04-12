@@ -63,6 +63,7 @@ from kivy.uix.pagelayout import PageLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.slider import Slider
 from kivy.core.window import Window
+import threading
 from threading import Thread
 from kivy.uix.screenmanager import NoTransition
 from kivy.uix.screenmanager import SlideTransition
@@ -2613,8 +2614,8 @@ class ResizeLabel(Label):
 class FileRecycleView(RecycleView):
     def __init__(self, **kwargs):
         super(FileRecycleView,self).__init__(**kwargs)
-        layout=self.FileRecycleViewLayout()
-        self.add_widget(layout)
+        self.layout=self.FileRecycleViewLayout()
+        self.add_widget(self.layout)
         self.viewclass=self.FileRecycleViewLabel
 
 
@@ -7639,15 +7640,47 @@ class DocumentScreen(Screen):
                         if str(i+1) in debug_box.widgets:
                             debug_box.remove_widget(debug_box.widgets[str(i+1)])
 
-                @mainthread
-                def _set_data(_data,*args):
-                    for i in _data:
-                        w['debug_box_scroll'].data.append(i)
-                    remove_spinners()
+                data_processed_event=threading.Event()
 
-                def data_chunker(_data,*args):
-                    chnk_size=1000
-                    amt_chunks=-(len(_data)//-chnk_size)#cieling division through negation
+                def adjust_scroll(_scroll_y,data_len,*args):
+                    _scroll=w['debug_box_scroll']
+                    if _scroll._touch:
+                        #need to drop touch if manually scrolling
+                        _scroll._touch=None
+                        _scroll.do_scroll_y=False 
+                    if 0 in (_scroll.scroll_y,data_len):
+                        #at top of scroll, or no items
+                        return
+
+                    #stop current movement, because it doesnt
+                    #know how to calulate velocity properly
+                    #when adjusting scroll_y and moving
+                    _scroll.effect_y.value=0
+                    _scroll.effect_y.velocity=0
+
+                    _val=(1.0-_scroll_y)*(data_len*250.0)
+                    new_scroll_y=1.0-(_val/(len(_scroll.data)*250.0))
+
+                    _scroll.scroll_y=new_scroll_y
+                    #dont forget to reallow manual scrolling
+                    _scroll.do_scroll_y=True
+
+                @mainthread
+                def _set_data(_data,last_chunk=False,*args):
+                    _scroll=w['debug_box_scroll']
+                    _scroll_y=_scroll.scroll_y
+                    data_len=len(_scroll.data)
+                    for i in _data:
+                        _scroll.data.append(i)
+                    if last_chunk:
+                        data_processed_event.set()
+                    remove_spinners()
+                    Clock.schedule_once(partial(adjust_scroll,_scroll_y,data_len), -1)
+
+                def data_chunker(_data:list,*args):
+                    _process_interval=30
+                    chnk_size=250
+                    amt_chunks=-(len(_data)//-chnk_size)#ceiling division via negation
                     if amt_chunks>1:
                         chunk=_data[:chnk_size]
                         remaining_data=_data[chnk_size:]
@@ -7655,9 +7688,13 @@ class DocumentScreen(Screen):
                         chunk=_data
                         remaining_data=None
                     def load_chunk(_chunk,*args):
-                        _set_data(_chunk)
                         if remaining_data:
-                            Clock.schedule_once(partial(data_chunker,remaining_data),5)
+                            _set_data(_chunk)
+                            time.sleep(_process_interval)
+                            data_chunker(remaining_data)
+                        else:
+                            _set_data(_chunk,last_chunk=True)
+                            time.sleep(_process_interval)
                     load_chunk(chunk)
 
                 def _load_data(*args):
@@ -7666,6 +7703,7 @@ class DocumentScreen(Screen):
                         add_spinners()
                     _data=[]
                     for file in file_list:
+                        data_processed_event.clear()
                         for index,entry in enumerate(general.reverse_readline(os.path.join(debug_path,file))):
                             try:
                                 entry=json.loads(entry)
@@ -7683,9 +7721,8 @@ class DocumentScreen(Screen):
                             entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n    {_text}  \n\n    {general.pad_str(_file,40)}{_line} \n    {_func}  \n"
                             color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
                             _data.append({'text':entry_text,'color':color})
-                    if len(_data)<=8000:
-                        return _set_data(_data)
-                    data_chunker(_data)
+                        data_chunker(_data)
+                        data_processed_event.wait()
 
                 self._load_debug_thread=Thread(target=_load_data,daemon=True)
                 self._load_debug_thread.start()
