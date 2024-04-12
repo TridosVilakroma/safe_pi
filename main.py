@@ -7728,9 +7728,7 @@ class DocumentScreen(Screen):
                         self.data_processed_event.wait()
                         if self.stop_loading:
                             self.stop_loading.clear()
-                            print('exit early')
                             return
-                        else: print('not yet')
 
                 self._load_debug_thread=Thread(target=_load_data,daemon=True)
                 self._load_debug_thread.start()
@@ -7782,17 +7780,71 @@ class DocumentScreen(Screen):
                         if str(i+1) in info_box.widgets:
                             info_box.remove_widget(info_box.widgets[str(i+1)])
 
+                def adjust_scroll(_scroll_y,data_len,*args):
+                    _scroll=w['info_box_scroll']
+                    if _scroll._touch:
+                        #need to drop touch if manually scrolling
+                        _scroll._touch=None
+                        _scroll.do_scroll_y=False 
+                    if 0 in (_scroll.scroll_y,data_len):
+                        #at top of scroll, or no items
+                        return
+
+                    #stop current movement, because it doesnt
+                    #know how to calulate velocity properly
+                    #when adjusting scroll_y and moving
+                    _scroll.effect_y.value=0
+                    _scroll.effect_y.velocity=0
+
+                    _val=(1.0-_scroll_y)*(data_len*250.0)
+                    new_scroll_y=1.0-(_val/(len(_scroll.data)*250.0))
+
+                    _scroll.scroll_y=new_scroll_y
+                    #dont forget to reallow manual scrolling
+                    _scroll.do_scroll_y=True
+
                 @mainthread
-                def _set_data(_data,*args):
+                def _set_data(_data,last_chunk=False,*args):
+                    _scroll=w['info_box_scroll']
+                    _scroll_y=_scroll.scroll_y
+                    data_len=len(_scroll.data)
                     for i in _data:
-                        w['info_box_scroll'].data.append(i)
+                        _scroll.data.append(i)
+                    if last_chunk:
+                        self.data_processed_event.set()
                     remove_spinners()
+                    Clock.schedule_once(partial(adjust_scroll,_scroll_y,data_len), -1)
+
+                def data_chunker(_data:list,*args):
+                    _process_interval=30
+                    chnk_size=250
+                    amt_chunks=-(len(_data)//-chnk_size)#ceiling division via negation
+                    if amt_chunks>1:
+                        chunk=_data[:chnk_size]
+                        remaining_data=_data[chnk_size:]
+                    else:
+                        chunk=_data
+                        remaining_data=None
+                    def load_chunk(_chunk,*args):
+                        if remaining_data:
+                            _set_data(_chunk)
+                            if self.stop_loading.wait(_process_interval):
+                                self.data_processed_event.set()
+                                return
+                            data_chunker(remaining_data)
+                        else:
+                            _set_data(_chunk,last_chunk=True)
+                            if self.stop_loading.wait(_process_interval):
+                                self.data_processed_event.set()
+                                return
+                    load_chunk(chunk)
+
                 def _load_data(*args):
                     file_list=os.listdir(info_path)
-                    if len(file_list)>1:
-                        add_spinners()
+                    add_spinners()
                     _data=[]
                     for file in file_list:
+                        self.data_processed_event.clear()
                         for index,entry in enumerate(general.reverse_readline(os.path.join(info_path,file))):
                                 try:
                                     entry=json.loads(entry)
@@ -7808,7 +7860,11 @@ class DocumentScreen(Screen):
                                 entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n\n    {_text}  \n\n\n    {_file} \n"
                                 color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
                                 _data.append({'text':entry_text,'color':color})
-                    _set_data(_data)
+                        data_chunker(_data)
+                        self.data_processed_event.wait()
+                        if self.stop_loading:
+                            self.stop_loading.clear()
+                            return
 
                 self._load_info_thread=Thread(target=_load_data,daemon=True)
                 self._load_info_thread.start()
@@ -7822,6 +7878,8 @@ class DocumentScreen(Screen):
             for i in all_widgets:
                 info_box.add_widget(i)
         elif not info_box.expanded:
+            self.stop_loading.set()
+            self.data_processed_event.set()
             lighten.start(info_box.shape_color)
             w['info_box_title'].pos_hint={'center_x':.5, 'center_y':.5}
             w['info_box_scroll'].effect_y.velocity=0
@@ -7858,17 +7916,71 @@ class DocumentScreen(Screen):
                         if str(i+1) in error_box.widgets:
                             error_box.remove_widget(error_box.widgets[str(i+1)])
 
+                def adjust_scroll(_scroll_y,data_len,*args):
+                    _scroll=w['error_box_scroll']
+                    if _scroll._touch:
+                        #need to drop touch if manually scrolling
+                        _scroll._touch=None
+                        _scroll.do_scroll_y=False 
+                    if 0 in (_scroll.scroll_y,data_len):
+                        #at top of scroll, or no items
+                        return
+
+                    #stop current movement, because it doesnt
+                    #know how to calulate velocity properly
+                    #when adjusting scroll_y and moving
+                    _scroll.effect_y.value=0
+                    _scroll.effect_y.velocity=0
+
+                    _val=(1.0-_scroll_y)*(data_len*250.0)
+                    new_scroll_y=1.0-(_val/(len(_scroll.data)*250.0))
+
+                    _scroll.scroll_y=new_scroll_y
+                    #dont forget to reallow manual scrolling
+                    _scroll.do_scroll_y=True
+
                 @mainthread
-                def _set_data(_data,*args):
+                def _set_data(_data,last_chunk=False,*args):
+                    _scroll=w['error_box_scroll']
+                    _scroll_y=_scroll.scroll_y
+                    data_len=len(_scroll.data)
                     for i in _data:
-                        w['error_box_scroll'].data.append(i)
+                        _scroll.data.append(i)
+                    if last_chunk:
+                        self.data_processed_event.set()
                     remove_spinners()
+                    Clock.schedule_once(partial(adjust_scroll,_scroll_y,data_len), -1)
+
+                def data_chunker(_data:list,*args):
+                    _process_interval=30
+                    chnk_size=250
+                    amt_chunks=-(len(_data)//-chnk_size)#ceiling division via negation
+                    if amt_chunks>1:
+                        chunk=_data[:chnk_size]
+                        remaining_data=_data[chnk_size:]
+                    else:
+                        chunk=_data
+                        remaining_data=None
+                    def load_chunk(_chunk,*args):
+                        if remaining_data:
+                            _set_data(_chunk)
+                            if self.stop_loading.wait(_process_interval):
+                                self.data_processed_event.set()
+                                return
+                            data_chunker(remaining_data)
+                        else:
+                            _set_data(_chunk,last_chunk=True)
+                            if self.stop_loading.wait(_process_interval):
+                                self.data_processed_event.set()
+                                return
+                    load_chunk(chunk)
+
                 def _load_data(*args):
                     file_list=os.listdir(error_path)
-                    if len(file_list)>1:
-                        add_spinners()
+                    add_spinners()
                     _data=[]
                     for file in file_list:
+                        self.data_processed_event.clear()
                         for index,entry in enumerate(general.reverse_readline(os.path.join(error_path,file))):
                                 try:
                                     entry=json.loads(entry)
@@ -7895,7 +8007,11 @@ class DocumentScreen(Screen):
                                     _caught_exception='    '.join(entry['exc_info'].splitlines(True))
                                     t=_markup+str('  '.join(_caught_exception.splitlines(True)[-9:]))+'\n'
                                     _data.append({'text':t,'color':color})
-                    _set_data(_data)
+                        data_chunker(_data)
+                        self.data_processed_event.wait()
+                        if self.stop_loading:
+                            self.stop_loading.clear()
+                            return
 
                 self._load_error_thread=Thread(target=_load_data,daemon=True)
                 self._load_error_thread.start()
@@ -7909,6 +8025,8 @@ class DocumentScreen(Screen):
             for i in all_widgets:
                 error_box.add_widget(i)
         elif not error_box.expanded:
+            self.stop_loading.set()
+            self.data_processed_event.set()
             lighten.start(error_box.shape_color)
             w['error_box_title'].pos_hint={'center_x':.5, 'center_y':.5}
             w['error_box_scroll'].effect_y.velocity=0
