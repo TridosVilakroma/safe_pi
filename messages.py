@@ -245,7 +245,7 @@ Press the restart button to continue.''',
 
     def active_interactive_messages(self,*args):
         i_index=self.interactive_index
-        return [k for k,v in i_index if i_index[k][1]]
+        return [k for k, v in i_index.items() if v[1]]
 
     def activate(self,message_name,callback_funcs,*args):
         self.interactive_index[message_name][1]=1
