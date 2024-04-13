@@ -12862,13 +12862,13 @@ def listen_to_UpdateService(*args):
     cg=screen_manager.get_screen('main')
     msg_icon=cg.widgets['msg_icon']
     if UpdateService.update_prompt:
-        if 'update' not in messages.active_messages:
+        if 'Update' not in [i.name for i in messages.active_messages]:
             messages.activate('update',(UpdateService.update_system,
                                         partial(messages.deactivate,'update'),
                                         cg.widgets['messenger_button'].schedule_refresh))
             messages.refresh_active_messages()
     if UpdateService.reboot_prompt:
-        if 'reboot' not in messages.active_messages:
+        if 'Restart' not in [i.name for i in messages.active_messages]:
             messages.activate('reboot',(UpdateService.reboot,
                                         partial(messages.deactivate,'reboot'),
                                         cg.widgets['messenger_button'].schedule_refresh))
