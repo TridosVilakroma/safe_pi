@@ -44,7 +44,7 @@ def check_usb_version(*args):
         version_path=glob.glob('/media/pi/*/update/Pi_ro_safe/version/version.py')[0]
         usb_version='0.0.0'
         with open(version_path,'r') as f:
-            usb_version=f.readline().split('=').replace("'","")
+            usb_version=f.readline().split('=')[1].replace("'","")
         if VersionInstance(usb_version) > VersionInstance(version):
             usb_update_found=1
             return True
