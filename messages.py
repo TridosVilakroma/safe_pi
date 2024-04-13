@@ -159,7 +159,7 @@ Press the update button to continue.''',
                             'Update Ready',
                             10,
                             0),0],
-            'usb_update':[InteractiveMessage('Update',
+            'usb_update':[InteractiveMessage('Update Media',
                             'Update Data Found',
 '''Update data found on inserted media.
 Do not remove media or power off while
@@ -245,7 +245,7 @@ Press the restart button to continue.''',
 
     def active_interactive_messages(self,*args):
         i_index=self.interactive_index
-        return [i_index[i][0] for i in i_index if i_index[i][1]]
+        return [k for k,v in i_index if i_index[k][1]]
 
     def activate(self,message_name,callback_funcs,*args):
         self.interactive_index[message_name][1]=1
