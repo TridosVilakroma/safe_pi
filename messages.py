@@ -248,6 +248,7 @@ Press the restart button to continue.''',
         return [i[0] for i in i_index.values() if i[1]]
 
     def activate(self,message_name,callback_funcs,*args):
+        self.interactive_index[message_name][0].seen=False
         self.interactive_index[message_name][1]=1
         self.interactive_index[message_name][0].callbacks=callback_funcs
 
