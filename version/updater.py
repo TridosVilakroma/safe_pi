@@ -1,4 +1,4 @@
-import hashlib,time,importlib,re,os
+import hashlib,time,importlib,re,os,glob
 from shutil import rmtree
 from os import getcwd,walk
 from os.path import join, normpath, relpath
@@ -14,6 +14,61 @@ download_complete=0
 checksum=0
 update_prompt=0
 reboot_prompt=0
+usb_update_found=0
+usb_update_invalid=0
+
+
+#########usb update########
+
+def usb_probe(*args):
+    '''probe for usb with update data
+
+    once data is found and the version is checked,
+    (or the update is invalid), this func will
+    short-cycle untill the usb is removed'''
+
+    global usb_update_found,usb_update_invalid
+    if glob.glob('/media/pi/*/update/Pi_ro_safe/version/version.py'):
+        if usb_update_found or usb_update_invalid:
+            return
+        check_usb_version()
+    else:
+        usb_update_found=0
+        usb_update_invalid=0
+
+def check_usb_version(*args):
+    global usb_update_found,usb_update_invalid
+    try:
+        from packaging.version import Version as VersionInstance
+        from version.version import version
+        version_path=glob.glob('/media/pi/*/update/Pi_ro_safe/version/version.py')[0]
+        usb_version='0.0.0'
+        with open(version_path,'r') as f:
+            usb_version=f.readline()
+        if VersionInstance(usb_version) > VersionInstance(version):
+            usb_update_found=1
+            return True
+        usb_update_found=0
+        usb_update_invalid=1
+        return False
+    except:
+        usb_update_found=0
+        usb_update_invalid=1
+        return False
+
+def usb_update(*args):
+    global reboot_prompt,usb_update_found
+    usb_update_found=0
+    try:
+        update_path=glob.glob('/media/pi/*/update/Pi_ro_safe')[0]
+        completed_update=run(f"git pull {update_path} update --allow-unrelated-histories",shell=True)
+        if completed_update.returncode:
+            #non-zero return code indicates update error
+            reboot_prompt=0
+        else:
+            reboot_prompt=1
+    except:
+        pass
 
 #########check for remote version########
 
