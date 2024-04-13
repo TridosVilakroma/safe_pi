@@ -12857,6 +12857,7 @@ def listen(app_object,*args):
                 del troubles_screen.widgets['load_errors']
 
 def listen_to_UpdateService(*args):
+    toast=App.get_running_app().notifications.toast
     screen_manager=App.get_running_app().context_screen
     cg=screen_manager.get_screen('main')
     msg_icon=cg.widgets['msg_icon']
@@ -12872,6 +12873,17 @@ def listen_to_UpdateService(*args):
                                         partial(messages.deactivate,'reboot'),
                                         cg.widgets['messenger_button'].schedule_refresh))
             messages.refresh_active_messages()
+            toast('[b][size=20]Update Successful','info')
+    if UpdateService.usb_update_found:
+        if 'usb_update' not in messages.active_messages:
+            messages.activate('usb_update',(UpdateService.usb_update,
+                                        partial(messages.deactivate,'usb_update'),
+                                        cg.widgets['messenger_button'].schedule_refresh))
+            messages.refresh_active_messages()
+            toast('[b][size=20]Update Media Found','info')
+    else:
+        if 'usb_update' in messages.active_messages:
+            messages.deactivate('usb_update')
 
 
 class Hood_Control(App):
@@ -12908,6 +12920,7 @@ class Hood_Control(App):
         Clock.schedule_interval(messages.refresh_active_messages,10)
         # Clock.schedule_once(self.context_screen.get_screen('account').auth_server)
         # Clock.schedule_interval(UpdateService.update,10)
+        # Clock.schedule_interval(UpdateService.usb_probe,10)
         Window.bind(on_request_close=self.exit_check)
         Window.bind(children=self.keep_notifications_on_top)
         self.notifications=Notifications(pos_hint={'x':.75,'y':.135},size_hint=(.25,.8))
