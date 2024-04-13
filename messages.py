@@ -159,6 +159,16 @@ Press the update button to continue.''',
                             'Update Ready',
                             10,
                             0),0],
+            'usb_update':[InteractiveMessage('Update',
+                            'Update Data Found',
+'''Update data found on inserted media.
+Do not remove media or power off while
+update is in progress.
+
+Press the update button to continue.''',
+                            'Update Ready',
+                            10,
+                            0),0],
             'reboot':[InteractiveMessage('Restart',
                             'Restart to Complete Update',
 '''System restart required to complete
