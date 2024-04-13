@@ -12862,20 +12862,20 @@ def listen_to_UpdateService(*args):
     cg=screen_manager.get_screen('main')
     msg_icon=cg.widgets['msg_icon']
     if UpdateService.update_prompt:
-        if 'update' not in messages.active_interactive_messages():
+        if 'update' not in messages.active_messages:
             messages.activate('update',(UpdateService.update_system,
                                         partial(messages.deactivate,'update'),
                                         cg.widgets['messenger_button'].schedule_refresh))
             messages.refresh_active_messages()
     if UpdateService.reboot_prompt:
-        if 'reboot' not in messages.active_interactive_messages():
+        if 'reboot' not in messages.active_messages:
             messages.activate('reboot',(UpdateService.reboot,
                                         partial(messages.deactivate,'reboot'),
                                         cg.widgets['messenger_button'].schedule_refresh))
             messages.refresh_active_messages()
             toast('[b][size=20]Update Successful','info')
     if UpdateService.usb_update_found:
-        if 'usb_update' not in messages.active_interactive_messages():
+        if 'usb_update' not in messages.active_messages:
             messages.activate('usb_update',(UpdateService.usb_update,
                                         partial(messages.deactivate,'usb_update'),
                                         cg.widgets['messenger_button'].schedule_refresh))
