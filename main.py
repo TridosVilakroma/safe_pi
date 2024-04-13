@@ -12884,6 +12884,7 @@ def listen_to_UpdateService(*args):
     else:
         if 'Update Media' in [i.name for i in messages.active_messages]:
             messages.deactivate('usb_update')
+            messages.refresh_active_messages()
 
 
 class Hood_Control(App):
