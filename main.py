@@ -12875,14 +12875,14 @@ def listen_to_UpdateService(*args):
             messages.refresh_active_messages()
             toast('[b][size=20]Update Successful','info')
     if UpdateService.usb_update_found:
-        if 'usb_update' not in messages.active_messages:
+        if 'Update Media' not in [i.name for i in messages.active_messages]:
             messages.activate('usb_update',(UpdateService.usb_update,
                                         partial(messages.deactivate,'usb_update'),
                                         cg.widgets['messenger_button'].schedule_refresh))
             messages.refresh_active_messages()
             toast('[b][size=20]Update Media Found','info')
     else:
-        if 'usb_update' in messages.active_messages:
+        if 'Update Media' in [i.name for i in messages.active_messages]:
             messages.deactivate('usb_update')
 
 
