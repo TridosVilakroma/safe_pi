@@ -113,6 +113,7 @@ background_image=r'media/patrick-tomasso-GXXYkSwndP4-unsplash.jpg'
 white_gradient=r'media/white_filter.png'
 msg_icon_image=r'media/msg_icon.png'
 language_image=r'media/higer_res_thick.png'
+schedule_icon_image=r'media/schedule_icon.png'
 trouble_icon=r'media/trouble icon_high_res.png'
 trouble_icon_dull=r'media/trouble icon_dull_high_res.png'
 logo=r'media/fs.png'
@@ -890,14 +891,14 @@ class ClockText(ButtonBehavior,LabelColor):
     def _return(self,*args):
         if self.opacity==0:
             self.fade_in()
-            self.parent.widgets['widget_carousel'].fade_out()
+            App.get_running_app().context_screen.get_screen('main').widgets['widget_carousel'].fade_out()
         if self.time_size==35:
             self.animated=False
             self.unrotate()
             self.unslide()
             self.text_unshrink()
             self.unmorph()
-            self.parent.widgets['widget_carousel'].fade_out()
+            App.get_running_app().context_screen.get_screen('main').widgets['widget_carousel'].fade_out()
 
     def _bounce(self,*args):
         wc=App.get_running_app().context_screen.get_screen('main').widgets['widget_carousel']
@@ -974,7 +975,7 @@ class ClockText(ButtonBehavior,LabelColor):
 
     def add_parent(self):
         if not self.parent:
-            App.get_running_app().context_screen.get_screen('main').add_widget(self)
+            App.get_running_app().context_screen.get_screen('main').widgets['container'].add_widget(self)
 
     def _update(self,*args):
         self.rotation.origin=self.center
@@ -2742,6 +2743,7 @@ class ControlGrid(Screen):
         self.ud={}
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
         self._keyboard=Window.request_keyboard(self._keyboard_closed, self, 'text')
+        self.current_section='main'
 
         self.value_up=Animation(value=1000,d=18,t='in_out_quad')
         self.value_down=Animation(value=0,d=1,t='in_out_circ')
@@ -2878,12 +2880,14 @@ class ControlGrid(Screen):
                     keep_ratio=False,
                     size_hint =(.98, .001),
                     pos_hint = {'x':.01, 'y':.13})
+        self.widgets['seperator_line']=seperator_line
 
         menu_icon=Image(source=settings_icon,
                     allow_stretch=True,
                     keep_ratio=False,
                     size_hint =(.135, .038),
                     pos_hint = {'x':.043, 'y':.045})
+        self.widgets['menu_icon']=menu_icon
         menu_icon.center=settings_button.center
 
         trouble_button=IconButton(source=trouble_icon_dull, allow_stretch=True, keep_ratio=True)
@@ -2893,12 +2897,12 @@ class ControlGrid(Screen):
         trouble_button.bind(on_press=self.open_trouble)
         trouble_button.color=(1,1,1,.15)
 
-        language_button=IconButton(source=language_image, allow_stretch=True, keep_ratio=True)
-        language_button.size_hint =(.10, .10)
-        language_button.pos_hint = {'x':.61, 'y':.02}
-        self.widgets['language_button']=language_button
-        language_button.bind(on_press=self.language_func)
-        language_button.color=(1,1,1,.65)
+        schedule_button=IconButton(source=schedule_icon_image, allow_stretch=True, keep_ratio=True)
+        schedule_button.size_hint =(.10, .10)
+        schedule_button.pos_hint = {'x':.61, 'y':.02}
+        self.widgets['schedule_button']=schedule_button
+        schedule_button.bind(on_press=self.schedule_icon_func)
+        schedule_button.color=(1,1,1,.65)
 
         msg_icon=IconButton(source=msg_icon_image, allow_stretch=True, keep_ratio=True)
         msg_icon.size_hint =(.10, .10)
@@ -2916,6 +2920,7 @@ class ControlGrid(Screen):
                 keep_ratio=True,
                 pos_hint = {'x':.89, 'y':.02},
                 color=(.7,.7,.7))
+        self.widgets['fs_logo']=fs_logo
         fs_logo.bind(on_release=self.about_func)
 
         overlay_menu=Popup(
@@ -2938,6 +2943,31 @@ class ControlGrid(Screen):
         overlay_x.bind(on_release=overlay_menu.dismiss)
         self.widgets['overlay_x']=overlay_x
 
+        container=FloatLayout(
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.5})
+        self.widgets['container']=container
+
+        tray_container=FloatLayout(
+            size_hint =(1, 1),
+            pos_hint = {'center_x':.5, 'center_y':.5})
+        self.widgets['tray_container']=tray_container
+
+        ########## schedule widgets ##########
+
+        schedule_box=RoundedColorLayoutModal(
+            bg_color=(1,1,1,.9),
+            size_hint =(.95, .825),
+            pos_hint = {'center_x':.5, 'center_y':.565},)
+        self.widgets['schedule_box']=schedule_box
+
+        schedule_x=IconButton(
+            source=overlay_x_icon_black,
+            size_hint=(.1,.1),
+            pos_hint={'x':.915,'y':.89})
+        schedule_x.bind(on_release=self.schedule_icon_func)
+        self.widgets['schedule_x']=schedule_x
+
         overlay_menu.add_widget(overlay_layout)
         clock_set_layout.add_widget(hour_wheel)
         clock_set_layout.add_widget(delimiter_dots)
@@ -2947,17 +2977,21 @@ class ControlGrid(Screen):
         messenger_button.add_widget(message_label)
         widget_carousel.add_widget(messenger_button)
 
+        container.add_widget(fans)
+        container.add_widget(lights)
+        container.add_widget(clock_label)
+
+        tray_container.add_widget(settings_button)
+        tray_container.add_widget(seperator_line)
+        tray_container.add_widget(menu_icon)
+        tray_container.add_widget(trouble_button)
+        tray_container.add_widget(schedule_button)
+        tray_container.add_widget(msg_icon)
+        tray_container.add_widget(fs_logo)
+
         self.add_widget(bg_image)
-        self.add_widget(fans)
-        self.add_widget(lights)
-        self.add_widget(settings_button)
-        self.add_widget(seperator_line)
-        self.add_widget(menu_icon)
-        self.add_widget(trouble_button)
-        self.add_widget(language_button)
-        self.add_widget(msg_icon)
-        self.add_widget(fs_logo)
-        self.add_widget(clock_label)
+        self.add_widget(container)
+        self.add_widget(tray_container)
 
     def ramp_animate(self,button,*args):
         fb=self.widgets['fans'] #fans button
@@ -3052,8 +3086,6 @@ class ControlGrid(Screen):
     def open_trouble(self,button):
         self.parent.transition = SlideTransition(direction='down')
         self.manager.current='trouble'
-    def language_func (self,button):
-        self.language_overlay()
     def update_msg_card(self,*args):
         self.widgets['message_label'].text=f'[size=50][color=#ffffff][b]{messages.active_messages[0].card}'
 
@@ -3064,6 +3096,13 @@ class ControlGrid(Screen):
             return
         if w['clock_label'].time_size==120 and w['clock_label'].opacity==1:
             #nothing animated, all set in standard positions
+            if self.current_section=='schedule':
+                #scheduler opened
+                w['clock_label'].animate()
+                self.widget_fade()
+                self.widgets['widget_carousel'].index=1
+                w['messenger_button'].undock()
+                return
             w['clock_label'].animate()
             self.widget_fade()
             self.widgets['widget_carousel'].index=1
@@ -3091,10 +3130,85 @@ class ControlGrid(Screen):
                 #carousel current is message button
                 w['messenger_button'].undock()
 
+    def schedule_icon_func (self,*args):
+        container_fade_out=Animation(opacity=0,d=.5)
+        container_fade_in=Animation(opacity=1,d=.5)
+        w=self.widgets
+        container=w['container']
 
+        def _swap_widgets(*args):
+            container.clear_widgets()
+            if App.get_running_app().limited:
+                if w['schedule_x'] in w['schedule_box'].children:
+                    w['schedule_box'].remove_widget(w['schedule_x'])
+            else:
+                if w['schedule_x'] not in w['schedule_box'].children:
+                    w['schedule_box'].add_widget(w['schedule_x'])
+            container.add_widget(w['schedule_box'])
+            container_fade_in.start(container)
 
-    def on_pre_leave(self, *args):
-        self.widgets['messenger_button'].redock()
+        if self.current_section=='main':
+            self.current_section='schedule'
+            self.schedule_tray_widget_swap('in')
+            container_fade_out.start(container)
+            container_fade_out.bind(on_complete=_swap_widgets)
+        else:
+            self.current_section='main'
+            self.schedule_tray_widget_swap('out')
+            container_fade_out.start(container)
+            container_fade_out.bind(on_complete=self.load_active_container)
+
+    def schedule_tray_widget_swap (self,mode='out'):
+        container_fade_out=Animation(opacity=0,d=.5)
+        container_fade_in=Animation(opacity=1,d=.5)
+        w=self.widgets
+        container=w['tray_container']
+
+        def _swap_widgets_in(*args):
+            container.clear_widgets()
+            in_widgets=[
+                w['settings_button'],
+                w['seperator_line'],
+                w['menu_icon'],
+                w['msg_icon'],
+                w['fs_logo']]
+            for i in in_widgets:
+                container.add_widget(i)
+            container_fade_in.start(container)
+
+        def _swap_widgets_out(*args):
+            container.clear_widgets()
+            out_widgets=[
+                w['settings_button'],
+                w['seperator_line'],
+                w['menu_icon'],
+                w['trouble_button'],
+                w['schedule_button'],
+                w['msg_icon'],
+                w['fs_logo']]
+            for i in out_widgets:
+                container.add_widget(i)
+            container_fade_in.start(container)
+
+        container_fade_out.start(container)
+        if mode=='in':
+            container_fade_out.bind(on_complete=_swap_widgets_in)
+        if mode=='out':
+            container_fade_out.bind(on_complete=_swap_widgets_out)
+
+    def load_active_container(self,*args):
+        container_fade_in=Animation(opacity=1,d=.5)
+        w=self.widgets
+        container=w['container']
+        container.clear_widgets()
+        active_widgets=[
+            w['fans'],
+            w['lights'],
+            w['clock_label']]
+        for i in active_widgets:
+            container.add_widget(i)
+        container_fade_in.start(container)
+
     def msg_icon_notifications(self,*args):
         unseen_messages=[i for i in messages.active_messages if i.seen==False]
         messenger=self.widgets['messenger_button']
@@ -3113,57 +3227,6 @@ class ControlGrid(Screen):
                 self.widgets['msg_icon'].widgets['notification_badge'].clear()
     def start_nb_clock(self,*args):
         Clock.schedule_interval(self.msg_icon_notifications,.75)
-
-
-    def language_overlay(self):
-        overlay_menu=self.widgets['overlay_menu']
-        overlay_menu.background_color=(0,0,0,0)
-        overlay_menu.auto_dismiss=True
-        overlay_menu.title=''
-        overlay_menu.separator_height=0
-        self.widgets['overlay_layout'].clear_widgets()
-
-        english=RoundedButton(text="[size=30][b][color=#000000]  English [/color][/b][/size]",
-                        size_hint =(.96, .125),
-                        pos_hint = {'x':.02, 'y':.7},
-                        background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.9),
-                        markup=True)
-        self.widgets['english']=english
-
-        spanish=RoundedButton(text="[size=30][b][color=#000000]  Español [/color][/b][/size]",
-                        size_hint =(.96, .125),
-                        pos_hint = {'x':.02, 'y':.3},
-                        background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.9),
-                        markup=True)
-        self.widgets['spanish']=spanish
-
-        def english_func(button):
-            global current_language
-            config=App.get_running_app().config_
-            current_language=lang_dict.english
-            config.set('preferences','language','english')
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
-            language_setter()
-            self.widgets['overlay_menu'].dismiss()
-        english.bind(on_release=english_func)
-
-        def spanish_func(button):
-            global current_language
-            config=App.get_running_app().config_
-            current_language=lang_dict.spanish
-            config.set('preferences','language','spanish')
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
-            language_setter()
-            self.widgets['overlay_menu'].dismiss()
-        spanish.bind(on_release=spanish_func)
-
-        self.widgets['overlay_layout'].add_widget(english)
-        self.widgets['overlay_layout'].add_widget(spanish)
-        self.widgets['overlay_menu'].open()
 
     def about_overlay(self):
         overlay_menu=self.widgets['overlay_menu']
@@ -3220,6 +3283,23 @@ class ControlGrid(Screen):
 
     def about_func (self,button):
         self.about_overlay()
+
+    def on_pre_leave(self, *args):
+        self.widgets['messenger_button'].redock()
+        if not App.get_running_app().limited:
+            if self.current_section=='schedule':
+                self.schedule_icon_func()
+
+    def on_pre_enter(self, *args):
+        if App.get_running_app().limited:
+            if self.current_section!='schedule':
+                self.schedule_icon_func()
+            self.widgets['schedule_button'].disabled=False
+            self.widgets['schedule_button'].opacity=1
+        else:
+            self.load_active_container()
+            self.widgets['schedule_button'].disabled=True
+            self.widgets['schedule_button'].opacity=.3
 
 class ActuationScreen(Screen):
     def __init__(self, **kwargs):
@@ -3669,6 +3749,13 @@ class SettingsScreen(Screen):
                     size_hint =(.98, .001),
                     pos_hint = {'x':.01, 'y':.13})
 
+        language_button=IconButton(source=language_image, allow_stretch=True, keep_ratio=True)
+        language_button.size_hint =(.10, .10)
+        language_button.pos_hint = {'x':.61, 'y':.02}
+        self.widgets['language_button']=language_button
+        language_button.bind(on_press=self.language_func)
+        language_button.color=(1,1,1,.65)
+
         overlay_menu.add_widget(overlay_layout)
         self.add_widget(bg_image)
         self.add_widget(back)
@@ -3677,6 +3764,7 @@ class SettingsScreen(Screen):
         self.add_widget(sys_report)
         self.add_widget(preferences)
         self.add_widget(seperator_line)
+        self.add_widget(language_button)
 
     def settings_back (self,button):
         self.parent.transition = SlideTransition(direction='left')
@@ -3690,6 +3778,58 @@ class SettingsScreen(Screen):
     def preferences_func (self,button):
         self.parent.transition = SlideTransition(direction='up')
         self.manager.current='preferences'
+    def language_func (self,button):
+        self.language_overlay()
+
+    def language_overlay(self):
+        overlay_menu=self.widgets['overlay_menu']
+        overlay_menu.background_color=(0,0,0,0)
+        overlay_menu.auto_dismiss=True
+        overlay_menu.title=''
+        overlay_menu.separator_height=0
+        self.widgets['overlay_layout'].clear_widgets()
+
+        english=RoundedButton(text="[size=30][b][color=#000000]  English [/color][/b][/size]",
+                        size_hint =(.96, .125),
+                        pos_hint = {'x':.02, 'y':.7},
+                        background_normal='',
+                        background_color=(245/250, 216/250, 41/250,.9),
+                        markup=True)
+        self.widgets['english']=english
+
+        spanish=RoundedButton(text="[size=30][b][color=#000000]  Español [/color][/b][/size]",
+                        size_hint =(.96, .125),
+                        pos_hint = {'x':.02, 'y':.3},
+                        background_normal='',
+                        background_color=(245/250, 216/250, 41/250,.9),
+                        markup=True)
+        self.widgets['spanish']=spanish
+
+        def english_func(button):
+            global current_language
+            config=App.get_running_app().config_
+            current_language=lang_dict.english
+            config.set('preferences','language','english')
+            with open(preferences_path,'w') as configfile:
+                config.write(configfile)
+            language_setter()
+            self.widgets['overlay_menu'].dismiss()
+        english.bind(on_release=english_func)
+
+        def spanish_func(button):
+            global current_language
+            config=App.get_running_app().config_
+            current_language=lang_dict.spanish
+            config.set('preferences','language','spanish')
+            with open(preferences_path,'w') as configfile:
+                config.write(configfile)
+            language_setter()
+            self.widgets['overlay_menu'].dismiss()
+        spanish.bind(on_release=spanish_func)
+
+        self.widgets['overlay_layout'].add_widget(english)
+        self.widgets['overlay_layout'].add_widget(spanish)
+        self.widgets['overlay_menu'].open()
 
     def about_overlay(self):
         overlay_menu=self.widgets['overlay_menu']
@@ -12895,6 +13035,7 @@ class Hood_Control(App):
         self.config_ = configparser.ConfigParser()
         self.config_.read(preferences_path)
         settings_setter(self.config_)
+        self.limited=self.config_.getboolean("config","limited",fallback=False)
         Clock.schedule_once(partial(language_setter,config=self.config_))
         self.context_screen=ScreenManager()
         # self.context_screen.add_widget(DocumentScreen(name='documents'))
