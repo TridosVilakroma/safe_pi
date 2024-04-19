@@ -142,6 +142,8 @@ hidden_black=r'media/hidden_black.png'
 slider_handle_yellow=r'media/slider_handle_yellow.png'
 overlay_x_icon=r'media/popup_x_white.png'
 overlay_x_icon_black=r'media/popup_x.png'
+add_schedule_icon=r'media/add_icon.png'
+edit_schedule_icon=r'media/edit_icon.png'
 
 
 class MarkupSpinnerOption(SpinnerOption):
@@ -2904,6 +2906,20 @@ class ControlGrid(Screen):
         schedule_button.bind(on_press=self.schedule_icon_func)
         schedule_button.color=(1,1,1,.65)
 
+        schedule_add_button=IconButton(source=add_schedule_icon, allow_stretch=True, keep_ratio=True)
+        schedule_add_button.size_hint =(.10, .10)
+        schedule_add_button.pos_hint = {'x':.61, 'y':.02}
+        self.widgets['schedule_add_button']=schedule_add_button
+        schedule_add_button.bind(on_press=self.schedule_add_icon_func)
+        schedule_add_button.color=(1,1,1,.65)
+
+        schedule_edit_button=IconButton(source=edit_schedule_icon, allow_stretch=True, keep_ratio=True)
+        schedule_edit_button.size_hint =(.10, .10)
+        schedule_edit_button.pos_hint = {'x':.75, 'y':.02}
+        self.widgets['schedule_edit_button']=schedule_edit_button
+        schedule_edit_button.bind(on_press=self.schedule_edit_icon_func)
+        schedule_edit_button.color=(1,1,1,.65)
+
         msg_icon=IconButton(source=msg_icon_image, allow_stretch=True, keep_ratio=True)
         msg_icon.size_hint =(.10, .10)
         msg_icon.pos_hint = {'x':.47, 'y':.02}
@@ -3158,6 +3174,12 @@ class ControlGrid(Screen):
             container_fade_out.start(container)
             container_fade_out.bind(on_complete=self.load_active_container)
 
+    def schedule_add_icon_func (self,*args):
+        pass
+
+    def schedule_edit_icon_func (self,*args):
+        pass
+
     def schedule_tray_widget_swap (self,mode='out'):
         container_fade_out=Animation(opacity=0,d=.5)
         container_fade_in=Animation(opacity=1,d=.5)
@@ -3171,6 +3193,8 @@ class ControlGrid(Screen):
                 w['seperator_line'],
                 w['menu_icon'],
                 w['msg_icon'],
+                w['schedule_add_button'],
+                w['schedule_edit_button'],
                 w['fs_logo']]
             for i in in_widgets:
                 container.add_widget(i)
