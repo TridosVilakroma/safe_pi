@@ -302,10 +302,10 @@ spanish={
     'quick' : "[size=50][b][color=#000000]  La Campana y Luces [/color][/b][/size]",
     'fans' : "[size=32][b][color=#000000] La Campana [/color][/b][/size]",
     'lights' : "[size=32][b][color=#000000] Los Luces [/color][/b][/size]",
-    'version_info' : '''[size=16][color=#000000]      Hood Control[/size]
-[size=22][i]-Versión 1.0.0-[/i][/color][/size]''',
-    'version_info_white' : '''[size=16][color=#ffffff]      Hood Control[/size]
-[size=22][i]-Versión 1.0.0-[/i][/color][/size]''',
+    'version_info' : f'''[size=16][color=#000000]      Hood Control[/size]
+[size=22][i]-Versión {version}-[/i][/color][/size]''',
+    'version_info_white' : f'''[size=16][color=#ffffff]      Hood Control[/size]
+[size=22][i]-Versión {version}-[/i][/color][/size]''',
     'alert' : "[size=75][b][color=#000000]  Activación de Sistema [/color][/b][/size]",
     'alert_acknowledged' : "[size=32][b][color=#000000]Activación de Sistema\n       -Fire Safe-\n   270-761-0637 [/color][/b][/size]",
     'acknowledge' : "[size=32][b][color=#000000] Reconocer [/color][/b][/size]",
@@ -330,7 +330,7 @@ spanish={
     'duration_1' : "[size=30][b][color=#000000]  5 Minutos [/color][/b][/size]",
     'duration_2' : "[size=30][b][color=#000000]  15 Minutos [/color][/b][/size]",
     'duration_3' : "[size=30][b][color=#000000]  30 Minutos [/color][/b][/size]",
-    'maint_overlay_warning_text' : """[size=30][color=#000000]El Modo de Mantenimiento
+    'maint_overlay_warning_text' : """[size=30][color=#ffffff]El Modo de Mantenimiento
 deshabilita los Sensores de Calor.
 Por eso puedes trabajar sin peligro.
 No puedes salir de este pantalla sin
@@ -340,7 +340,7 @@ Deshabilitar La Campana?
   [/color][/size]""",
     'continue_button' : "[size=30][b][color=#000000]  Seguir [/color][/b][/size]",
     'cancel_button' : "[size=30][b][color=#000000]  Regresa [/color][/b][/size]",
-    'override_overlay_warning_text' : """[size=30][color=#000000]El Modo de Mantenimiento activo.
+    'override_overlay_warning_text' : """[size=30][color=#ffffff]El Modo de Mantenimiento activo.
 La campana esta discapacitada.
 Deshabilitar el Modo de Mantenimiento 
 a modo de tocando DESACTIVAR
