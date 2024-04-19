@@ -3297,7 +3297,8 @@ class ControlGrid(Screen):
             self.widgets['schedule_button'].disabled=False
             self.widgets['schedule_button'].opacity=1
         else:
-            self.load_active_container()
+            if self.current_section=='schedule':
+                self.schedule_icon_func()
             self.widgets['schedule_button'].disabled=True
             self.widgets['schedule_button'].opacity=.3
 
@@ -6096,11 +6097,11 @@ class PreferenceScreen(Screen):
         # to reposition the lines correctly before opening
         # update_lines()
 
-        # def _swap_color(button,*args):
-        #     if button.state=='down':
-        #         button.bg_color=(245/250, 216/250, 41/250,.85)
-        #     if button.state=='normal':
-        #         button.bg_color=(.5,.5,.5,1)
+        def _swap_color(button,*args):
+            if button.state=='down':
+                button.bg_color=(245/250, 216/250, 41/250,.85)
+            if button.state=='normal':
+                button.bg_color=(.5,.5,.5,1)
 
 
         overlay_title=Label(text=current_language['advanced_settings_overlay'],
@@ -6109,70 +6110,6 @@ class PreferenceScreen(Screen):
         self.widgets['overlay_title']=overlay_title
         overlay_title.ref='advanced_settings_overlay'
 
-        # evoke_title=Label(text=current_language['evoke_title'],
-        #                 pos_hint = {'center_x':.2, 'center_y':.87},
-        #                 markup=True)
-        # self.widgets['evoke_title']=evoke_title
-        # evoke_title.ref='evoke_title'
-
-        # msg_evoke_on=RoundedToggleButton(text=current_language['msg_evoke_on'],
-        #                 size_hint =(.2, .125),
-        #                 pos_hint = {'center_x':.2, 'y':.65},
-        #                 background_down='',
-        #                 background_color=(.5,.5,.5,.85),
-        #                 markup=True,
-        #                 group='evoke',
-        #                 allow_no_selection=False)
-        # self.widgets['msg_evoke_on']=msg_evoke_on
-        # msg_evoke_on.ref='msg_evoke_on'
-        # msg_evoke_on.unbind(state=msg_evoke_on.color_swap)
-        # msg_evoke_on.bind(state=_swap_color)
-        # msg_evoke_on.bind(state=msg_evoke_on.color_swap)
-
-        # msg_evoke_off=RoundedToggleButton(text=current_language['msg_evoke_off'],
-        #                 size_hint =(.2, .125),
-        #                 pos_hint = {'center_x':.2, 'y':.45},
-        #                 background_down='',
-        #                 background_color=(.5,.5,.5,.85),
-        #                 markup=True,
-        #                 group='evoke',
-        #                 allow_no_selection=False)
-        # self.widgets['msg_evoke_off']=msg_evoke_off
-        # msg_evoke_off.ref='msg_evoke_off'
-        # msg_evoke_off.unbind(state=msg_evoke_off.color_swap)
-        # msg_evoke_off.bind(state=_swap_color)
-        # msg_evoke_off.bind(state=msg_evoke_off.color_swap)
-
-        # is_evoke=config.getboolean('preferences','evoke')
-        # if is_evoke:
-        #     msg_evoke_on.state='down'
-        #     _swap_color(msg_evoke_off)
-        # else:
-        #     msg_evoke_off.state='down'
-        #     _swap_color(msg_evoke_on)
-
-        # screensaver_timer_title=Label(text=current_language['screensaver_timer_title'],
-        #                 pos_hint = {'center_x':.6, 'center_y':.9},
-        #                 markup=True)
-        # self.widgets['screensaver_timer_title']=screensaver_timer_title
-        # screensaver_timer_title.ref='screensaver_timer_title'
-
-        # screensaver_timer_value=Label(
-        #     text='[size=30][b][color=#ffffff]'+config.get('preferences','screensaver_timeout',fallback='10')+' Minutes',
-        #     pos_hint = {'center_x':.6, 'center_y':.85},
-        #     markup=True)
-        # self.widgets['screensaver_timer_value']=screensaver_timer_value
-
-        # screensaver_timer_setter=Slider(
-        #     size_hint =(.4, .125),
-        #     pos_hint = {'center_x':.6, 'y':.72},
-        #     cursor_image=slider_handle_yellow,
-        #     sensitivity='handle',
-        #     min=1,
-        #     max=30,
-        #     step=1,
-        #     value=config.getint('preferences','screensaver_timeout',fallback=10))
-        # self.widgets['screensaver_timer_setter']=screensaver_timer_setter
 
         input_filter_timer_title=Label(
             text=current_language['input_filter_timer_title'],
@@ -6198,34 +6135,6 @@ class PreferenceScreen(Screen):
             value=config.getint('preferences','input_filter_timeout',fallback=2))
         self.widgets['input_filter_timer_setter']=input_filter_timer_setter
 
-        # def msg_evoke_on_func(button):
-        #     config.set('preferences','evoke','True')
-        #     with open(preferences_path,'w') as configfile:
-        #         config.write(configfile)
-        # msg_evoke_on.bind(on_release=msg_evoke_on_func)
-
-        # def msg_evoke_off_func(button):
-        #     config.set('preferences','evoke','False')
-        #     with open(preferences_path,'w') as configfile:
-        #         config.write(configfile)
-        # msg_evoke_off.bind(on_release=msg_evoke_off_func)
-
-        # def screensaver_timer_setter_display_func(slider,touch,*args):
-        #     if touch.grab_current != slider:
-        #         return
-        #     screensaver_timer_value.text='[size=30][b][color=#ffffff]'+str(slider.value)+' Minutes'
-        # screensaver_timer_setter.bind(on_touch_move=screensaver_timer_setter_display_func)
-
-        # def screensaver_timer_setter_save_func(slider,touch,*args):
-        #     if touch.grab_current != slider:
-        #         return
-        #     config.set('preferences','screensaver_timeout',str(slider.value))
-        #     with open(preferences_path,'w') as configfile:
-        #         config.write(configfile)
-        #     ScreenSaver.timeout=slider.value*60
-        #     ScreenSaver.service()
-        # screensaver_timer_setter.bind(on_touch_up=screensaver_timer_setter_save_func)
-
         def input_filter_timer_setter_display_func(slider,touch,*args):
             if touch.grab_current != slider:
                 return
@@ -6244,22 +6153,76 @@ class PreferenceScreen(Screen):
             logic.fs.micro_debounce_timer=slider.value
         input_filter_timer_setter.bind(on_touch_up=input_filter_timer_setter_save_func)
 
+
+        schedule_mode_title=Label(
+            text=current_language['schedule_mode_title'],
+            pos_hint = {'center_x':.5, 'center_y':.6},
+            markup=True)
+        self.widgets['schedule_mode_title']=schedule_mode_title
+        schedule_mode_title.ref='schedule_mode_title'
+
+        schedule_mode_on=RoundedToggleButton(text=current_language['schedule_mode_on'],
+                        size_hint =(.18, .125),
+                        pos_hint = {'center_x':.625, 'center_y':.5},
+                        background_down='',
+                        background_color=(.5,.5,.5,.85),
+                        markup=True,
+                        group='schedule',
+                        allow_no_selection=False)
+        self.widgets['schedule_mode_on']=schedule_mode_on
+        schedule_mode_on.ref='schedule_mode_on'
+        schedule_mode_on.unbind(state=schedule_mode_on.color_swap)
+        schedule_mode_on.bind(state=_swap_color)
+        schedule_mode_on.bind(state=schedule_mode_on.color_swap)
+
+        schedule_mode_off=RoundedToggleButton(text=current_language['schedule_mode_off'],
+                        size_hint =(.18, .125),
+                        pos_hint = {'center_x':.375, 'center_y':.5},
+                        background_down='',
+                        background_color=(.5,.5,.5,.85),
+                        markup=True,
+                        group='schedule',
+                        allow_no_selection=False)
+        self.widgets['schedule_mode_off']=schedule_mode_off
+        schedule_mode_off.ref='schedule_mode_off'
+        schedule_mode_off.unbind(state=schedule_mode_off.color_swap)
+        schedule_mode_off.bind(state=_swap_color)
+        schedule_mode_off.bind(state=schedule_mode_off.color_swap)
+
+        is_limited=config.getboolean('config','limited',fallback=False)
+        if is_limited:
+            schedule_mode_on.state='down'
+            _swap_color(schedule_mode_off)
+        else:
+            schedule_mode_off.state='down'
+            _swap_color(schedule_mode_on)
+
+
         # def on_dismiss(self,*args):
         #     overlay_menu.canvas.before.remove_group("msg")
 
         self.widgets['overlay_layout'].add_widget(overlay_title)
-        # self.widgets['overlay_layout'].add_widget(evoke_title)
-        # self.widgets['overlay_layout'].add_widget(msg_evoke_on)
-        # self.widgets['overlay_layout'].add_widget(msg_evoke_off)
-        # self.widgets['overlay_layout'].add_widget(screensaver_timer_title)
-        # self.widgets['overlay_layout'].add_widget(screensaver_timer_value)
-        # self.widgets['overlay_layout'].add_widget(screensaver_timer_setter)
         self.widgets['overlay_layout'].add_widget(input_filter_timer_title)
         self.widgets['overlay_layout'].add_widget(input_filter_timer_value)
         self.widgets['overlay_layout'].add_widget(input_filter_timer_setter)
-        # overlay_menu.bind(on_dismiss=on_dismiss)
+        self.widgets['overlay_layout'].add_widget(schedule_mode_title)
+        self.widgets['overlay_layout'].add_widget(schedule_mode_on)
+        self.widgets['overlay_layout'].add_widget(schedule_mode_off)
         overlay_menu.open()
 
+        def schedule_mode_on_func(button):
+            App.get_running_app().limited=True
+            config.set('config','limited','True')
+            with open(preferences_path,'w') as configfile:
+                config.write(configfile)
+        schedule_mode_on.bind(on_release=schedule_mode_on_func)
+
+        def schedule_mode_off_func(button):
+            App.get_running_app().limited=False
+            config.set('config','limited','False')
+            with open(preferences_path,'w') as configfile:
+                config.write(configfile)
+        schedule_mode_off.bind(on_release=schedule_mode_off_func)
     def settings_back(self,button):
         self.parent.transition = SlideTransition(direction='down')
         self.manager.current='settings'
