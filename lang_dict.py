@@ -73,6 +73,9 @@ Import into >>logs/sys_report/report.jpg[/color][/size]''',
     'screensaver_timer_title' : "[size=20][b][color=#ffffff]Screen Saver Timer[/color][/b][/size]",
     'heat_sensor_timer_title' : "[size=20][b][color=#ffffff]Heat Sensor Override Duration[/color][/b][/size]",
     'input_filter_timer_title' : "[size=20][b][color=#ffffff]Input Interference Filter[/color][/b][/size]",
+    'schedule_mode_title' : "[size=20][b][color=#ffffff]Limited Scheduler Mode[/color][/b][/size]",
+    'schedule_mode_on' : "[size=30][b][color=#000000]  On [/color][/b][/size]",
+    'schedule_mode_off' : "[size=30][b][color=#000000]  Off [/color][/b][/size]",
     'maint_overlay_warning_text' : """[size=30][color=#ffffff]Maintenance Override disables heat 
 sensors allowing neccessary maintenance 
 to take place safely.
