@@ -39,6 +39,9 @@ Config.set('kivy', 'keyboard_mode', 'systemanddock')
 if os.name=='posix':
     Config.set('graphics', 'fullscreen', 'auto')
     Config.set('graphics', 'borderless', '1')
+# else:
+#     Config.set('graphics', 'width', '1280')
+#     Config.set('graphics', 'height', '800')
 
 import kivy
 import logic,lang_dict,pindex,utils.general as general
@@ -46,6 +49,7 @@ if os.name == 'nt':
     import RPi_test.GPIO as GPIO
 else:
     import RPi.GPIO as GPIO
+from kivy.uix.widget import Widget
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.animation import Animation
 from kivy.app import App
@@ -61,6 +65,7 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.pagelayout import PageLayout
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.stacklayout import StackLayout
 from kivy.uix.slider import Slider
 from kivy.core.window import Window
 import threading
@@ -144,6 +149,99 @@ overlay_x_icon=r'media/popup_x_white.png'
 overlay_x_icon_black=r'media/popup_x.png'
 add_schedule_icon=r'media/add_icon.png'
 edit_schedule_icon=r'media/edit_icon.png'
+
+
+class PauseTouch(Widget):
+    '''widget that intercepts all touch events.
+
+    timeout is how long touch will be intercepted for; defaults to 1 second.
+    If timeout is set to 0 or less, touch will be intercepted until `unpause` is called.
+
+    WARNING: do not add this widget to any other widgets. It will be added to the `Window`
+    instance automatically.
+
+    example usage:
+
+    PauseTouch(3)
+
+    will intercept all touch events for 3 seconds.
+    '''
+
+    def __init__(self,timeout=1, **kwargs):
+        super(PauseTouch,self).__init__(**kwargs)
+        Window.add_widget(self)
+        if timeout >0:
+            Clock.schedule_once(self.unpause,timeout)
+
+    def unpause(self,*args):
+        if self in Window.children:
+            Window.remove_widget(self)
+
+    def on_touch_down(self, touch):
+        return True
+
+class CirlcePulseEmit(Widget):
+
+    radius=NumericProperty(0)
+    color=ListProperty([0,0,0,1])
+
+    def __init__(self,quantity=1, **kwargs):
+        super(CirlcePulseEmit,self).__init__(**kwargs)
+        self.quantity=quantity
+        self.pulse_anim=Animation(radius=max(self.width,self.height),d=1)
+        self.pulse_anim.bind(on_complete=self.reset_props)
+        self.fade_anim=Animation(color=[0,0,0,0],d=1)
+        with self.canvas:
+            self.circ_color=Color(0,0,0,1)
+            self.circle=Line(circle=(150, 150,10))
+
+    def emit(self,*args):
+        Clock.schedule_once(self.clear,self.quantity)
+        self.pulse_anim.start(self)
+        self.fade_anim.start(self)
+
+    def reset_props(self,*args):
+        if self.quantity==0:
+            print('here')
+            return
+        print(self.quantity)
+        self.quantity-=1
+        self.radius=0
+        self.color=[0,0,0,1]
+        self.pulse_anim.start(self)
+        self.fade_anim.start(self)
+
+    def on_radius(self,*args):
+        self.circle.circle=(self.center_x,self.center_y,self.radius)
+
+    def on_color(self,*args):
+        self.circ_color.rgba=(self.color)
+
+
+    def align(self,*args):
+        self.center=self.parent.center
+        self.size=self.parent.size
+
+    def on_parent(self,*args):
+        parent=self.parent
+        if not parent:
+            return
+        self.center=parent.center
+        parent.bind(size=self.align)
+        parent.bind(pos=self.align)
+        if hasattr(parent,'widgets'):
+            parent.widgets['circle_pulse_emit']=self
+        self.emit()
+
+    def clear(self,*args):
+        parent=self.parent
+        if not parent:
+            return
+        parent.unbind(size=self.align,pos=self.align)
+        if hasattr(parent,'widgets'):
+            if 'circle_pulse_emit' in parent.widgets:
+                del parent.widgets['circle_pulse_emit']
+        parent.remove_widget(self)
 
 
 class MarkupSpinnerOption(SpinnerOption):
@@ -251,6 +349,35 @@ class IconButton(ButtonBehavior, Image):
     #     self.rect.pos = instance.pos
     #     self.rect.size = instance.size
     pass
+
+class ServicesIconButton(IconButton):
+
+    def __init__(self, **kwargs):
+        super(ServicesIconButton,self).__init__(**kwargs)
+
+class ServicesStackLayout(StackLayout):
+    def __init__(self, **kwargs):
+        super(ServicesStackLayout,self).__init__(**kwargs)
+        self.blocking_touch=False
+        self.flicker_anim=Animation(opacity=.2,d=.75,t='in_quad')+Animation(opacity=1,d=.75,t='out_quad')
+        self.fade_in=Animation(opacity=1,d=1.5,t='in_quad')
+
+    def add_widget(self, widget):
+        pause=PauseTouch(0)
+        amnt=len(self.children)
+        widget.opacity=0
+        if amnt>2:
+            for index,i in enumerate(reversed(self.children),1):
+                anim=Animation(opacity=1,d=index*.1)
+                anim.start(i)
+                anim.bind(on_complete=lambda *args,i=i: self.flicker_anim.start(i))
+            fade=Animation(opacity=1,d=(amnt*.1)+1.5,t='in_quad')
+            fade.start(widget)
+            fade.bind(on_complete=pause.unpause)
+            return super(ServicesStackLayout,self).add_widget(widget)
+        self.fade_in.start(widget)
+        self.fade_in.bind(on_complete=pause.unpause)
+        return super(ServicesStackLayout,self).add_widget(widget)
 
 class RoundedButton(Button):
     def __init__(self,**kwargs):
@@ -2746,6 +2873,9 @@ class ControlGrid(Screen):
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
         self._keyboard=Window.request_keyboard(self._keyboard_closed, self, 'text')
         self.current_section='main'
+        self.scheduled_services=[]
+        self.schedule_dock_close_anim=Animation(pos_hint={'center_x':1.3},d=.5,t='in_out_back')
+        self.schedule_dock_open_anim=Animation(pos_hint={'center_x':.825},d=.5,t='out_back')
 
         self.value_up=Animation(value=1000,d=18,t='in_out_quad')
         self.value_down=Animation(value=0,d=1,t='in_out_circ')
@@ -2875,7 +3005,7 @@ class ControlGrid(Screen):
                     background_color=(250/250, 250/250, 250/250,.9),
                     markup=True)
         self.widgets['settings_button']=settings_button
-        settings_button.bind(on_press=self.open_settings)
+        settings_button.bind(on_release=self.open_settings)
 
         seperator_line=Image(source=gray_seperator_line,
                     allow_stretch=True,
@@ -2896,35 +3026,21 @@ class ControlGrid(Screen):
         trouble_button.size_hint =(.10, .10)
         trouble_button.pos_hint = {'x':.75, 'y':.02}
         self.widgets['trouble_button']=trouble_button
-        trouble_button.bind(on_press=self.open_trouble)
+        trouble_button.bind(on_release=self.open_trouble)
         trouble_button.color=(1,1,1,.15)
 
         schedule_button=IconButton(source=schedule_icon_image, allow_stretch=True, keep_ratio=True)
         schedule_button.size_hint =(.10, .10)
         schedule_button.pos_hint = {'x':.61, 'y':.02}
         self.widgets['schedule_button']=schedule_button
-        schedule_button.bind(on_press=self.schedule_icon_func)
+        schedule_button.bind(on_release=self.schedule_icon_func)
         schedule_button.color=(1,1,1,.65)
-
-        schedule_add_button=IconButton(source=add_schedule_icon, allow_stretch=True, keep_ratio=True)
-        schedule_add_button.size_hint =(.10, .10)
-        schedule_add_button.pos_hint = {'x':.61, 'y':.02}
-        self.widgets['schedule_add_button']=schedule_add_button
-        schedule_add_button.bind(on_press=self.schedule_add_icon_func)
-        schedule_add_button.color=(1,1,1,.65)
-
-        schedule_edit_button=IconButton(source=edit_schedule_icon, allow_stretch=True, keep_ratio=True)
-        schedule_edit_button.size_hint =(.10, .10)
-        schedule_edit_button.pos_hint = {'x':.75, 'y':.02}
-        self.widgets['schedule_edit_button']=schedule_edit_button
-        schedule_edit_button.bind(on_press=self.schedule_edit_icon_func)
-        schedule_edit_button.color=(1,1,1,.65)
 
         msg_icon=IconButton(source=msg_icon_image, allow_stretch=True, keep_ratio=True)
         msg_icon.size_hint =(.10, .10)
         msg_icon.pos_hint = {'x':.47, 'y':.02}
         self.widgets['msg_icon']=msg_icon
-        msg_icon.bind(on_press=self.msg_icon_func)
+        msg_icon.bind(on_release=self.msg_icon_func)
         msg_icon.color=(1,1,1,.65)
         msg_icon.widgets={}
         Clock.schedule_once(self.start_nb_clock,5)
@@ -2984,6 +3100,80 @@ class ControlGrid(Screen):
         schedule_x.bind(on_release=self.schedule_icon_func)
         self.widgets['schedule_x']=schedule_x
 
+        schedule_title=Label(
+            text=current_language['schedule_title'],
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'x':.15, 'center_y':.925},)
+        self.widgets['schedule_title']=schedule_title
+        schedule_title.ref='schedule_title'
+
+        schedule_box_layout=ServicesStackLayout(
+            size_hint=(.9,.8),
+            spacing=10,
+            pos_hint={'center_x':.5,'center_y':.45})
+        self.widgets['schedule_box_layout']=schedule_box_layout
+
+        schedule_dock=DenseRoundedColorLayout(
+            bg_color=(.15,.15,.15,.95),
+            size_hint =(.6, .725),
+            pos_hint = {'center_x':1.3, 'center_y':.51})
+        self.widgets['schedule_dock']=schedule_dock
+        schedule_dock.bind(on_release=self.schedule_dock_handle_func)
+
+        schedule_dock_handle=RoundedButton(
+            size_hint =(.055,.425),
+            pos_hint = {'center_x':.06, 'center_y':.5},
+            background_down='',
+            background_color=(250/250, 250/250, 250/250,.9),
+            markup=True)
+        self.widgets['schedule_dock_handle']=schedule_dock_handle
+        schedule_dock_handle.bind(on_release=self.schedule_dock_handle_func)
+
+        schedule_dock_handle_lines=Image(
+            source=menu_lines_vertical,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.0325,.325),
+            pos_hint = {'center_x':.06, 'center_y':.5})
+        self.widgets['schedule_dock_handle_lines']=schedule_dock_handle_lines
+
+        schedule_dock_scroll=OutlineScroll(
+            size_hint =(.65,.9),
+            pos_hint = {'x':.125, 'center_y':.5},
+            bg_color=(.85,.85,.85,.85),
+            bar_width=8,
+            bar_color=(245/250, 216/250, 41/250,.9),
+            bar_inactive_color=(245/250, 216/250, 41/250,.35),
+            do_scroll_y=True,
+            do_scroll_x=False)
+        self.widgets['schedule_dock_scroll']=schedule_dock_scroll
+
+        schedule_dock_scroll_layout=GridLayout(
+            cols=1,
+            spacing=10,
+            size_hint_y=None,
+            padding=5)
+        schedule_dock_scroll_layout.bind(minimum_height=lambda layout,min_height:setattr(layout,'height',min_height))
+        self.widgets['schedule_dock_scroll_layout']=schedule_dock_scroll_layout
+
+        schedule_add_button=IconButton(source=add_schedule_icon, allow_stretch=True, keep_ratio=True)
+        schedule_add_button.size_hint =(.10, .10)
+        schedule_add_button.pos_hint = {'x':.61, 'y':.02}
+        self.widgets['schedule_add_button']=schedule_add_button
+        schedule_add_button.bind(on_release=self.schedule_dock_handle_func)
+        schedule_add_button.color=(1,1,1,.65)
+
+        schedule_edit_button=IconButton(source=edit_schedule_icon, allow_stretch=True, keep_ratio=True)
+        schedule_edit_button.size_hint =(.10, .10)
+        schedule_edit_button.pos_hint = {'x':.75, 'y':.02}
+        self.widgets['schedule_edit_button']=schedule_edit_button
+        schedule_edit_button.bind(on_release=self.schedule_edit_icon_func)
+        schedule_edit_button.color=(1,1,1,.65)
+
+        schedule_box.add_widget(schedule_title)
+        schedule_box.add_widget(schedule_box_layout)
+
         overlay_menu.add_widget(overlay_layout)
         clock_set_layout.add_widget(hour_wheel)
         clock_set_layout.add_widget(delimiter_dots)
@@ -3005,9 +3195,16 @@ class ControlGrid(Screen):
         tray_container.add_widget(msg_icon)
         tray_container.add_widget(fs_logo)
 
+        schedule_dock_scroll.add_widget(schedule_dock_scroll_layout)
+
+        schedule_dock.add_widget(schedule_dock_handle)
+        schedule_dock.add_widget(schedule_dock_handle_lines)
+        schedule_dock.add_widget(schedule_dock_scroll)
+
         self.add_widget(bg_image)
         self.add_widget(container)
         self.add_widget(tray_container)
+        self.add_widget(schedule_dock)
 
     def ramp_animate(self,button,*args):
         fb=self.widgets['fans'] #fans button
@@ -3174,11 +3371,19 @@ class ControlGrid(Screen):
             container_fade_out.start(container)
             container_fade_out.bind(on_complete=self.load_active_container)
 
-    def schedule_add_icon_func (self,*args):
-        pass
+    def schedule_dock_handle_func(self,*args):
+        d=self.widgets['schedule_dock']
+        if d.pos_hint['center_x']==.825:
+            self.schedule_dock_close_anim.start(self.widgets['schedule_dock'])
+        elif d.pos_hint['center_x']==1.3:
+            self.schedule_scroll_populate()
+            self.schedule_dock_open_anim.start(self.widgets['schedule_dock'])
 
     def schedule_edit_icon_func (self,*args):
-        pass
+        if App.get_running_app().admin_mode_start>time.time():
+            pass
+        else:
+            Window.add_widget(PinLock(partial(print,'here')))
 
     def schedule_tray_widget_swap (self,mode='out'):
         container_fade_out=Animation(opacity=0,d=.5)
@@ -3219,6 +3424,58 @@ class ControlGrid(Screen):
             container_fade_out.bind(on_complete=_swap_widgets_in)
         if mode=='out':
             container_fade_out.bind(on_complete=_swap_widgets_out)
+
+    def schedule_scroll_populate(self,*args):
+        w=self.widgets
+        layout=w['schedule_dock_scroll_layout']
+        layout.scroll_y=1
+        layout.clear_widgets()
+        services_path='schedule/available_services.json'
+        try:
+            with open(services_path,'r') as f:
+                services=json.load(f)
+        except OSError:
+            return
+        try:
+            for i in services.values():
+                card=RoundedColorLayout(
+                    bg_color=(.25,.25,.25,.85),
+                    size_hint =(1, None),
+                    height=150)
+                title=MinimumBoundingLabel(
+                    text=f"[color=#000000][size=20][b]{i['title']}",
+                    pos_hint = {'center_x':.525, 'center_y':.7},
+                    markup=True)
+                icon=Image(
+                    source=i['icon'],
+                    size_hint =(.4,.4),
+                    pos_hint={'center_x':.1,'center_y':.7})
+                add_button=RoundedButton(
+                    text='[color=#000000][size=18]Add Service',
+                    size_hint =(.7, .3),
+                    pos_hint = {'center_x':.5, 'y':.05},
+                    background_normal='',
+                    background_color=(100/255, 255/255, 100/255,.85),
+                    markup=True)
+                add_button.bind(on_release=partial(self.add_service_prompt_details,i))
+                add_button.bind(on_release=self.schedule_dock_handle_func)
+                card.add_widget(title)
+                card.add_widget(icon)
+                card.add_widget(add_button)
+                layout.add_widget(card)
+        except Exception as e:
+            logger.exception(e)
+
+    def add_service_prompt_details(self,details,*args):
+        w=self.widgets
+        layout=w['schedule_box_layout']
+        ratio=layout.width/11
+        service_icon=ServicesIconButton(
+            source=details['icon'],
+            size=(ratio,ratio),
+            size_hint=(None,None))
+        service_icon.add_widget(CirlcePulseEmit(6))
+        layout.add_widget(service_icon)
 
     def load_active_container(self,*args):
         container_fade_in=Animation(opacity=1,d=.5)
