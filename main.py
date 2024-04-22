@@ -183,40 +183,38 @@ class PauseTouch(Widget):
 class CirlcePulseEmit(Widget):
 
     radius=NumericProperty(0)
-    color=ListProperty([0,0,0,1])
+    color=ListProperty([0,0,0,0])
 
     def __init__(self,quantity=1, **kwargs):
         super(CirlcePulseEmit,self).__init__(**kwargs)
-        self.quantity=quantity
-        self.pulse_anim=Animation(radius=max(self.width,self.height),d=1)
-        self.pulse_anim.bind(on_complete=self.reset_props)
-        self.fade_anim=Animation(color=[0,0,0,0],d=1)
+        self.quantity=quantity+1
         with self.canvas:
-            self.circ_color=Color(0,0,0,1)
-            self.circle=Line(circle=(150, 150,10))
+            self.circ_color=Color(0,0,0,0)
+            self.circle=Line(circle=(150, 150,0),width=1)
 
     def emit(self,*args):
-        Clock.schedule_once(self.clear,self.quantity)
-        self.pulse_anim.start(self)
-        self.fade_anim.start(self)
+        if self.quantity<1:
+            self.clear()
+            return
+        self.quantity-=1
+        pulse_anim=Animation(radius=max(self.width,self.height),d=1.25)
+        pulse_anim.bind(on_complete=self.reset_props)
+        pulse_anim.start(self)
+        fade_anim=Animation(color=[0,0,0,0],d=1.25,t='in_quad')
+        fade_anim.start(self)
+        fade_anim.start(self)
 
     def reset_props(self,*args):
-        if self.quantity==0:
-            print('here')
-            return
-        print(self.quantity)
-        self.quantity-=1
         self.radius=0
         self.color=[0,0,0,1]
-        self.pulse_anim.start(self)
-        self.fade_anim.start(self)
+        self.circle.width=.5
+        self.emit()
 
     def on_radius(self,*args):
         self.circle.circle=(self.center_x,self.center_y,self.radius)
 
     def on_color(self,*args):
         self.circ_color.rgba=(self.color)
-
 
     def align(self,*args):
         self.center=self.parent.center
