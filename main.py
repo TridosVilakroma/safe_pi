@@ -180,13 +180,13 @@ class PauseTouch(Widget):
     def on_touch_down(self, touch):
         return True
 
-class CirlcePulseEmit(Widget):
+class CirclePulseEmit(Widget):
 
     radius=NumericProperty(0)
     color=ListProperty([0,0,0,0])
 
     def __init__(self,quantity=1, **kwargs):
-        super(CirlcePulseEmit,self).__init__(**kwargs)
+        super(CirclePulseEmit,self).__init__(**kwargs)
         self.quantity=quantity+1
         with self.canvas:
             self.circ_color=Color(0,0,0,0)
@@ -240,7 +240,6 @@ class CirlcePulseEmit(Widget):
             if 'circle_pulse_emit' in parent.widgets:
                 del parent.widgets['circle_pulse_emit']
         parent.remove_widget(self)
-
 
 class MarkupSpinnerOption(SpinnerOption):
     def __init__(self, **kwargs):
@@ -360,7 +359,9 @@ class ServicesStackLayout(StackLayout):
         self.flicker_anim=Animation(opacity=.2,d=.75,t='in_quad')+Animation(opacity=1,d=.75,t='out_quad')
         self.fade_in=Animation(opacity=1,d=1.5,t='in_quad')
 
-    def add_widget(self, widget):
+    def add_widget(self, widget,load=False):
+        if load:
+            return super(ServicesStackLayout,self).add_widget(widget)
         pause=PauseTouch(0)
         amnt=len(self.children)
         widget.opacity=0
@@ -2793,6 +2794,63 @@ class DenseRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
             return True
         return super(DenseRoundedColorLayout,self).on_touch_down(touch)
 
+class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
+
+    dim_saturation=NumericProperty(0)
+
+    def __init__(self, bg_color=(0.1, 0.1, 0.1, 0.95),fade_in=False, **kwargs):
+        self.target_size_hint=kwargs['size_hint']
+        super(ModalDenseRoundedColorLayout,self).__init__(bg_color, **kwargs)
+        self.fade_in=fade_in
+        if fade_in:
+            with self.canvas.before:
+                self.dim_color=Color(0,0,0,0)
+                Rectangle(size=Window.size)
+        else:
+            with self.canvas.before:
+                self.dim_color=Color(0,0,0,.65)
+                Rectangle(size=Window.size)
+
+    def on_dim_saturation(self,*args):
+        self.dim_color.rgba=(0,0,0,self.dim_saturation)
+
+    def on_parent(self,*args):
+        parent=self.parent
+        if not parent:
+            return
+        if self.fade_in:
+            Clock.schedule_once(self.animate_dim,1.5)
+            if self.target_size_hint:
+                self.size_hint=(0,0)
+                Clock.schedule_once(self.animate_size,2.25)
+
+    def animate_size(self,*args):
+        Animation(size_hint=self.target_size_hint,d=.5).start(self)
+
+    def animate_dim(self,*args):
+        Animation(dim_saturation=.65,d=1).start(self)
+
+    def clear(self,*args):
+        self.dim_saturation=0
+        if hasattr(self,'parent'):
+            if self.parent is None:
+                return
+            self.parent.remove_widget(self)
+
+    def on_touch_down(self, touch):
+        if self.collide_point(*touch.pos):
+            touch.grab(self)
+        super(ModalDenseRoundedColorLayout, self).on_touch_down(touch)
+        return True
+
+    def on_touch_up(self, touch):
+        if not self.collide_point(*touch.pos):
+            if touch.grab_current is self:
+                touch.ungrab(self)
+            self.clear()
+        super(ModalDenseRoundedColorLayout, self).on_touch_up(touch)
+        return True
+
 class OutlineModalScroll(ScrollView):
     def __init__(self,bg_color=(0,0,0,1), **kwargs):
         super(OutlineModalScroll,self).__init__(**kwargs)
@@ -3155,6 +3213,13 @@ class ControlGrid(Screen):
         schedule_dock_scroll_layout.bind(minimum_height=lambda layout,min_height:setattr(layout,'height',min_height))
         self.widgets['schedule_dock_scroll_layout']=schedule_dock_scroll_layout
 
+        schedule_details_box=ModalDenseRoundedColorLayout(
+            bg_color=(.05,.05,.05,.95),
+            size_hint =(.6, .725),
+            pos_hint = {'center_x':.5, 'center_y':.5},
+            fade_in=True)
+        self.widgets['schedule_details_box']=schedule_details_box
+
         schedule_add_button=IconButton(source=add_schedule_icon, allow_stretch=True, keep_ratio=True)
         schedule_add_button.size_hint =(.10, .10)
         schedule_add_button.pos_hint = {'x':.61, 'y':.02}
@@ -3472,8 +3537,10 @@ class ControlGrid(Screen):
             source=details['icon'],
             size=(ratio,ratio),
             size_hint=(None,None))
-        service_icon.add_widget(CirlcePulseEmit(6))
+        service_icon.add_widget(CirclePulseEmit(6))
         layout.add_widget(service_icon)
+        self.add_widget(w['schedule_details_box'])
+
 
     def load_active_container(self,*args):
         container_fade_in=Animation(opacity=1,d=.5)
