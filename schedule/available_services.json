@@ -1,0 +1,26 @@
+{
+    "suppression_system":{
+        "title":"Suppression System Inspection",
+        "icon":"media/schedule_icon.png",
+        "intervals":[6,12],
+        "default_interval":6
+    },
+    "fire_extinguishers":{
+        "title":"Fire Extinguisher Service",
+        "icon":"media/schedule_icon.png",
+        "intervals":[1,12],
+        "default_interval":12
+    },
+    "hood_cleaning":{
+        "title":"Hood Cleaning",
+        "icon":"media/schedule_icon.png",
+        "intervals":[1,3,6,12],
+        "default_interval":6
+    },
+    "fan_maintenance":{
+        "title":"Fan Maintenance",
+        "icon":"media/schedule_icon.png",
+        "intervals":[6,12],
+        "default_interval":6
+    }
+}
