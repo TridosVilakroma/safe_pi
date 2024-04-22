@@ -3160,7 +3160,7 @@ class ControlGrid(Screen):
             text=current_language['schedule_title'],
             markup=True,
             size_hint =(.4, .05),
-            pos_hint = {'x':.15, 'center_y':.925},)
+            pos_hint = {'x':.05, 'center_y':.925},)
         self.widgets['schedule_title']=schedule_title
         schedule_title.ref='schedule_title'
 
