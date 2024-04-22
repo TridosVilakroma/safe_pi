@@ -76,6 +76,7 @@ Import into >>logs/sys_report/report.jpg[/color][/size]''',
     'schedule_mode_title' : "[size=20][b][color=#ffffff]Limited Scheduler Mode[/color][/b][/size]",
     'schedule_mode_on' : "[size=30][b][color=#000000]  On [/color][/b][/size]",
     'schedule_mode_off' : "[size=30][b][color=#000000]  Off [/color][/b][/size]",
+    'schedule_title' : "[size=40][color=#000000][b][u][i]       Scheduled Services       ",
     'maint_overlay_warning_text' : """[size=30][color=#ffffff]Maintenance Override disables heat 
 sensors allowing neccessary maintenance 
 to take place safely.
