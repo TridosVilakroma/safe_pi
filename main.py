@@ -2807,11 +2807,12 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
 
     dim_saturation=NumericProperty(0)
 
-    def __init__(self, bg_color=(0.1, 0.1, 0.1, 0.95),call_back=None,fade_in=False, **kwargs):
+    def __init__(self, bg_color=(0.1, 0.1, 0.1, 0.95),call_back=None,fade_in=False,data={}, **kwargs):
         self.target_size_hint=kwargs['size_hint']
         super(ModalDenseRoundedColorLayout,self).__init__(bg_color, **kwargs)
         self.fade_in=fade_in
         self.call_back=call_back
+        self.service_data=data
         if fade_in:
             with self.canvas.before:
                 self.dim_color=Color(0,0,0,0)
@@ -2820,6 +2821,34 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             with self.canvas.before:
                 self.dim_color=Color(0,0,0,.65)
                 Rectangle(size=Window.size)
+
+    def populate_details(self,*args):
+        save_func=App.get_running_app().context_screen.get_screen('main').save_service_details
+
+        service_details={
+        "title":f"{self.service_data['title']}",
+        "icon":f"{self.service_data['icon']}",
+        "interval":f"{self.service_data['default_interval']}",
+        }
+
+        schedule_details_title=Label(
+            text=current_language['schedule_details_title'],
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.925},)
+        schedule_details_title.ref='schedule_details_title'
+
+        save_button=RoundedButton(
+            text='[color=#000000][size=18]save Service',
+            size_hint =(.7, .1),
+            pos_hint = {'center_x':.5, 'y':.05},
+            background_down='',
+            background_color=(100/255, 255/255, 100/255,.85),
+            markup=True)
+        save_button.bind(on_release=partial(save_func,service_details))
+
+        self.add_widget(schedule_details_title)
+        self.add_widget(save_button)
 
     def on_dim_saturation(self,*args):
         self.dim_color.rgba=(0,0,0,self.dim_saturation)
@@ -2835,7 +2864,9 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
                 Clock.schedule_once(self.animate_size,2.25)
 
     def animate_size(self,*args):
-        Animation(size_hint=self.target_size_hint,d=.5).start(self)
+        a=Animation(size_hint=self.target_size_hint,d=.5)
+        a.bind(on_complete=self.populate_details)
+        a.start(self)
 
     def animate_dim(self,*args):
         Animation(dim_saturation=.65,d=1).start(self)
@@ -2850,16 +2881,13 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             self.call_back()
 
     def on_touch_down(self, touch):
-        if self.collide_point(*touch.pos):
-            touch.grab(self)
         super(ModalDenseRoundedColorLayout, self).on_touch_down(touch)
         return True
 
     def on_touch_up(self, touch):
-        if not self.collide_point(*touch.pos):
-            if touch.grab_current is self:
-                touch.ungrab(self)
-            self.clear(cb=True)
+        if self.collide_point(*touch.pos):
+            return True
+        self.clear(cb=True)
         super(ModalDenseRoundedColorLayout, self).on_touch_up(touch)
         return True
 
@@ -3544,15 +3572,25 @@ class ControlGrid(Screen):
             size_hint=(None,None))
         service_icon.add_widget(CirclePulseEmit(6))
         layout.add_widget(service_icon)
+
         details_box=ModalDenseRoundedColorLayout(
             bg_color=(.05,.05,.05,.95),
             size_hint =(.6, .725),
             pos_hint = {'center_x':.5, 'center_y':.5},
             fade_in=True,
-            call_back=lambda *args:w['schedule_box_layout'].remove_widget(service_icon))
+            call_back=lambda *args:w['schedule_box_layout'].remove_widget(service_icon),
+            data=details)
         details_box.target=service_icon
+
         self.add_widget(details_box)
 
+    def save_service_details(self,data,*args):
+        with open('schedule/scheduled_services.json','r+') as f:
+            loaded_data = json.load(f)
+            loaded_data.append(data)
+            f.seek(0)
+            json.dump(loaded_data, f)
+            f.truncate()
 
     def load_active_container(self,*args):
         container_fade_in=Animation(opacity=1,d=.5)
