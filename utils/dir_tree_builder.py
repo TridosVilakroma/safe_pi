@@ -32,7 +32,8 @@ logs_tree = {
     "logs":{
         "configurations": {
             "hood_control.ini": default_config,
-            "pushed_messages.json": "{}"
+            "pushed_messages.json": "{}",
+            "scheduled_services.json":"{}"
             },
         "devices": {
             "device_list.json": "{}",
