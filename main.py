@@ -358,6 +358,7 @@ class ServicesStackLayout(StackLayout):
         self.blocking_touch=False
         self.flicker_anim=Animation(opacity=.2,d=.75,t='in_quad')+Animation(opacity=1,d=.75,t='out_quad')
         self.fade_in=Animation(opacity=1,d=1.5,t='in_quad')
+        self.fade_out=Animation(opacity=0,d=1.5,t='in_quad')
 
     def add_widget(self, widget,load=False):
         if load:
@@ -377,6 +378,14 @@ class ServicesStackLayout(StackLayout):
         self.fade_in.start(widget)
         self.fade_in.bind(on_complete=pause.unpause)
         return super(ServicesStackLayout,self).add_widget(widget)
+    
+    def remove_widget(self, widget):
+        pause=PauseTouch(1.5)
+        self.fade_out.start(widget)
+        Clock.schedule_once(lambda *args:self._remove_widget(widget),1.5)
+
+    def _remove_widget(self,widget,*args):
+        return super(ServicesStackLayout,self).remove_widget(widget)
 
 class RoundedButton(Button):
     def __init__(self,**kwargs):
@@ -2798,10 +2807,11 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
 
     dim_saturation=NumericProperty(0)
 
-    def __init__(self, bg_color=(0.1, 0.1, 0.1, 0.95),fade_in=False, **kwargs):
+    def __init__(self, bg_color=(0.1, 0.1, 0.1, 0.95),call_back=None,fade_in=False, **kwargs):
         self.target_size_hint=kwargs['size_hint']
         super(ModalDenseRoundedColorLayout,self).__init__(bg_color, **kwargs)
         self.fade_in=fade_in
+        self.call_back=call_back
         if fade_in:
             with self.canvas.before:
                 self.dim_color=Color(0,0,0,0)
@@ -2830,12 +2840,14 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
     def animate_dim(self,*args):
         Animation(dim_saturation=.65,d=1).start(self)
 
-    def clear(self,*args):
+    def clear(self,cb=False,*args):
         self.dim_saturation=0
         if hasattr(self,'parent'):
             if self.parent is None:
                 return
             self.parent.remove_widget(self)
+        if self.call_back and cb:
+            self.call_back()
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
@@ -2847,7 +2859,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         if not self.collide_point(*touch.pos):
             if touch.grab_current is self:
                 touch.ungrab(self)
-            self.clear()
+            self.clear(cb=True)
         super(ModalDenseRoundedColorLayout, self).on_touch_up(touch)
         return True
 
@@ -3213,13 +3225,6 @@ class ControlGrid(Screen):
         schedule_dock_scroll_layout.bind(minimum_height=lambda layout,min_height:setattr(layout,'height',min_height))
         self.widgets['schedule_dock_scroll_layout']=schedule_dock_scroll_layout
 
-        schedule_details_box=ModalDenseRoundedColorLayout(
-            bg_color=(.05,.05,.05,.95),
-            size_hint =(.6, .725),
-            pos_hint = {'center_x':.5, 'center_y':.5},
-            fade_in=True)
-        self.widgets['schedule_details_box']=schedule_details_box
-
         schedule_add_button=IconButton(source=add_schedule_icon, allow_stretch=True, keep_ratio=True)
         schedule_add_button.size_hint =(.10, .10)
         schedule_add_button.pos_hint = {'x':.61, 'y':.02}
@@ -3539,7 +3544,14 @@ class ControlGrid(Screen):
             size_hint=(None,None))
         service_icon.add_widget(CirclePulseEmit(6))
         layout.add_widget(service_icon)
-        self.add_widget(w['schedule_details_box'])
+        details_box=ModalDenseRoundedColorLayout(
+            bg_color=(.05,.05,.05,.95),
+            size_hint =(.6, .725),
+            pos_hint = {'center_x':.5, 'center_y':.5},
+            fade_in=True,
+            call_back=lambda *args:w['schedule_box_layout'].remove_widget(service_icon))
+        details_box.target=service_icon
+        self.add_widget(details_box)
 
 
     def load_active_container(self,*args):
