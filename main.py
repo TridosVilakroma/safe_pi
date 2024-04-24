@@ -2839,12 +2839,14 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         schedule_details_title.ref='schedule_details_title'
 
         save_button=RoundedButton(
-            text='[color=#000000][size=18]save Service',
+            text=current_language['schedule_save_button'],
             size_hint =(.7, .1),
             pos_hint = {'center_x':.5, 'y':.05},
             background_down='',
             background_color=(100/255, 255/255, 100/255,.85),
             markup=True)
+        schedule_details_title.ref='schedule_save_button'
+        save_button.bind(on_release=self.animate_success_clear)
         save_button.bind(on_release=partial(save_func,service_details))
 
         self.add_widget(schedule_details_title)
@@ -2864,14 +2866,22 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
                 Clock.schedule_once(self.animate_size,2.25)
 
     def animate_size(self,*args):
-        a=Animation(size_hint=self.target_size_hint,d=.5)
+        a=Animation(size_hint=self.target_size_hint,d=.5,t='out_sine')
         a.bind(on_complete=self.populate_details)
         a.start(self)
 
     def animate_dim(self,*args):
         Animation(dim_saturation=.65,d=1).start(self)
 
-    def clear(self,cb=False,*args):
+    def animate_success_clear(self,*args):
+        self.clear_widgets()
+        a=Animation(size_hint=(0,0),d=.5,t='in_out_back')
+        a.bind(on_complete=self.clear)
+        a.start(self)
+        Animation(dim_saturation=0,d=1).start(self)
+
+    def clear(self,*args,cb=False):
+        #cb == call self.callback if True
         self.dim_saturation=0
         if hasattr(self,'parent'):
             if self.parent is None:
@@ -3585,12 +3595,17 @@ class ControlGrid(Screen):
         self.add_widget(details_box)
 
     def save_service_details(self,data,*args):
-        with open('schedule/scheduled_services.json','r+') as f:
-            loaded_data = json.load(f)
-            loaded_data.append(data)
-            f.seek(0)
-            json.dump(loaded_data, f)
-            f.truncate()
+        try:
+            with open('logs/configurations/scheduled_services.json','r+') as f:
+                loaded_data = json.load(f)
+                loaded_data.append(data)
+                f.seek(0)
+                json.dump(loaded_data, f, indent=4)
+                f.truncate()
+        except Exception as e:
+            logger.exception(e)
+            print(Exception)
+            print('e: ',e)
 
     def load_active_container(self,*args):
         container_fade_in=Animation(opacity=1,d=.5)
