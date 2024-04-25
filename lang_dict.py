@@ -77,8 +77,14 @@ Import into >>logs/sys_report/report.jpg[/color][/size]''',
     'schedule_mode_on' : "[size=30][b][color=#000000]  On [/color][/b][/size]",
     'schedule_mode_off' : "[size=30][b][color=#000000]  Off [/color][/b][/size]",
     'schedule_title' : "[size=40][color=#000000][b][u][i]       Scheduled Services       ",
-    'schedule_details_title' : "[size=30][color=#ffffff][b][u][i]       Setup Service       ",
-    'schedule_save_button' : "[size=20][color=#000000]Save Service",
+    'schedule_details_title' : "[size=30][color=#aaaaaa][b][i]Schedule Setup",
+    'schedule_save_button' : "[size=20][color=#000000]Confirm Schedule",
+    'schedule_details_name_label' : "[size=20][color=#ffffff]Service:",
+    'schedule_details_interval_label' : "[size=20][color=#ffffff]Interval:",
+    'schedule_details_locked_label' : "[size=20][color=#ffffff]Security:",
+    'schedule_details_custom_pin_label' : "[size=20][color=#ffffff]Vendor Pin:",
+    'schedule_details_custom_pin_input' : "[size=20][color=#000000]Create Pin",
+    'schedule_details_expire_label' : "[size=20][color=#ffffff]Expiration:",
     'maint_overlay_warning_text' : """[size=30][color=#ffffff]Maintenance Override disables heat 
 sensors allowing neccessary maintenance 
 to take place safely.
