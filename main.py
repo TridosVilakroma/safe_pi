@@ -185,11 +185,12 @@ class CirclePulseEmit(Widget):
     radius=NumericProperty(0)
     color=ListProperty([0,0,0,0])
 
-    def __init__(self,quantity=1, **kwargs):
+    def __init__(self,quantity=1,style='slow_pulse', **kwargs):
         super(CirclePulseEmit,self).__init__(**kwargs)
         self.quantity=quantity+1
+        self.style=style
         with self.canvas:
-            self.circ_color=Color(0,0,0,0)
+            self.circ_color=Color(0,0,0,)
             self.circle=Line(circle=(150, 150,0),width=1)
 
     def emit(self,*args):
@@ -197,11 +198,14 @@ class CirclePulseEmit(Widget):
             self.clear()
             return
         self.quantity-=1
-        pulse_anim=Animation(radius=max(self.width,self.height),d=1.25)
+        if self.style=='slow_pulse':
+            pulse_anim=Animation(radius=max(self.width,self.height),d=1.25)
+        elif self.style=='quick':
+            self.circ_color.rgba=(0,0,0,1)
+            pulse_anim=Animation(radius=max(self.width,self.height)*.4,d=.225,t='in_out_quint')
         pulse_anim.bind(on_complete=self.reset_props)
         pulse_anim.start(self)
         fade_anim=Animation(color=[0,0,0,0],d=1.25,t='in_quad')
-        fade_anim.start(self)
         fade_anim.start(self)
 
     def reset_props(self,*args):
@@ -346,11 +350,6 @@ class IconButton(ButtonBehavior, Image):
     #     self.rect.pos = instance.pos
     #     self.rect.size = instance.size
     pass
-
-class ServicesIconButton(IconButton):
-
-    def __init__(self, **kwargs):
-        super(ServicesIconButton,self).__init__(**kwargs)
 
 class ServicesStackLayout(StackLayout):
     def __init__(self, **kwargs):
@@ -2875,10 +2874,10 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
 
     def animate_success_clear(self,*args):
         self.clear_widgets()
-        a=Animation(size_hint=(0,0),d=.5,t='in_out_back')
+        a=Animation(size_hint=(0,0),d=.5,t='in_back')
         a.bind(on_complete=self.clear)
         a.start(self)
-        Animation(dim_saturation=0,d=1).start(self)
+        Animation(dim_saturation=0,d=.5).start(self)
 
     def clear(self,*args,cb=False):
         #cb == call self.callback if True
@@ -2950,6 +2949,24 @@ class OutlineModalScroll(ScrollView):
 
 class FloatImage(FloatLayout,Image):
     pass
+
+class ServicesIconButton(IconButton):
+    def __init__(self,data, **kwargs):
+        super(ServicesIconButton,self).__init__(**kwargs)
+        self.data=data
+
+    def on_state(self,button,state,*args):
+        if state=='down':
+            self.color=(1,1,.9,.85)
+            self.add_widget(CirclePulseEmit(0,style='quick'))
+        else:
+            self.color=(1,1,1,1)
+
+    def on_release(self,*args):
+        print(self.data)
+
+
+
 
 #<<<<<<<<<<>>>>>>>>>>#
 
@@ -3457,6 +3474,7 @@ class ControlGrid(Screen):
 
         def _swap_widgets(*args):
             container.clear_widgets()
+            Clock.schedule_once(self.load_service_details,0)
             if App.get_running_app().limited:
                 if w['schedule_x'] in w['schedule_box'].children:
                     w['schedule_box'].remove_widget(w['schedule_x'])
@@ -3579,7 +3597,8 @@ class ControlGrid(Screen):
         service_icon=ServicesIconButton(
             source=details['icon'],
             size=(ratio,ratio),
-            size_hint=(None,None))
+            size_hint=(None,None),
+            data=details)
         service_icon.add_widget(CirclePulseEmit(6))
         layout.add_widget(service_icon)
 
@@ -3606,6 +3625,26 @@ class ControlGrid(Screen):
             logger.exception(e)
             print(Exception)
             print('e: ',e)
+
+    def load_service_details(self,*args):
+        try:
+            with open('logs/configurations/scheduled_services.json','r') as f:
+                loaded_data = json.load(f)
+        except Exception as e:
+            logger.exception(e)
+            print(Exception)
+            print('e: ',e)
+            return
+        w=self.widgets
+        layout=w['schedule_box_layout']
+        ratio=layout.width/11
+        for i in  loaded_data:
+            service_icon=ServicesIconButton(
+                source=i['icon'],
+                size=(ratio,ratio),
+                size_hint=(None,None),
+                data=i)
+            layout.add_widget(service_icon,load=True)
 
     def load_active_container(self,*args):
         container_fade_in=Animation(opacity=1,d=.5)
