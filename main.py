@@ -39,9 +39,9 @@ Config.set('kivy', 'keyboard_mode', 'systemanddock')
 if os.name=='posix':
     Config.set('graphics', 'fullscreen', 'auto')
     Config.set('graphics', 'borderless', '1')
-# else:
-#     Config.set('graphics', 'width', '1280')
-#     Config.set('graphics', 'height', '800')
+else:
+    Config.set('graphics', 'width', '1280')
+    Config.set('graphics', 'height', '800')
 
 import kivy
 import logic,lang_dict,pindex,utils.general as general
@@ -150,6 +150,7 @@ overlay_x_icon_black=r'media/popup_x.png'
 add_schedule_icon=r'media/add_icon.png'
 edit_schedule_icon=r'media/edit_icon.png'
 
+#<<<<<<<<<< CUSTOM WIDGETS >>>>>>>>>>#
 
 class PauseTouch(Widget):
     '''widget that intercepts all touch events.
@@ -2809,6 +2810,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
     def __init__(self, bg_color=(0.1, 0.1, 0.1, 0.95),call_back=None,fade_in=False,data={}, **kwargs):
         self.target_size_hint=kwargs['size_hint']
         super(ModalDenseRoundedColorLayout,self).__init__(bg_color, **kwargs)
+        self.widgets={}
         self.fade_in=fade_in
         self.call_back=call_back
         self.service_data=data
@@ -2827,8 +2829,12 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         service_details={
         "title":f"{self.service_data['title']}",
         "icon":f"{self.service_data['icon']}",
-        "interval":f"{self.service_data['default_interval']}",
+        "intervals":self.service_data['intervals'],
+        "default_interval":self.service_data['default_interval'],
+        "default_locked":self.service_data["default_locked"]
         }
+
+        ##### top #####
 
         schedule_details_title=Label(
             text=current_language['schedule_details_title'],
@@ -2836,6 +2842,87 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             size_hint =(.4, .05),
             pos_hint = {'center_x':.5, 'center_y':.925},)
         schedule_details_title.ref='schedule_details_title'
+
+        ##### left #####
+
+        schedule_details_interval_label=MinimumBoundingLabel(
+            text= current_language['schedule_details_interval_label'],
+            markup=True,
+            pos_hint = {'x':.05, 'center_y':.75},)
+        schedule_details_interval_label.ref='schedule_details_interval_label'
+
+        schedule_details_interval_input=MarkupSpinner(
+            disabled=False,
+            text=f'[b][size=16]{service_details["default_interval"]} Month(s)',
+            markup=True,
+            values=(f'[b][size=16]{i} Month(s)' for i in service_details['intervals']),
+            size_hint =(.3, .05),
+            pos_hint = {'right':.475, 'center_y':.75})
+
+        schedule_details_expire_label=MinimumBoundingLabel(
+            text= current_language['schedule_details_expire_label'],
+            markup=True,
+            pos_hint = {'x':.05, 'center_y':.65},)
+        schedule_details_expire_label.ref='schedule_details_expire_label'
+
+        schedule_details_expire_input=MarkupSpinner(
+            disabled=False,
+            text=f'[b][size=16]No Expiration',
+            markup=True,
+            values=('[b][size=16]1 Year','[b][size=16]2 Years','[b][size=16]3 Years','[b][size=16]No Expiration'),
+            size_hint =(.3, .05),
+            pos_hint = {'right':.475, 'center_y':.65})
+
+        ##### middle #####
+
+        schedule_details_seperator_line=Image(
+            source=gray_seperator_line_vertical,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.0015, .5),
+            pos_hint = {'center_x':.5, 'center_y':.55})
+
+        ##### right #####
+
+        schedule_details_locked_label=MinimumBoundingLabel(
+            text= current_language['schedule_details_locked_label'],
+            markup=True,
+            pos_hint = {'x':.55, 'center_y':.75},)
+        schedule_details_locked_label.ref='schedule_details_locked_label'
+
+        schedule_details_locked_input=MarkupSpinner(
+            disabled=False,
+            text=f'[b][size=16]{service_details["default_locked"]}',
+            markup=True,
+            values=('[b][size=16]Lock with Admin pin','[b][size=16]Add Vendor pin','[b][size=16]No pin Required'),
+            size_hint =(.3, .05),
+            pos_hint = {'right':.975, 'center_y':.75})
+        schedule_details_locked_input.bind(text=self.schedule_details_locked_input_validate)
+
+        schedule_details_custom_pin_label=MinimumBoundingLabel(
+            text= current_language['schedule_details_custom_pin_label'],
+            markup=True,
+            pos_hint = {'x':.55, 'center_y':.65},)
+        schedule_details_custom_pin_label.ref='schedule_details_custom_pin_label'
+
+        schedule_details_custom_pin_input=RoundedButton(
+            text=current_language['schedule_details_custom_pin_input'],
+            size_hint =(.275, .07),
+            pos_hint = {'right':.975, 'center_y':.65},
+            background_down='',
+            background_color=(100/255, 100/255, 100/255,.85),
+            markup=True,
+            disabled=True)
+        schedule_details_title.ref='schedule_details_custom_pin_input'
+        self.widgets['schedule_details_custom_pin_input']=schedule_details_custom_pin_input
+        schedule_details_custom_pin_input.bind(on_release=self.set_vendor_pin)
+
+        ##### bottom #####
+
+        schedule_details_name_label=MinimumBoundingLabel(
+            text= '[size=18][color=#ffffff][b]'+service_details['title'],
+            markup=True,
+            pos_hint = {'center_x':.5, 'center_y':.2},)
 
         save_button=RoundedButton(
             text=current_language['schedule_save_button'],
@@ -2849,7 +2936,50 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         save_button.bind(on_release=partial(save_func,service_details))
 
         self.add_widget(schedule_details_title)
+        self.add_widget(schedule_details_interval_label)
+        self.add_widget(schedule_details_interval_input)
+        self.add_widget(schedule_details_locked_label)
+        self.add_widget(schedule_details_locked_input)
+        self.add_widget(schedule_details_custom_pin_label)
+        self.add_widget(schedule_details_custom_pin_input)
+        self.add_widget(schedule_details_expire_label)
+        self.add_widget(schedule_details_expire_input)
+        self.add_widget(schedule_details_seperator_line)
+        self.add_widget(schedule_details_name_label)
         self.add_widget(save_button)
+
+    def set_vendor_pin(self,*args):
+        def set_pin(*args):
+            pl=PinLock(set_pin=True,callback=confirm_pin)
+            pl.widgets['title'].text='[size=20][color=#ffffff][b]Enter New Pin'
+            self.add_widget(pl)
+
+        def confirm_pin(**kwargs):
+            if not 'alt_pin' in kwargs:
+                App.get_running_app().notifications.toast('Error','warning')
+                return
+            pin=kwargs.pop('alt_pin')
+            pl=PinLock(alt_pin=pin,callback=save_pin)
+            pl.widgets['title'].text='[size=20][color=#ffffff][b]Confirm New Pin'
+            self.add_widget(pl)
+
+        def save_pin(pin,*args):
+            w=self.widgets
+            b=w['schedule_details_custom_pin_input']
+            b.text=f'[b][size=20][color=#000000]{pin}'
+
+        set_pin()
+
+    def schedule_details_locked_input_validate(self,button,text,*args):
+        w=self.widgets
+        b=w['schedule_details_custom_pin_input']
+        if text=='[b][size=16]Add Vendor pin':
+            b.disabled=False
+            b.bg_color=(100/255, 255/255, 100/255,.85)
+        else:
+            b.disabled=True
+            b.bg_color=(100/255, 100/255, 100/255,.85)
+        b.color_swap()
 
     def on_dim_saturation(self,*args):
         self.dim_color.rgba=(0,0,0,self.dim_saturation)
@@ -2968,7 +3098,7 @@ class ServicesIconButton(IconButton):
 
 
 
-#<<<<<<<<<<>>>>>>>>>>#
+#<<<<<<<<<< SCREENS >>>>>>>>>>#
 
 class ControlGrid(Screen):
     def fans_switch(self,button,*args):
@@ -8616,7 +8746,6 @@ class DocumentScreen(Screen):
         w['dock'].pos_hint={'center_x':.175, 'center_y':.51}
         w['container'].clear_widgets()
         self.current_section=''
-
 
 class TroubleScreen(Screen):
     def __init__(self, **kwargs):
