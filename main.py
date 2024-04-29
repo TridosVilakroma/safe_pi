@@ -34,6 +34,7 @@ import version.updater as UpdateService
 from version.version import version as VERSION
 UpdateService.current_version=VERSION
 from notifications.handler import Notifications as Notifications
+from utils.color_themes import palette
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
 if os.name=='posix':
@@ -152,6 +153,36 @@ edit_schedule_icon=r'media/edit_icon.png'
 
 #<<<<<<<<<< CUSTOM WIDGETS >>>>>>>>>>#
 
+class RoundedButton(Button):
+    def __init__(self,**kwargs):
+        super(RoundedButton,self).__init__(**kwargs)
+        self.bg_color=kwargs.get("background_color",palette('base'))
+        self.background_color = (self.bg_color[0], self.bg_color[1], self.bg_color[2], 0)  # Invisible background color to regular button
+
+        with self.canvas.before:
+            if self.background_down=="":
+                self.shape_color = Color(self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3])
+            else:
+                self.shape_color = Color(self.bg_color[0], self.bg_color[1], self.bg_color[2], self.bg_color[3])
+
+            self.shape = RoundedRectangle(pos=self.pos, size=self.size, radius=[20])
+            self.bind(pos=self.update_shape, size=self.update_shape,state=self.color_swap)
+
+    def update_shape(self, *args):
+        self.shape.pos = self.pos
+        self.shape.size = self.size
+    def color_swap(self,*args):
+        if self.state=="normal":
+            if self.background_normal=="":
+                self.shape_color.rgba = self.bg_color[0], self.bg_color[1], self.bg_color[2], self.bg_color[3]
+            else:
+                self.shape_color.rgba = self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3]
+        if self.state=="down":
+            if self.background_down=="":
+                self.shape_color.rgba = self.bg_color[0], self.bg_color[1], self.bg_color[2], self.bg_color[3]
+            else:
+                self.shape_color.rgba = self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3]
+
 class PauseTouch(Widget):
     '''widget that intercepts all touch events.
 
@@ -191,7 +222,7 @@ class CirclePulseEmit(Widget):
         self.quantity=quantity+1
         self.style=style
         with self.canvas:
-            self.circ_color=Color(0,0,0,)
+            self.circ_color=Color(*palette('dark_shade'))
             self.circle=Line(circle=(150, 150,0),width=1)
 
     def emit(self,*args):
@@ -202,7 +233,7 @@ class CirclePulseEmit(Widget):
         if self.style=='slow_pulse':
             pulse_anim=Animation(radius=max(self.width,self.height),d=1.25)
         elif self.style=='quick':
-            self.circ_color.rgba=(0,0,0,1)
+            self.circ_color.rgba=palette('dark_shade',1)
             pulse_anim=Animation(radius=max(self.width,self.height)*.4,d=.225,t='in_out_quint')
         pulse_anim.bind(on_complete=self.reset_props)
         pulse_anim.start(self)
@@ -251,6 +282,15 @@ class MarkupSpinnerOption(SpinnerOption):
         kwargs['markup']=True
         super(MarkupSpinnerOption,self).__init__(**kwargs)
 
+class ColorMarkupSpinnerOption(RoundedButton):
+    def  __init__(self, **kwargs):
+        kwargs['markup']=True
+        super(ColorMarkupSpinnerOption,self).__init__(**kwargs)
+        self.background_down=''
+        self.background_normal=''
+        self.size_hint_y=None
+        self.height=48
+
 class MarkupSpinner(Spinner):
     def __init__(self, **kwargs):
         super(MarkupSpinner,self).__init__(**kwargs)
@@ -264,7 +304,7 @@ class PinPop(Popup):
         title_color=[0, 0, 0, 1],
         title_size='38',
         title_align='center',
-        separator_color=[245/250, 216/250, 41/250,.5],
+        separator_color=palette('primary',.5),
         **kwargs)
         self.widgets={}
         self.overlay_layout=FloatLayout()
@@ -285,7 +325,7 @@ class ScatterImage(Image,Scatter):
         return super(ScatterImage, self).on_touch_up(touch)
 
 class OutlineScroll(ScrollView):
-    def __init__(self,bg_color=(0,0,0,1), **kwargs):
+    def __init__(self,bg_color=palette('dark_shade',1), **kwargs):
         super(OutlineScroll,self).__init__(**kwargs)
         self.bind(pos=self.update_rect)
         self.bind(size=self.update_rect)
@@ -297,7 +337,7 @@ class OutlineScroll(ScrollView):
         self.rect.size = (self.size[0], self.size[1])
 
 class OutlineAutoScroll(ScrollView):
-    def __init__(self,bg_color=(0,0,0,1), **kwargs):
+    def __init__(self,bg_color=palette('dark_shade',1), **kwargs):
         super(OutlineAutoScroll,self).__init__(**kwargs)
         if os.name=='nt':
             self.scroll_speed=10
@@ -343,7 +383,7 @@ class IconButton(ButtonBehavior, Image):
     # def __init__(self, **kwargs):
     #     super(IconButton,self).__init__(**kwargs)
     #     with self.canvas.before:
-    #             self.colour = Color(0,0,0,1)
+    #             self.colour = Color(*palette('dark_shade',1))
     #             self.rect = Rectangle(size=self.size, pos=self.pos)
     #     self.bind(size=self._update_rect, pos=self._update_rect)
 
@@ -386,35 +426,6 @@ class ServicesStackLayout(StackLayout):
 
     def _remove_widget(self,widget,*args):
         return super(ServicesStackLayout,self).remove_widget(widget)
-
-class RoundedButton(Button):
-    def __init__(self,**kwargs):
-        super(RoundedButton,self).__init__(**kwargs)
-        self.bg_color=kwargs["background_color"]
-        self.background_color = (self.bg_color[0], self.bg_color[1], self.bg_color[2], 0)  # Invisible background color to regular button
-
-        with self.canvas.before:
-            if self.background_normal=="":
-                self.shape_color = Color(self.bg_color[0], self.bg_color[1], self.bg_color[2], self.bg_color[3])
-            if self.background_down=="":
-                self.shape_color = Color(self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3])
-            self.shape = RoundedRectangle(pos=self.pos, size=self.size, radius=[20])
-            self.bind(pos=self.update_shape, size=self.update_shape,state=self.color_swap)
-
-    def update_shape(self, *args):
-        self.shape.pos = self.pos
-        self.shape.size = self.size
-    def color_swap(self,*args):
-        if self.state=="normal":
-            if self.background_normal=="":
-                self.shape_color.rgba = self.bg_color[0], self.bg_color[1], self.bg_color[2], self.bg_color[3]
-            else:
-                self.shape_color.rgba = self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3]
-        if self.state=="down":
-            if self.background_down=="":
-                self.shape_color.rgba = self.bg_color[0], self.bg_color[1], self.bg_color[2], self.bg_color[3]
-            else:
-                self.shape_color.rgba = self.bg_color[0]*.5, self.bg_color[1]*.5, self.bg_color[2]*.5, self.bg_color[3]
 
 class DraggableRoundedButton(DragBehavior,Button):
     def _do_touch_up(self, touch, *largs):
@@ -512,23 +523,23 @@ class trouble_template(Button):
         markup=True,
         size_hint_y=None,
         size_hint_x=1,
-        color = (0,0,0,1),
+        color = palette('dark_shade',1),
         background_down='',
         background_normal='',
-        background_color=(245/250, 216/250, 41/250,.85),
+        background_color=palette('primary',.85),
         **kwargs)
         
         self.bind(pos=self.update_rect)
         self.bind(size=self.update_rect)
         self.bind(state=self.color_swap)
         with self.canvas.before:
-            Color(245/250, 216/250, 41/250,.85)
+            Color(*palette('primary',.85))
             self.rect = Rectangle(pos=self.center,size=(self.width,self.height))
     def color_swap(self,*args):
         if self.state=="normal":
-            self.background_color=(245/250, 216/250, 41/250,.85)
+            self.background_color=palette('primary',.85)
         if self.state=="down":
-            self.background_color=((245/250)*.5, (216/250)*.5, (41/250)*.5,(.85)*.5)
+            self.background_color=((250/255)*.5, (220/255)*.5, (42/255)*.5,(.85)*.5)
     def update_rect(self, *args):
         self.rect.pos = self.pos
         self.rect.size = (self.size[0], self.size[1])
@@ -548,7 +559,7 @@ class trouble_template(Button):
                     logger.exception(f'main.py CLASS=trouble_template translate():  {self} has no entry in selected lanuage dict')
 
 class ScrollItemTemplate(Button):
-    def __init__(self,Item_tag,Item_text='',link_text=None,ref_tag=None,color=(245/250, 216/250, 41/250,.85),**kwargs):
+    def __init__(self,Item_tag,Item_text='',link_text=None,ref_tag=None,color=palette('primary',.85),**kwargs):
         if link_text == None:
             link_text=''
         else:
@@ -558,7 +569,7 @@ class ScrollItemTemplate(Button):
         markup=True,
         size_hint_y=None,
         size_hint_x=1,
-        color = (0,0,0,1),
+        color = palette('dark_shade',1),
         **kwargs)
         self.bind(pos=self.update_rect)
         self.bind(size=self.update_rect)
@@ -570,8 +581,8 @@ class ScrollItemTemplate(Button):
         self.rect.size = (self.size[0], self.size[1])
 
 class RoundedScrollItemTemplate(RoundedButton): 
-    def __init__(self,Item_tag,color=(245/250, 216/250, 41/250,.85),**kwargs):
-        if color==(245/250, 216/250, 41/250,.9):
+    def __init__(self,Item_tag,color=palette('primary',.85),**kwargs):
+        if color==palette('primary',.9):
             text_color= '#000000'
         else:
             text_color= '#ffffff'
@@ -589,7 +600,7 @@ class DisplayLabel(Label):
         self.bind(pos=self.update_rect)
         self.bind(size=self.update_rect)
         with self.canvas.before:
-                    Color(255/255, 255/255, 255/255,1)
+                    Color(*palette('light_tint',1))
                     self.rect = Rectangle(pos=self.center,size=(self.width,self.height))
     def update_rect(self, *args):
         self.rect.pos = self.pos
@@ -598,7 +609,7 @@ class DisplayLabel(Label):
         self.text=f'[size=25][color=#000000]{text}[/color][/size]'
 
 class ExactLabel(Label):
-    def __init__(self,label_color=(0,0,0,0), **kwargs):
+    def __init__(self,label_color=palette('dark_shade',0), **kwargs):
         super().__init__(**kwargs)
         self.size_hint=(None,None)
         with self.canvas.before:
@@ -622,10 +633,10 @@ class MinimumBoundingLabel(Label):
         self.size_hint=(None,None)
     #uncomment to see bounding boxes
     #     with self.canvas.before:
-    #         self.colour = Color(1,0,1,1)
+    #         self.colour = Color(*palette('dark_shade',1))
     #         self.rect = Rectangle(size=self.size, pos=self.pos)
 
-    #     self.bg_color=(1,0,1,1)
+    #     self.bg_color=palette('dark_shade',1)
     #     self.bind(size=self._update_rect, pos=self._update_rect)
 
     # def _update_rect(self, instance, *args):
@@ -653,7 +664,7 @@ class BoxLayoutColor(BoxLayout):
         super(BoxLayoutColor,self).__init__(**kwargs)
 
         with self.canvas.before:
-                Color(0,0,0,.95)
+                Color(*palette('dark_shade',.95))
                 self.rect = Rectangle(size=self.size, pos=self.pos)
 
         self.bind(size=self._update_rect, pos=self._update_rect)
@@ -663,7 +674,7 @@ class BoxLayoutColor(BoxLayout):
         self.rect.size = instance.size
 
 class RelativeLayoutColor(RelativeLayout):
-    def __init__(self,bg_color= (.1,.1,.1,.95),**kwargs):
+    def __init__(self,bg_color= palette('secondary',.95),**kwargs):
         super(RelativeLayoutColor,self).__init__(**kwargs)
         self.bg_color=bg_color
 
@@ -679,7 +690,7 @@ class RelativeLayoutColor(RelativeLayout):
 
 class LabelColor(Label):
     bg_color=ColorProperty()
-    def __init__(self,bg_color= (.1,.1,.1,.95),**kwargs):
+    def __init__(self,bg_color= palette('secondary',.95),**kwargs):
         super(LabelColor,self).__init__(**kwargs)
 
         with self.canvas.before:
@@ -705,7 +716,7 @@ class LabelColor(Label):
 
 class RoundedLabelColor(Label):
     bg_color=ColorProperty()
-    def __init__(self,bg_color= (.1,.1,.1,.95),**kwargs):
+    def __init__(self,bg_color= palette('secondary',.95),**kwargs):
         super(RoundedLabelColor,self).__init__(**kwargs)
         self.bg_color=bg_color
 
@@ -798,7 +809,7 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
 
     def on_touch_down(self, touch):
         if self.collide_point(*touch.pos):
-            self.bg_color=(.2,.1,.1,1)
+            self.bg_color=palette('highlight')
             touch.grab(self)
             self.avatar=self._avatar(touch)
         return super(DraggableRoundedLabelColor, self).on_touch_down(touch)
@@ -810,7 +821,7 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
                     self.set_index(dp)
             self.remove_drop_points(self.parent)
             self._new_move=True
-            self.bg_color=(.1,.1,.1,1)
+            self.bg_color=palette('secondary',1)
             self.opacity=1
             touch.ungrab(self)
 
@@ -854,7 +865,7 @@ class DraggableRoundedLabelColor(RoundedLabelColor):
 
 class RoundedColorLayout(FloatLayout):
     bg_color=ColorProperty()
-    def __init__(self,bg_color= (.1,.1,.1,.95),**kwargs):
+    def __init__(self,bg_color= palette('secondary',.95),**kwargs):
         super(RoundedColorLayout,self).__init__(**kwargs)
         self.bg_color=bg_color
 
@@ -868,12 +879,12 @@ class RoundedColorLayout(FloatLayout):
         self.shape.size = self.size
 
 class RoundedColorLayoutButton(ButtonBehavior,RoundedColorLayout):
-    def __init__(self, bg_color=(0.1, 0.1, 0.1, 0.95), **kwargs):
+    def __init__(self, bg_color=palette('secondary', 0.95), **kwargs):
         super(RoundedColorLayoutButton,self).__init__(bg_color=bg_color, **kwargs)
 
 class RoundedColorLayoutModal(FloatLayout):
     bg_color=ColorProperty()
-    def __init__(self,bg_color= (.1,.1,.1,.95),**kwargs):
+    def __init__(self,bg_color= palette('secondary',.95),**kwargs):
         super(RoundedColorLayoutModal,self).__init__(**kwargs)
         self.bg_color=bg_color
 
@@ -905,7 +916,7 @@ class ExpandableRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
             self.modal_dim=kwargs.pop('modal_dim')
             Clock.schedule_once(self._set_modal_dim)
             self._apply_dim=Animation(rgba=self.modal_dim)
-            self._remove_dim=Animation(rgba=(0,0,0,0),d=.2)
+            self._remove_dim=Animation(rgba=palette('dark_shade',0),d=.2)
         self.move_anim=Animation(pos_hint=self.expanded_pos,d=.15,t='in_out_quad')
         self.move_anim.bind(on_complete=self.set_expanded_true)
         self.return_anim=Animation(pos_hint=self.original_pos,d=.15,t='out_back')
@@ -925,7 +936,7 @@ class ExpandableRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
 
     def _set_modal_dim(self,*args):
         with self.canvas.before:
-            self._dim=Color(0,0,0,0)
+            self._dim=Color(*palette('dark_shade',0))
             self._dim_rect=Rectangle(size=Window.size)
 
     def on_touch_down(self, touch):
@@ -1236,8 +1247,8 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
 
     def populate_widgets(self,*args):
         self.clear_widgets()
-        scroll_color=(.4,.4,.4,.85)
-        yellow=(245/250, 216/250, 41/250,.9)
+        scroll_color=palette('base',.85)
+        yellow=palette('primary',.9)
 
         cg=App.get_running_app().context_screen.get_screen('main')
         cgw=cg.widgets
@@ -1256,7 +1267,7 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
             source=gray_seperator_line,
             allow_stretch=True,
             keep_ratio=False,
-            color=(.5,.5,.5,1),
+            color=palette('base',1),
             size_hint =(.5, .001),
             pos_hint = {'x':.01, 'y':.87})
         self.widgets['msg_seperator_line']=msg_seperator_line
@@ -1290,7 +1301,7 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
         for i in messages.active_messages:
             btn = RoundedButton(
                 background_normal='',
-                background_color=(.1,.1,.1,1),
+                background_color=palette('secondary',1),
                 text=i.name,
                 size_hint_y=None,
                 height=40)
@@ -1356,7 +1367,7 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
                 size_hint =(.4, .1),
                 pos_hint = {'x':.06, 'y':.215},
                 background_normal='',
-                background_color=(.4,.4,.4,.85),
+                background_color=palette('base',.85),
                 markup=True)
             self.widgets['selected_msg_button']=selected_msg_button
             for i in message.callbacks:
@@ -1968,11 +1979,11 @@ class PreLoader(CircularProgressBar):
         else:self.ref='preloader'
         if 'color' in kwargs:
             _color=kwargs.pop('color')
-        else:_color=(1,1,1,1)
+        else:_color=palette('light_tint',1)
 
         super().__init__(**kwargs)
         self._progress_colour=_color
-        self.background_colour=(1,1,1,0)
+        self.background_colour=palette('light_tint',0)
         self.rel_x=rel_pos[0]
         self.rel_y=rel_pos[1]
         self.rel_size=rel_size
@@ -2226,7 +2237,7 @@ class PinLock(RoundedColorLayoutModal):
             self.set_pin=kwargs.pop('set_pin')
         if 'alt_pin' in kwargs:
             self.alt_pin=kwargs.pop('alt_pin')
-        super(PinLock,self).__init__(bg_color=(.15,.15,.15,1),**kwargs)
+        super(PinLock,self).__init__(bg_color=palette('secondary',1),**kwargs)
         self.hidden=hidden
         self.widgets={}
         self.pin=[]
@@ -2241,7 +2252,7 @@ class PinLock(RoundedColorLayoutModal):
         self.pos_hint={'center_x':.5,'center_y':.5}
         self.callback=callback
         with self.canvas.before:
-            Color(0,0,0,.65)
+            Color(*palette('dark_shade',.65))
             Rectangle(size=Window.size)
 
         title=Label(
@@ -2330,7 +2341,7 @@ class PinLock(RoundedColorLayoutModal):
             size_hint =(.15, .15),
             pos_hint = {'x':.05, 'y':.65},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         one.value=1
         self.widgets['one']=one
@@ -2340,7 +2351,7 @@ class PinLock(RoundedColorLayoutModal):
             size_hint =(.15, .15),
             pos_hint = {'x':.3, 'y':.65},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         two.value=2
         self.widgets['two']=two
@@ -2350,7 +2361,7 @@ class PinLock(RoundedColorLayoutModal):
             size_hint =(.15, .15),
             pos_hint = {'x':.55, 'y':.65},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         three.value=3
         self.widgets['three']=three
@@ -2360,7 +2371,7 @@ class PinLock(RoundedColorLayoutModal):
             size_hint =(.15, .15),
             pos_hint = {'x':.05, 'y':.45},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         four.value=4
         self.widgets['four']=four
@@ -2370,7 +2381,7 @@ class PinLock(RoundedColorLayoutModal):
             size_hint =(.15, .15),
             pos_hint = {'x':.3, 'y':.45},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         five.value=5
         self.widgets['five']=five
@@ -2380,7 +2391,7 @@ class PinLock(RoundedColorLayoutModal):
             size_hint =(.15, .15),
             pos_hint = {'x':.55, 'y':.45},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         six.value=6
         self.widgets['six']=six
@@ -2390,7 +2401,7 @@ class PinLock(RoundedColorLayoutModal):
             size_hint =(.15, .15),
             pos_hint = {'x':.05, 'y':.25},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         seven.value=7
         self.widgets['seven']=seven
@@ -2400,7 +2411,7 @@ class PinLock(RoundedColorLayoutModal):
             size_hint =(.15, .15),
             pos_hint = {'x':.3, 'y':.25},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         eight.value=8
         self.widgets['eight']=eight
@@ -2410,7 +2421,7 @@ class PinLock(RoundedColorLayoutModal):
             size_hint =(.15, .15),
             pos_hint = {'x':.55, 'y':.25},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         nine.value=9
         self.widgets['nine']=nine
@@ -2420,7 +2431,7 @@ class PinLock(RoundedColorLayoutModal):
             size_hint =(.15, .15),
             pos_hint = {'x':.05, 'y':.05},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         zero.value=0
         self.widgets['zero']=zero
@@ -2430,7 +2441,7 @@ class PinLock(RoundedColorLayoutModal):
             size_hint =(.4, .15),
             pos_hint = {'x':.3, 'y':.05},
             background_down='',
-            background_color=(255/255, 100/255, 100/255,.85),
+            background_color=palette('highlight',.85),
             markup=True)
         self.widgets['backspace']=backspace
         backspace.bind(on_release=self.backspace_func)
@@ -2439,7 +2450,7 @@ class PinLock(RoundedColorLayoutModal):
             size_hint =(.15, .75),
             pos_hint = {'right':.95, 'y':.05},
             background_down='',
-            background_color=(100/255, 255/255, 100/255,.85),
+            background_color=palette('complement',.85),
             markup=True)
         self.widgets['enter']=enter
         enter.bind(on_release=self.enter_func)
@@ -2531,7 +2542,7 @@ class PinLock(RoundedColorLayoutModal):
             fade.start(i)
         fade.start(self.widgets['hidden_button'])
         with self.canvas.after:
-            Color(0,1,0)
+            Color(*palette('complement'))
             self.check_one=Line(width=3)
             self.check_two=Line(width=3)
         self.end_point_one=self.check_one_start
@@ -2617,15 +2628,15 @@ class EmailInput(TextInput):
 
     def _text_validation(self,button,focused,*args):
         if focused:
-            self.foreground_color=(0,0,0,1)
+            self.foreground_color=palette('dark_shade',1)
             return
         t=self.minimum_email_req.match(self.text)
         if t:
             self.contains_valid_email=True
-            self.foreground_color=(0,0,0,1)
+            self.foreground_color=palette('dark_shade',1)
         else:
             self.contains_valid_email=False
-            self.foreground_color=(1,0,0,1)
+            self.foreground_color=palette('highlight',1)
 
 class ScreenSaver(ButtonBehavior,Label):
     '''ScreenSaver implements a software level screen saver.
@@ -2726,9 +2737,9 @@ class ScreenSaver(ButtonBehavior,Label):
     def __init__(self, **kwargs):
         super(ScreenSaver,self).__init__(**kwargs)
         with self.canvas.before:
-            self.canvas_color=Color(0,0,0,0)
+            self.canvas_color=Color(*palette('dark_shade',0))
             Rectangle(size=Window.size)
-        Animation(rgba=(0,0,0,1),d=2,t='out_sine').start(self.canvas_color)
+        Animation(rgba=palette('dark_shade',1),d=2,t='out_sine').start(self.canvas_color)
 
     def clear(self,*args):
         cls=ScreenSaver
@@ -2794,7 +2805,7 @@ class DenseRoundedColorLayout(ButtonBehavior,RoundedColorLayout):
     # widgets behind it, so we explicitly
     # capture the touch to meet expectations
 
-    def __init__(self, bg_color=(0.1, 0.1, 0.1, 0.95), **kwargs):
+    def __init__(self, bg_color=palette('secondary', 0.95), **kwargs):
         super(DenseRoundedColorLayout,self).__init__(bg_color=bg_color, **kwargs)
 
     def on_touch_down(self, touch):
@@ -2807,7 +2818,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
 
     dim_saturation=NumericProperty(0)
 
-    def __init__(self, bg_color=(0.1, 0.1, 0.1, 0.95),call_back=None,fade_in=False,data={}, **kwargs):
+    def __init__(self, bg_color=palette('secondary', 0.95),call_back=None,fade_in=False,data={}, **kwargs):
         self.target_size_hint=kwargs['size_hint']
         super(ModalDenseRoundedColorLayout,self).__init__(bg_color, **kwargs)
         self.widgets={}
@@ -2816,11 +2827,11 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         self.service_data=data
         if fade_in:
             with self.canvas.before:
-                self.dim_color=Color(0,0,0,0)
+                self.dim_color=Color(*palette('dark_shade',0))
                 Rectangle(size=Window.size)
         else:
             with self.canvas.before:
-                self.dim_color=Color(0,0,0,.65)
+                self.dim_color=Color(*palette('dark_shade',.65))
                 Rectangle(size=Window.size)
 
     def populate_details(self,*args):
@@ -2857,7 +2868,9 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             markup=True,
             values=(f'[b][size=16]{i} Month(s)' for i in service_details['intervals']),
             size_hint =(.3, .05),
-            pos_hint = {'right':.475, 'center_y':.75})
+            pos_hint = {'right':.475, 'center_y':.75},
+            background_down='',
+            background_color=palette('primary',.85))
 
         schedule_details_expire_label=MinimumBoundingLabel(
             text= current_language['schedule_details_expire_label'],
@@ -2871,7 +2884,9 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             markup=True,
             values=('[b][size=16]1 Year','[b][size=16]2 Years','[b][size=16]3 Years','[b][size=16]No Expiration'),
             size_hint =(.3, .05),
-            pos_hint = {'right':.475, 'center_y':.65})
+            pos_hint = {'right':.475, 'center_y':.65},
+            background_down='',
+            background_color=palette('light_tint',.85))
 
         ##### middle #####
 
@@ -2896,7 +2911,9 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             markup=True,
             values=('[b][size=16]Lock with Admin pin','[b][size=16]Add Vendor pin','[b][size=16]No pin Required'),
             size_hint =(.3, .05),
-            pos_hint = {'right':.975, 'center_y':.75})
+            pos_hint = {'right':.975, 'center_y':.75},
+            background_down='',
+            background_color=palette('light_tint',.85))
         schedule_details_locked_input.bind(text=self.schedule_details_locked_input_validate)
 
         schedule_details_custom_pin_label=MinimumBoundingLabel(
@@ -2910,7 +2927,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             size_hint =(.275, .07),
             pos_hint = {'right':.975, 'center_y':.65},
             background_down='',
-            background_color=(100/255, 100/255, 100/255,.85),
+            background_color=palette('base',.85),
             markup=True,
             disabled=True)
         schedule_details_title.ref='schedule_details_custom_pin_input'
@@ -2929,7 +2946,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             size_hint =(.7, .1),
             pos_hint = {'center_x':.5, 'y':.05},
             background_down='',
-            background_color=(100/255, 255/255, 100/255,.85),
+            background_color=palette('complement',.85),
             markup=True)
         schedule_details_title.ref='schedule_save_button'
         save_button.bind(on_release=self.animate_success_clear)
@@ -2975,14 +2992,14 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         b=w['schedule_details_custom_pin_input']
         if text=='[b][size=16]Add Vendor pin':
             b.disabled=False
-            b.bg_color=(100/255, 255/255, 100/255,.85)
+            b.bg_color=palette('accent',.85)
         else:
             b.disabled=True
-            b.bg_color=(100/255, 100/255, 100/255,.85)
+            b.bg_color=palette('base',.85)
         b.color_swap()
 
     def on_dim_saturation(self,*args):
-        self.dim_color.rgba=(0,0,0,self.dim_saturation)
+        self.dim_color.rgba=palette('dark_shade',self.dim_saturation)
 
     def on_parent(self,*args):
         parent=self.parent
@@ -3031,7 +3048,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         return True
 
 class OutlineModalScroll(ScrollView):
-    def __init__(self,bg_color=(0,0,0,1), **kwargs):
+    def __init__(self,bg_color=palette('dark_shade',1), **kwargs):
         super(OutlineModalScroll,self).__init__(**kwargs)
         self.x_btn=IconButton(
             source=overlay_x_icon,
@@ -3052,7 +3069,7 @@ class OutlineModalScroll(ScrollView):
         if parent:
             self.scroll_y=1
             self.last_parent=parent
-            self._dim=LabelColor(bg_color=(0,0,0,.65))
+            self._dim=LabelColor(bg_color=palette('dark_shade',.65))
             parent.add_widget(self._dim)
             Clock.schedule_once(lambda *args:parent.add_widget(self.x_btn))
         else:
@@ -3087,10 +3104,10 @@ class ServicesIconButton(IconButton):
 
     def on_state(self,button,state,*args):
         if state=='down':
-            self.color=(1,1,.9,.85)
+            self.color=palette('primary',.65)
             self.add_widget(CirclePulseEmit(0,style='quick'))
         else:
-            self.color=(1,1,1,1)
+            self.color=palette('light_tint',1)
 
     def on_release(self,*args):
         print(self.data)
@@ -3151,7 +3168,7 @@ class ControlGrid(Screen):
                     size_hint =(.45, .5),
                     pos_hint = {'x':.03, 'y':.4},
                     background_down='',
-                    background_color=(0/250, 159/250, 232/250,.85),
+                    background_color=palette('accent',.85),
                     markup=True)
         self.widgets['fans']=fans
         fans.ref='fans'
@@ -3162,7 +3179,7 @@ class ControlGrid(Screen):
                     size_hint =(.45, .5),
                     pos_hint = {'x':.52, 'y':.4},
                     background_down='',
-                    background_color=(245/250, 216/250, 41/250,.85),
+                    background_color=palette('primary',.85),
                     markup=True)
         self.widgets['lights']=lights
         lights.ref='lights'
@@ -3172,7 +3189,7 @@ class ControlGrid(Screen):
             markup=True,
             size_hint =(.475,.22),
             pos_hint = {'center_x':.5, 'center_y':.265},
-            bg_color=(.2,.2,.2,.65))
+            bg_color=palette('secondary',.65))
         self.widgets['clock_label']=clock_label
         clock_label.bind(on_release=self.widget_fade)
 
@@ -3183,7 +3200,7 @@ class ControlGrid(Screen):
             ignore_perpendicular_swipes=True)
         self.widgets['widget_carousel']=widget_carousel
 
-        clock_set_layout=RelativeLayoutColor(bg_color= (.1,.1,.1,.85))
+        clock_set_layout=RelativeLayoutColor(bg_color= palette('secondary',.85))
 
         hour_wheel=BigWheelClock(
             size_hint =(.25, .9),
@@ -3233,7 +3250,7 @@ class ControlGrid(Screen):
             ampm_wheel.add_widget(_ampm)
 
         messenger_button=Messenger(
-            bg_color=(.7,.7,.7,.3),
+            bg_color=palette('neutral',.3),
             size_hint =(1,1),
             pos_hint = {'center_x':.5, 'center_y':.5})
         self.widgets['messenger_button']=messenger_button
@@ -3255,7 +3272,7 @@ class ControlGrid(Screen):
                     size_hint =(.18, .1),
                     pos_hint = {'x':.02, 'y':.015},
                     background_down='',
-                    background_color=(250/250, 250/250, 250/250,.9),
+                    background_color=palette('light_tint',.9),
                     markup=True)
         self.widgets['settings_button']=settings_button
         settings_button.bind(on_release=self.open_settings)
@@ -3280,21 +3297,21 @@ class ControlGrid(Screen):
         trouble_button.pos_hint = {'x':.75, 'y':.02}
         self.widgets['trouble_button']=trouble_button
         trouble_button.bind(on_release=self.open_trouble)
-        trouble_button.color=(1,1,1,.15)
+        trouble_button.color=palette('light_tint',.15)
 
         schedule_button=IconButton(source=schedule_icon_image, allow_stretch=True, keep_ratio=True)
         schedule_button.size_hint =(.10, .10)
         schedule_button.pos_hint = {'x':.61, 'y':.02}
         self.widgets['schedule_button']=schedule_button
         schedule_button.bind(on_release=self.schedule_icon_func)
-        schedule_button.color=(1,1,1,.65)
+        schedule_button.color=palette('light_tint',.65)
 
         msg_icon=IconButton(source=msg_icon_image, allow_stretch=True, keep_ratio=True)
         msg_icon.size_hint =(.10, .10)
         msg_icon.pos_hint = {'x':.47, 'y':.02}
         self.widgets['msg_icon']=msg_icon
         msg_icon.bind(on_release=self.msg_icon_func)
-        msg_icon.color=(1,1,1,.65)
+        msg_icon.color=palette('light_tint',.65)
         msg_icon.widgets={}
         Clock.schedule_once(self.start_nb_clock,5)
 
@@ -3304,7 +3321,7 @@ class ControlGrid(Screen):
                 allow_stretch=True,
                 keep_ratio=True,
                 pos_hint = {'x':.89, 'y':.02},
-                color=(.7,.7,.7))
+                color=palette('neutral'))
         self.widgets['fs_logo']=fs_logo
         fs_logo.bind(on_release=self.about_func)
 
@@ -3314,7 +3331,7 @@ class ControlGrid(Screen):
             title_color=[0, 0, 0, 1],
             title_size='38',
             title_align='center',
-            separator_color=[255/255, 0/255, 0/255, .5])
+            separator_color=palette('highlight', .5))
         overlay_menu.bind(on_touch_down=overlay_menu.dismiss)
         self.widgets['overlay_menu']=overlay_menu
 
@@ -3341,7 +3358,7 @@ class ControlGrid(Screen):
         ########## schedule widgets ##########
 
         schedule_box=RoundedColorLayoutModal(
-            bg_color=(1,1,1,.9),
+            bg_color=palette('light_tint',.9),
             size_hint =(.95, .825),
             pos_hint = {'center_x':.5, 'center_y':.565},)
         self.widgets['schedule_box']=schedule_box
@@ -3368,7 +3385,7 @@ class ControlGrid(Screen):
         self.widgets['schedule_box_layout']=schedule_box_layout
 
         schedule_dock=DenseRoundedColorLayout(
-            bg_color=(.15,.15,.15,.95),
+            bg_color=palette('secondary',.95),
             size_hint =(.6, .725),
             pos_hint = {'center_x':1.3, 'center_y':.51})
         self.widgets['schedule_dock']=schedule_dock
@@ -3378,7 +3395,7 @@ class ControlGrid(Screen):
             size_hint =(.055,.425),
             pos_hint = {'center_x':.06, 'center_y':.5},
             background_down='',
-            background_color=(250/250, 250/250, 250/250,.9),
+            background_color=palette('light_tint',.9),
             markup=True)
         self.widgets['schedule_dock_handle']=schedule_dock_handle
         schedule_dock_handle.bind(on_release=self.schedule_dock_handle_func)
@@ -3394,10 +3411,10 @@ class ControlGrid(Screen):
         schedule_dock_scroll=OutlineScroll(
             size_hint =(.65,.9),
             pos_hint = {'x':.125, 'center_y':.5},
-            bg_color=(.85,.85,.85,.85),
+            bg_color=palette('neutral',.85),
             bar_width=8,
-            bar_color=(245/250, 216/250, 41/250,.9),
-            bar_inactive_color=(245/250, 216/250, 41/250,.35),
+            bar_color=palette('primary',.9),
+            bar_inactive_color=palette('primary',.35),
             do_scroll_y=True,
             do_scroll_x=False)
         self.widgets['schedule_dock_scroll']=schedule_dock_scroll
@@ -3415,14 +3432,14 @@ class ControlGrid(Screen):
         schedule_add_button.pos_hint = {'x':.61, 'y':.02}
         self.widgets['schedule_add_button']=schedule_add_button
         schedule_add_button.bind(on_release=self.schedule_dock_handle_func)
-        schedule_add_button.color=(1,1,1,.65)
+        schedule_add_button.color=palette('light_tint',.65)
 
         schedule_edit_button=IconButton(source=edit_schedule_icon, allow_stretch=True, keep_ratio=True)
         schedule_edit_button.size_hint =(.10, .10)
         schedule_edit_button.pos_hint = {'x':.75, 'y':.02}
         self.widgets['schedule_edit_button']=schedule_edit_button
         schedule_edit_button.bind(on_release=self.schedule_edit_icon_func)
-        schedule_edit_button.color=(1,1,1,.65)
+        schedule_edit_button.color=palette('light_tint',.65)
 
         schedule_box.add_widget(schedule_title)
         schedule_box.add_widget(schedule_box_layout)
@@ -3482,7 +3499,7 @@ class ControlGrid(Screen):
                 ramp_progress=CircularProgressBar()
                 ramp_progress.widget_size=int(fb.height*.9)
                 ramp_progress._background_colour=(0,0,0,0)
-                ramp_progress._progress_colour=(.1,.1,.1,.85)
+                ramp_progress._progress_colour=palette('secondary',.85)
                 self.widgets['ramp_progress']=ramp_progress
                 ramp_progress.pos=self.widgets['fans'].center
                 ramp_progress.opacity=0
@@ -3693,7 +3710,7 @@ class ControlGrid(Screen):
         try:
             for i in services.values():
                 card=RoundedColorLayout(
-                    bg_color=(.25,.25,.25,.85),
+                    bg_color=palette('secondary',.85),
                     size_hint =(1, None),
                     height=150)
                 title=MinimumBoundingLabel(
@@ -3709,7 +3726,7 @@ class ControlGrid(Screen):
                     size_hint =(.7, .3),
                     pos_hint = {'center_x':.5, 'y':.05},
                     background_normal='',
-                    background_color=(100/255, 255/255, 100/255,.85),
+                    background_color=palette('complement',.85),
                     markup=True)
                 add_button.bind(on_release=partial(self.add_service_prompt_details,i))
                 add_button.bind(on_release=self.schedule_dock_handle_func)
@@ -3733,7 +3750,7 @@ class ControlGrid(Screen):
         layout.add_widget(service_icon)
 
         details_box=ModalDenseRoundedColorLayout(
-            bg_color=(.05,.05,.05,.95),
+            bg_color=palette('dark_shade',.85),
             size_hint =(.6, .725),
             pos_hint = {'center_x':.5, 'center_y':.5},
             fade_in=True,
@@ -3810,7 +3827,7 @@ class ControlGrid(Screen):
 
     def about_overlay(self):
         overlay_menu=self.widgets['overlay_menu']
-        overlay_menu.background_color=(0,0,0,.75)
+        overlay_menu.background_color=palette('dark_shade',.75)
         overlay_menu.title=''
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
@@ -3845,14 +3862,14 @@ class ControlGrid(Screen):
                         size_hint =(.9, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['about_back_button']=about_back_button
         about_back_button.ref='about_back'
 
         def about_overlay_close(button):
             self.widgets['overlay_menu'].dismiss()
-        about_back_button.bind(on_press=about_overlay_close)
+        about_back_button.bind(on_release=about_overlay_close)
 
         self.widgets['overlay_layout'].add_widget(about_text)
         self.widgets['overlay_layout'].add_widget(version_info)
@@ -3892,19 +3909,19 @@ class ActuationScreen(Screen):
         alert=RoundedLabelColor(text=current_language['alert'],
                     size_hint =(.96, .45),
                     pos_hint = {'x':.02, 'y':.5},
-                    bg_color=(249/250, 25/250, 25/250,.85),
+                    bg_color=palette('highlight',.85),
                     markup=True)
         self.widgets['alert']=alert
         alert.ref='alert'
 
         action_box=RoundedColorLayout(
-            bg_color=(.25,.25,.25,.85),
+            bg_color=palette('secondary',.85),
             size_hint =(.35, .40),
             pos_hint = {'x':.02, 'center_y':.25},)
         self.widgets['action_box']=action_box
 
         with action_box.canvas.before:
-           Color(.1,.1,.1,1)
+           Color(*palette('secondary',1))
            action_box.msg_lines=Line(points=[100,100,100,100],width=1.5,group='action')
 
         def update_action_box_lines(*args):
@@ -3941,7 +3958,7 @@ class ActuationScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.725},
             # background_normal='',
             background_down='',
-            background_color=(.1,.1,.1,.85),
+            background_color=palette('secondary',.85),
             markup=True)
         self.widgets['acknowledge']=acknowledge
         acknowledge.ref='acknowledge'
@@ -3953,20 +3970,20 @@ class ActuationScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.275},
             # background_normal='',
             background_down='',
-            background_color=(.1,.1,.1,.85),
+            background_color=palette('secondary',.85),
             markup=True)
         self.widgets['service']=service
         service.ref='service'
         service.bind(on_release=self.service_func)
 
         dialogue_box=RoundedColorLayout(
-            bg_color=(.1,.1,.1,.9),
+            bg_color=palette('secondary',.9),
             size_hint =(.5, .40),
             pos_hint = {'center_x':.7, 'center_y':.25},)
         self.widgets['dialogue_box']=dialogue_box
 
         with dialogue_box.canvas.before:
-           Color(.25,.25,.25,1)
+           Color(*palette('secondary',1))
            dialogue_box.msg_lines=Line(points=[100,100,100,100],width=1.5,group='action')
 
         def update_dialogue_box_lines(*args):
@@ -3998,7 +4015,7 @@ class ActuationScreen(Screen):
         dialogue_box.bind(pos=update_dialogue_box_lines, size=update_dialogue_box_lines)
 
         dialogue_title=RoundedLabelColor(
-            bg_color=(.25,.25,.25,.0),
+            bg_color=palette('secondary',.0),
             size_hint =(.9, .2),
             pos_hint = {'center_x':.5, 'center_y':.875},
             text=current_language['acknowledge'],
@@ -4007,7 +4024,7 @@ class ActuationScreen(Screen):
         dialogue_title.ref='dialogue_title'
 
         dialogue_body=RoundedLabelColor(
-            bg_color=(.25,.25,.25,.0),
+            bg_color=palette('secondary',.0),
             size_hint =(.9, .5),
             pos_hint = {'center_x':.5, 'center_y':.35},
             text=current_language['acknowledge'],
@@ -4023,7 +4040,7 @@ class ActuationScreen(Screen):
             title_color=[0, 0, 0, 1],
             title_size='38',
             title_align='center',
-            separator_color=[255/255, 0/255, 0/255, .5])
+            separator_color=palette('highlight', .5))
         self.widgets['overlay_menu']=overlay_menu
 
         overlay_layout=FloatLayout()
@@ -4053,7 +4070,7 @@ class ActuationScreen(Screen):
             return
         logger.info('actuation acknowledged')
         self.anime.cancel_all(self.widgets['alert'])
-        self.widgets['alert'].bg_color=(249/250, 25/250, 25/250,.85)
+        self.widgets['alert'].bg_color=palette('highlight',.85)
         # self.widgets['alert'].text=current_language['alert_acknowledged']
         button.text="[size=28][color=#ffffff]Acknowledged"
         button.disabled=True
@@ -4062,13 +4079,13 @@ class ActuationScreen(Screen):
         self.service_overlay()
 
     def pulse(self):
-            self.anime = Animation(bg_color=(249/250, 200/250, 200/250,.85), duration=.2)+Animation(bg_color=(249/250, 0/250, 0/250,1), duration=1.5)
+            self.anime = Animation(bg_color=palette('light_tint',.85), duration=.1)+Animation(bg_color=palette('highlight',1), duration=1.5,t='out_cubic')
             self.anime.repeat = True
             self.anime.start(self.widgets['alert'])
 
     def service_overlay(self):
         overlay_menu=self.widgets['overlay_menu']
-        overlay_menu.background_color=(0,0,0,.8)
+        overlay_menu.background_color=palette('dark_shade',.8)
         overlay_menu.title=''
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
@@ -4079,7 +4096,7 @@ class ActuationScreen(Screen):
             size_hint =(.9, .1),
             pos_hint = {'x':.05, 'y':.05},
             background_normal='',
-            background_color=(245/250, 216/250, 41/250,.9),
+            background_color=palette('primary',.9),
             markup=True)
         self.widgets['service_back_button']=service_back_button
         service_back_button.ref='about_back'
@@ -4089,7 +4106,7 @@ class ActuationScreen(Screen):
             size_hint =(.9, .1),
             pos_hint = {'x':.05, 'y':.45},
             background_normal='',
-            background_color=(.25,.25,.25,1),
+            background_color=palette('secondary',1),
             markup=True)
         self.widgets['service_enter_button']=service_enter_button
         service_back_button.ref='enter'
@@ -4100,7 +4117,7 @@ class ActuationScreen(Screen):
         self.widgets['pin_layout']=pin_layout
 
         with pin_layout.canvas.before:
-           Color(.25,.25,.25,1)
+           Color(*palette('secondary',1))
            pin_layout.box_lines=Line(points=[100,100,100,100],width=1.5,group='action')
            pin_layout.divider_line1=Line(points=[100,100,100,100],width=1.5,group='action')
            pin_layout.divider_line2=Line(points=[100,100,100,100],width=1.5,group='action')
@@ -4258,16 +4275,16 @@ class SettingsScreen(Screen):
                         size_hint =(.4, .1),
                         pos_hint = {'x':.06, 'y':.015},
                         background_down='',
-                        background_color=(200/255, 200/255, 200/255,.9),
+                        background_color=palette('neutral',.9),
                         markup=True)
         self.widgets['back']=back
         back.ref='settings_back'
-        back.bind(on_press=self.settings_back)
+        back.bind(on_release=self.settings_back)
 
         version_info=RoundedButton(text=current_language['version_info'],
                 markup=True,
                 background_normal='',
-                background_color=(245/250, 216/250, 41/250,.5),
+                background_color=palette('primary',.5),
                 size_hint =(.18, .1),
                 pos_hint = {'x':.75, 'y':.015},)
         version_info.ref='version_info'
@@ -4278,7 +4295,7 @@ class SettingsScreen(Screen):
             size_hint =(.9, .18),
             pos_hint = {'x':.05, 'y':.78},
             background_down='',
-            background_color=(100/255, 100/255, 100/255,.9),#(200/255, 200/255, 200/255,.9),
+            background_color=palette('base',.9),
             markup=True)
         self.widgets['analytics']=analytics
         analytics.ref='analytics'
@@ -4289,7 +4306,7 @@ class SettingsScreen(Screen):
                         size_hint =(.9, .18),
                         pos_hint = {'x':.05, 'y':.51},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.9),#180/255, 10/255, 10/255,.9
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['sys_report']=sys_report
         sys_report.ref='sys_report'
@@ -4299,7 +4316,7 @@ class SettingsScreen(Screen):
                         size_hint =(.9, .18),
                         pos_hint = {'x':.05, 'y':.24},
                         background_down='',
-                        background_color=(200/255, 205/255, 200/255,.9),
+                        background_color=palette('neutral',.9),
                         markup=True)
         self.widgets['preferences']=preferences
         preferences.ref='preferences'
@@ -4311,7 +4328,7 @@ class SettingsScreen(Screen):
             title_color=[0, 0, 0, 1],
             title_size='38',
             title_align='center',
-            separator_color=[255/255, 0/255, 0/255, .5])
+            separator_color=palette('highlight', .5))
         self.widgets['overlay_menu']=overlay_menu
 
         overlay_layout=FloatLayout()
@@ -4334,8 +4351,8 @@ class SettingsScreen(Screen):
         language_button.size_hint =(.10, .10)
         language_button.pos_hint = {'x':.61, 'y':.02}
         self.widgets['language_button']=language_button
-        language_button.bind(on_press=self.language_func)
-        language_button.color=(1,1,1,.65)
+        language_button.bind(on_release=self.language_func)
+        language_button.color=palette('light_tint',.65)
 
         overlay_menu.add_widget(overlay_layout)
         self.add_widget(bg_image)
@@ -4364,7 +4381,7 @@ class SettingsScreen(Screen):
 
     def language_overlay(self):
         overlay_menu=self.widgets['overlay_menu']
-        overlay_menu.background_color=(0,0,0,0)
+        overlay_menu.background_color=palette('dark_shade',0)
         overlay_menu.auto_dismiss=True
         overlay_menu.title=''
         overlay_menu.separator_height=0
@@ -4374,7 +4391,7 @@ class SettingsScreen(Screen):
                         size_hint =(.96, .125),
                         pos_hint = {'x':.02, 'y':.7},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['english']=english
 
@@ -4382,7 +4399,7 @@ class SettingsScreen(Screen):
                         size_hint =(.96, .125),
                         pos_hint = {'x':.02, 'y':.3},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['spanish']=spanish
 
@@ -4414,7 +4431,7 @@ class SettingsScreen(Screen):
 
     def about_overlay(self):
         overlay_menu=self.widgets['overlay_menu']
-        overlay_menu.background_color=(0,0,0,.75)
+        overlay_menu.background_color=palette('dark_shade',.75)
         overlay_menu.title=''
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
@@ -4449,14 +4466,14 @@ class SettingsScreen(Screen):
                         size_hint =(.9, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['about_back_button']=about_back_button
         about_back_button.ref='about_back'
 
         def about_overlay_close(button):
             self.widgets['overlay_menu'].dismiss()
-        about_back_button.bind(on_press=about_overlay_close)
+        about_back_button.bind(on_release=about_overlay_close)
 
         self.widgets['overlay_layout'].add_widget(about_text)
         self.widgets['overlay_layout'].add_widget(version_info)
@@ -4481,21 +4498,21 @@ class ReportScreen(Screen):
                     size_hint =(.4, .1),
                     pos_hint = {'x':.06, 'y':.015},
                     background_down='',
-                    background_color=(200/250, 200/250, 200/250,.85),
+                    background_color=palette('neutral',.85),
                     markup=True)
         self.widgets['back']=back
         back.ref='report_back'
-        back.bind(on_press=self.Report_back)
+        back.bind(on_release=self.Report_back)
 
         back_main=RoundedButton(text=current_language['report_back_main'],
                         size_hint =(.4, .1),
                         pos_hint = {'x':.52, 'y':.015},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['back_main']=back_main
         back_main.ref='report_back_main'
-        back_main.bind(on_press=self.Report_back_main)
+        back_main.bind(on_release=self.Report_back_main)
 
         date_label=DisplayLabel(
             text='',
@@ -4565,8 +4582,8 @@ class ReportScreen(Screen):
             size_hint_y=1,
             size_hint_x=.95,
             pos_hint = {'center_x':.525, 'center_y':.5})
-        report_scroll.bar_color=(245/250, 216/250, 41/250,.75)
-        report_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
+        report_scroll.bar_color=palette('primary',.75)
+        report_scroll.bar_inactive_color=palette('primary',.55)
         self.widgets['report_scroll']=report_scroll
 
         report_scatter = Scatter(
@@ -4744,23 +4761,23 @@ class DevicesScreen(Screen):
                     size_hint =(.4, .1),
                     pos_hint = {'x':.06, 'y':.015},
                     background_down='',
-                    background_color=(200/250, 200/250, 200/250,.85),
+                    background_color=palette('neutral',.85),
                     markup=True)
         self.widgets['back']=back
         back.ref='report_back'
-        back.bind(on_press=self.devices_back)
+        back.bind(on_release=self.devices_back)
 
         back_main=RoundedButton(text=current_language['report_back_main'],
                         size_hint =(.4, .1),
                         pos_hint = {'x':.52, 'y':.015},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['back_main']=back_main
         back_main.ref='report_back_main'
-        back_main.bind(on_press=self.devices_back_main)
+        back_main.bind(on_release=self.devices_back_main)
 
-        device_details=ScrollItemTemplate(current_language['no_device'],color=(120/255, 120/255, 120/255,.85))
+        device_details=ScrollItemTemplate(current_language['no_device'],color=palette('base',.85))
         self.widgets['device_details']=device_details
         device_details.ref='no_device'
 
@@ -4781,8 +4798,8 @@ class DevicesScreen(Screen):
             # size_hint_x=1,
             size_hint =(.9, .80),
             pos_hint = {'center_x':.5, 'y':.18})
-        device_scroll.bar_color=(245/250, 216/250, 41/250,.75)
-        device_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
+        device_scroll.bar_color=palette('primary',.75)
+        device_scroll.bar_inactive_color=palette('primary',.55)
         self.widgets['device_scroll']=device_scroll
 
         overlay_menu=Popup(
@@ -4791,7 +4808,7 @@ class DevicesScreen(Screen):
             title_color=[0, 0, 0, 1],
             title_size='30',
             title_align='center',
-            separator_color=[255/255, 0/255, 0/255, .5])
+            separator_color=palette('highlight', .5))
         overlay_menu.bind(on_open=self.resize)
         self.widgets['overlay_menu']=overlay_menu
 
@@ -4811,7 +4828,7 @@ class DevicesScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':1.5},
             expanded_size=(.9,.8),
             expanded_pos = {'center_x':.5, 'center_y':.55},
-            bg_color=(0,0,0,.85))
+            bg_color=palette('dark_shade',.85))
         batch_add_layout.widgets={}
         self.widgets['batch_add_layout']=batch_add_layout
         batch_add_layout.bind(expanded=self.batch_add_layout_populate)
@@ -4837,7 +4854,7 @@ class DevicesScreen(Screen):
             size_hint =(.5, .075),
             pos_hint = {'center_x':.5, 'center_y':.075},
             background_down='',
-            background_color=(250/250, 250/250, 250/250,.9),
+            background_color=palette('light_tint',.9),
             markup=True)
         self.widgets['batch_add_expand_button']=batch_add_expand_button
         batch_add_expand_button.bind(on_release=batch_add_layout.shrink)
@@ -4860,7 +4877,7 @@ class DevicesScreen(Screen):
         self.widgets['batch_add_vertical_seperator']=batch_add_vertical_seperator
 
         batch_add_instructions=LabelColor(
-            bg_color=(0,0,0,1),
+            bg_color=palette('dark_shade',1),
             text=current_language['batch_add_instructions'],
             markup=True,
             size_hint =(.3, .6),
@@ -4882,10 +4899,10 @@ class DevicesScreen(Screen):
         batches_scroll=OutlineScroll(
             size_hint =(.175,.6),
             pos_hint = {'center_x':.475, 'center_y':.475},
-            bg_color=(1,1,1,.15),
+            bg_color=palette('light_tint',.15),
             bar_width=8,
-            bar_color=(245/250, 216/250, 41/250,.9),
-            bar_inactive_color=(245/250, 216/250, 41/250,.35),
+            bar_color=palette('primary',.9),
+            bar_inactive_color=palette('primary',.35),
             do_scroll_y=True,
             do_scroll_x=False)
         self.widgets['batches_scroll']=batches_scroll
@@ -4901,10 +4918,10 @@ class DevicesScreen(Screen):
         batches_device_info_scroll=OutlineScroll(
             size_hint =(.3125,.6),
             pos_hint = {'center_x':.79375, 'center_y':.475},
-            bg_color=(1,1,1,.15),
+            bg_color=palette('light_tint',.15),
             bar_width=8,
-            bar_color=(245/250, 216/250, 41/250,.9),
-            bar_inactive_color=(245/250, 216/250, 41/250,.35),
+            bar_color=palette('primary',.9),
+            bar_inactive_color=palette('primary',.35),
             do_scroll_y=True,
             do_scroll_x=False)
         self.widgets['batches_device_info_scroll']=batches_device_info_scroll
@@ -4920,7 +4937,7 @@ class DevicesScreen(Screen):
         batch_blue_relay_4_button=RoundedButton(
             text='[b][size=16][color=#000000]Four Channel\nBlue Relay Board',
             background_normal='',
-            background_color=(.0, .5, .7,.8),
+            background_color=palette('accent',.8),
             markup=True,
             size_hint_y=None,
             height=60,
@@ -4931,7 +4948,7 @@ class DevicesScreen(Screen):
         batch_blue_relay_6_button=RoundedButton(
             text='[b][size=16][color=#000000]Six Channel\nBlue Relay Board',
             background_normal='',
-            background_color=(.0, .5, .7,.8),
+            background_color=palette('accent',.8),
             markup=True,
             size_hint_y=None,
             height=60,
@@ -4942,7 +4959,7 @@ class DevicesScreen(Screen):
         basic_inputs_button=RoundedButton(
             text='[b][size=16][color=#000000]Basic Input Devices',
             background_normal='',
-            background_color=(.0, .5, .7,.8),
+            background_color=palette('accent',.8),
             markup=True,
             size_hint_y=None,
             height=60,
@@ -4981,15 +4998,15 @@ class DevicesScreen(Screen):
             height=75,
             text='[b][size=16][color=#000000]Add Batch',
             background_normal='',
-            background_color=(.0, .5, .7,.8),
+            background_color=palette('accent',.8),
             markup=True)
         add_batch_button.bind(on_release=partial(self.add_batch,batch))
         layout.add_widget(add_batch_button)
         layout.add_widget(Label())
 
     def batch_add_layout_populate(self,*args):
-        darken=Animation(rgba=(0,0,0,.95))
-        lighten=Animation(rgba=(0,0,0,.85))
+        darken=Animation(rgba=palette('dark_shade',.95))
+        lighten=Animation(rgba=palette('dark_shade',.85))
         batch_add_layout=self.widgets['batch_add_layout']
         batch_add_layout.clear_widgets()
         if batch_add_layout.expanded:
@@ -5056,7 +5073,7 @@ class DevicesScreen(Screen):
                         size_hint =(.15, .15),
                         pos_hint = {'x':.85, 'y':.95})
         self.widgets['info_add_icon']=info_add_icon
-        info_add_icon.color=(1,1,1,.5)
+        info_add_icon.color=palette('light_tint',.5)
         info_add_icon.bind(on_release=partial(self.info_add_icon_func,device))
         info_add_icon.bind(state=self.icon_change)
 
@@ -5064,43 +5081,43 @@ class DevicesScreen(Screen):
                         size_hint =(.2, .2),
                         pos_hint = {'x':.0, 'y':.90})
         self.widgets['delete_icon']=delete_icon
-        delete_icon.color=(1,1,1,.8)
+        delete_icon.color=palette('light_tint',.8)
         delete_icon.bind(on_release=partial(self.delete_icon_func,device))
         delete_icon.bind(state=self.delete_icon_change)
 
 
         info_type=MinimumBoundingLabel(
             text=f"[size=18]Device Type:                         {device.type}[/size]",
-            color=(0,0,0,1),
+            color=palette('dark_shade',1),
             pos_hint = {'x':.1, 'y':.85},
             markup=True)
 
         info_pin=MinimumBoundingLabel(
             text=f"[size=18]Device GPIO Pin:                 {device.pin}[/size]",
-            color=(0,0,0,1),
+            color=palette('dark_shade',1),
             pos_hint = {'x':.1, 'y':.75},
             markup=True)
 
         info_run_time=MinimumBoundingLabel(
             text=f"[size=18]Device Run Time:                {general.Convert_time(device.run_time)}[/size]",
-            color=(0,0,0,1),
+            color=palette('dark_shade',1),
             pos_hint = {'x':.1, 'y':.65},
             markup=True)
 
         info_trigger=MinimumBoundingLabel(
             text=f"[size=18]Device Trigger State:         {device.trigger.capitalize()}[/size]",
-            color=(0,0,0,1),
+            color=palette('dark_shade',1),
             pos_hint = {'x':.1, 'y':.55},
             markup=True)
 
         info_loading_error=MinimumBoundingLabel(text=f"[size=18]Device failed to load all details correctly[/size]",
-                color=(0,0,0,1),
+                color=palette('dark_shade',1),
                 pos_hint = {'center_x':.5, 'y':.3},
                 markup=True)
         self.widgets['info_loading_error']=info_loading_error
 
         info_admin_hint=MinimumBoundingLabel(text=f"[size=18]Enable Admin mode to edit device[/size]",
-                color=(0,0,0,1),
+                color=palette('dark_shade',1),
                 pos_hint = {'center_x':.5, 'y':.2},
                 markup=True)
         self.widgets['info_admin_hint']=info_admin_hint
@@ -5108,27 +5125,26 @@ class DevicesScreen(Screen):
         info_back_button=RoundedButton(text=current_language['about_back'],
                         size_hint =(.9, .15),
                         pos_hint = {'x':.05, 'y':.025},
-                        background_normal='',
                         background_down='',
-                        background_color=(255/255, 50/255, 50/255,.85),
+                        background_color=palette('highlight',.85),
                         markup=True)
         self.widgets['info_back_button']=info_back_button
         info_back_button.ref='about_back'
-        info_back_button.bind(on_press=self.info_overlay_close)
+        info_back_button.bind(on_release=self.info_overlay_close)
 
         info_gv_reset=IconButton(source=reset_valve,
                         size_hint =(.12, .12),
                         pos_hint = {'x':.15, 'y':.98})
-        info_gv_reset.color=(1,1,1,.8)
+        info_gv_reset.color=palette('light_tint',.8)
         self.widgets['info_gv_reset']=info_gv_reset
-        info_gv_reset.bind(on_press=partial(self.info_gv_reset_func,device))
+        info_gv_reset.bind(on_release=partial(self.info_gv_reset_func,device))
 
         info_heat_timer_reset=IconButton(source=reset_valve,
                         size_hint =(.12, .12),
                         pos_hint = {'x':.15, 'y':.98})
-        info_heat_timer_reset.color=(1,1,1,.8)
+        info_heat_timer_reset.color=palette('light_tint',.8)
         self.widgets['info_heat_timer_reset']=info_heat_timer_reset
-        info_heat_timer_reset.bind(on_press=partial(self.info_heat_timer_reset_func,device))
+        info_heat_timer_reset.bind(on_release=partial(self.info_heat_timer_reset_func,device))
 
         self.widgets['overlay_layout'].add_widget(info_add_icon)
         self.widgets['overlay_layout'].add_widget(delete_icon)
@@ -5170,17 +5186,17 @@ class DevicesScreen(Screen):
                         pos_hint = {'x':.05, 'y':.025},
                         background_normal='',
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['delete_back_button']=delete_back_button
         delete_back_button.ref='cancel_button'
-        delete_back_button.bind(on_press=partial(self.delete_overlay_close,device))
+        delete_back_button.bind(on_release=partial(self.delete_overlay_close,device))
 
         delete_confirm_button=RoundedButton(text="Delete",
                         size_hint =(.4, .10),
                         pos_hint = {'x':.3, 'y':.35},
-                        background_normal='',
-                        background_color=(180/255, 10/255, 10/255,.9),
+                        background_down='',
+                        background_color=palette('highlight',1),
                         markup=True)
         self.widgets['delete_confirm_button']=delete_confirm_button
         delete_confirm_button.ref='about_back'
@@ -5190,13 +5206,13 @@ class DevicesScreen(Screen):
 terminate the associated GPIO pin usage immediately.
         
 Only proceed if necessary; This action cannot be undone.[/color][/size]""",
-                        color=(0,0,0,1),
+                        color=palette('dark_shade',1),
                         pos_hint = {'center_x':.5, 'center_y':.7},
                         markup=True)
 
         delete_progress=CircularProgressBar()
         delete_progress._widget_size=200
-        delete_progress._progress_colour=(180/255, 10/255, 10/255,1)
+        delete_progress._progress_colour=palette('highlight',1)
         self.widgets['delete_progress']=delete_progress
 
         self.widgets['overlay_layout'].add_widget(delete_back_button)
@@ -5281,7 +5297,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                 self.name='default'
                 self.type='Exfan'
                 self.pin=0
-                self.color=(0/255, 0/255, 0/255,.85)
+                self.color=palette('dark_shade',.85)
                 self.run_time=0
                 self.trigger="High"
                 self.device_types={
@@ -5307,9 +5323,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         new_device_back_button=RoundedButton(text=current_language['about_back'],
                         size_hint =(.4, .15),
                         pos_hint = {'x':.05, 'y':.025},
-                        # background_normal='',
                         background_down='',
-                        background_color=(255/255, 50/255, 50/255,.85),
+                        background_color=palette('highlight',.85),
                         markup=True)
         self.widgets['new_device_back_button']=new_device_back_button
         new_device_back_button.ref='about_back'
@@ -5319,7 +5334,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         size_hint =(.4, .15),
                         pos_hint = {'x':.55, 'y':.025},
                         background_down='',
-                        background_color=(100/255, 255/255, 100/255,.85),
+                        background_color=palette('complement',.85),
                         markup=True)
         self.widgets['new_device_save_button']=new_device_save_button
         new_device_save_button.ref='save'
@@ -5327,7 +5342,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         get_name_label=MinimumBoundingLabel(text="[size=18]Device Name:[/size]",
                         pos_hint = {'x':.1, 'y':.9},
-                        color = (0,0,0,1),
+                        color = palette('dark_shade',1),
                         markup=True)
 
         get_name=TextInput(multiline=False,
@@ -5341,7 +5356,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         get_device_label=MinimumBoundingLabel(text="[size=18]Device Type:[/size]",
                         pos_hint = {'x':.1, 'y':.8},
-                        color = (0,0,0,1),
+                        color = palette('dark_shade',1),
                         markup=True)
 
         get_device_type=Spinner(
@@ -5356,7 +5371,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         get_device_pin_label=MinimumBoundingLabel(text="[size=18]Device I/O Pin:[/size]",
                         pos_hint = {'x':.1, 'y':.7},
-                        color = (0,0,0,1),
+                        color = palette('dark_shade',1),
                         markup=True)
 
         get_device_pin=Spinner(
@@ -5369,7 +5384,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         get_advanced_device_pin_label=MinimumBoundingLabel(text="[size=18]Advanced Device I/O Pin:[/size]",
                         pos_hint = {'x':.1, 'y':.6},
-                        color = (0,0,0,1),
+                        color = palette('dark_shade',1),
                         markup=True)
 
         get_advanced_device_pin=Spinner(
@@ -5383,7 +5398,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         get_trigger_label=MinimumBoundingLabel(text="[size=18]Device Pin Trigger State:[/size]",
                         pos_hint = {'x':.1, 'y':.5},
-                        color = (0,0,0,1),
+                        color = palette('dark_shade',1),
                         markup=True)
 
         get_trigger_state=Spinner(
@@ -5401,7 +5416,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             pos_hint = {'x':.40, 'y':.4},
             # background_normal='',
             background_down='',
-            background_color=(245/250, 216/250, 41/250,.75),
+            background_color=palette('primary',.75),
             markup=True)
         self.widgets['advanced_toggle']=advanced_toggle
         advanced_toggle.bind(state=partial(self.advanced_toggle_func,current_device))
@@ -5499,25 +5514,25 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
     def get_device_type_func(self,current_device,button,value):
         current_device.type=value
         if value=="Exfan":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="MAU":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="Light":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="Dry":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="GV":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="Micro":
-            current_device.color=(170/255, 0/255, 0/255,.85)
+            current_device.color=palette('highlight',.85)
         elif value=="Heat":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="Light Switch":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="Fans Switch":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="Manometer":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
     def get_device_pin_func(self,current_device,button,value):
         if current_device.type=='Manometer':
             return
@@ -5605,9 +5620,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         edit_device_back_button=RoundedButton(text=current_language['about_back'],
                         size_hint =(.4, .15),
                         pos_hint = {'x':.05, 'y':.025},
-                        # background_normal='',
                         background_down='',
-                        background_color=(255/255, 50/255, 50/255,.85),
+                        background_color=palette('highlight',.85),
                         markup=True)
         self.widgets['edit_device_back_button']=edit_device_back_button
         edit_device_back_button.ref='about_back'
@@ -5618,7 +5632,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
                         pos_hint = {'x':.55, 'y':.025},
                         # background_normal='',
                         background_down='',
-                        background_color=(100/255, 255/255, 100/255,.85),
+                        background_color=palette('complement',.85),
                         markup=True)
         self.widgets['edit_device_save_button']=edit_device_save_button
         edit_device_save_button.ref='save'
@@ -5626,7 +5640,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         get_name_label=MinimumBoundingLabel(text="[size=18]Device Name:[/size]",
                         pos_hint = {'x':.05, 'y':.9},
-                        color = (0,0,0,1),
+                        color = palette('dark_shade',1),
                         markup=True)
 
         get_name=TextInput(multiline=False,
@@ -5639,7 +5653,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         get_device_label=MinimumBoundingLabel(text="[size=18]Device Type: (Locked)[/size]",
                         pos_hint = {'x':.05, 'y':.8},
-                        color = (0,0,0,1),
+                        color = palette('dark_shade',1),
                         markup=True)
 
         get_device_type=Spinner(
@@ -5652,7 +5666,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         get_device_pin_label=MinimumBoundingLabel(text="[size=18]Device I/O Pin:[/size]",
                         pos_hint = {'x':.05, 'y':.7},
-                        color = (0,0,0,1),
+                        color = palette('dark_shade',1),
                         markup=True)
 
         edit_device_pin=Spinner(
@@ -5665,7 +5679,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         get_advanced_device_pin_label=MinimumBoundingLabel(text="[size=18]Advanced Device I/O Pin:[/size]",
                         pos_hint = {'x':.05, 'y':.6},
-                        color = (0,0,0,1),
+                        color = palette('dark_shade',1),
                         markup=True)
 
         edit_advanced_device_pin=Spinner(
@@ -5679,7 +5693,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
 
         edit_trigger_label=MinimumBoundingLabel(text="[size=18]Device Pin Trigger State:[/size]",
                         pos_hint = {'x':.05, 'y':.5},
-                        color = (0,0,0,1),
+                        color = palette('dark_shade',1),
                         markup=True)
 
         edit_trigger_state=Spinner(
@@ -5697,7 +5711,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             pos_hint = {'x':.40, 'y':.4},
             # background_normal='',
             background_down='',
-            background_color=(245/250, 216/250, 41/250,.75),
+            background_color=palette('primary',.75),
             markup=True)
         self.widgets['edit_advanced_toggle']=edit_advanced_toggle
         edit_advanced_toggle.bind(state=partial(self.edit_advanced_toggle_func,current_device))
@@ -5785,25 +5799,25 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
     def edit_device_type_func(self,current_device,button,value):
         current_device.type=value
         if value=="Exfan":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="MAU":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="Light":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="Dry":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="GV":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="Micro":
-            current_device.color=(170/255, 0/255, 0/255,.85)
+            current_device.color=palette('highlight',.85)
         elif value=="Heat":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="Light Switch":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="Fans Switch":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
         elif value=="Manometer":
-            current_device.color=(0/255, 0/255, 0/255,.85)
+            current_device.color=palette('dark_shade',.85)
     def edit_device_pin_func(self,current_device,button,value):
         if current_device.type=='Manometer':
             return
@@ -5868,7 +5882,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             self.widgets['device_layout'].add_widget(self.widgets['device_details'])
         new_device=RoundedScrollItemTemplate(
                         '[/color][color=#000000]Add Device +',
-                        color=(200/250, 200/250, 200/250,.85))
+                        color=palette('neutral',.85))
         self.widgets['device_layout'].add_widget(new_device)
         new_device.bind(on_release=self.new_device_func)
 
@@ -5899,18 +5913,18 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
     def check_admin_mode(self):
         if App.get_running_app().admin_mode_start>time.time() or self.unlocked:
             if 'info_add_icon' in  self.widgets:
-                self.widgets['info_add_icon'].color=(1,1,1,.5)
+                self.widgets['info_add_icon'].color=palette('light_tint',.5)
             if 'delete_icon' in self.widgets:
-                self.widgets['delete_icon'].color=(1,1,1,.8)
+                self.widgets['delete_icon'].color=palette('light_tint',.8)
             if 'info_admin_hint' in self.widgets:
                 self.widgets['overlay_layout'].remove_widget(self.widgets['info_admin_hint'])
         else:
             if 'info_admin_hint' in self.widgets:
                 self.widgets['overlay_layout'].add_widget(self.widgets['info_admin_hint'])
             if 'info_add_icon' in  self.widgets:
-                self.widgets['info_add_icon'].color=(1,1,1,.15)
+                self.widgets['info_add_icon'].color=palette('light_tint',.15)
             if 'delete_icon' in self.widgets:
-                self.widgets['delete_icon'].color=(1,1,1,.15)
+                self.widgets['delete_icon'].color=palette('light_tint',.15)
 
     def on_pre_enter(self):
         self.unlocked=False
@@ -5929,23 +5943,23 @@ class TrainScreen(Screen):
                     size_hint =(.4, .1),
                     pos_hint = {'x':.06, 'y':.015},
                     background_down='',
-                    background_color=(200/250, 200/250, 200/250,.85),
+                    background_color=palette('neutral',.85),
                     markup=True)
         self.widgets['back']=back
         back.ref='report_back'
-        back.bind(on_press=self.train_back)
+        back.bind(on_release=self.train_back)
 
         back_main=RoundedButton(text=current_language['report_back_main'],
                         size_hint =(.4, .1),
                         pos_hint = {'x':.52, 'y':.015},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['back_main']=back_main
         back_main.ref='report_back_main'
-        back_main.bind(on_press=self.train_back_main)
+        back_main.bind(on_release=self.train_back_main)
 
-        train_details=ScrollItemTemplate(current_language['no_train'],color=(120/255, 120/255, 120/255,.85))
+        train_details=ScrollItemTemplate(current_language['no_train'],color=palette('base',.85))
         self.widgets['train_details']=train_details
         train_details.ref='no_train'
 
@@ -6004,21 +6018,21 @@ class PreferenceScreen(Screen):
                         size_hint =(.4, .1),
                         pos_hint = {'x':.06, 'y':.015},
                         background_down='',
-                        background_color=(200/250, 200/250, 200/250,.9),
+                        background_color=palette('neutral',.9),
                         markup=True)
         self.widgets['back']=back
         back.ref='preferences_back'
-        back.bind(on_press=self.settings_back)
+        back.bind(on_release=self.settings_back)
 
         back_main=RoundedButton(text=current_language['preferences_back_main'],
                         size_hint =(.4, .1),
                         pos_hint = {'x':.52, 'y':.015},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['back_main']=back_main
         back_main.ref='preferences_back_main'
-        back_main.bind(on_press=self.settings_back_main)
+        back_main.bind(on_release=self.settings_back_main)
 
         pref_scroll=ScrollView(
             bar_width=8,
@@ -6026,8 +6040,8 @@ class PreferenceScreen(Screen):
             do_scroll_x=False,
             size_hint =(.9, .85),
             pos_hint = {'center_x':.5, 'y':.14})
-        pref_scroll.bar_color=(245/250, 216/250, 41/250,.75)
-        pref_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
+        pref_scroll.bar_color=palette('primary',.75)
+        pref_scroll.bar_inactive_color=palette('primary',.55)
         self.widgets['pref_scroll']=pref_scroll
 
         scroll_layout=EventpassGridLayout(
@@ -6043,7 +6057,7 @@ class PreferenceScreen(Screen):
                         size_hint =(1, 1),
                         #pos_hint = {'x':.01, 'y':.9},
                         background_down='',
-                        background_color=(200/250, 200/250, 200/250,.9),
+                        background_color=palette('neutral',.9),
                         markup=True)
         self.widgets['advanced_settings']=advanced_settings
         advanced_settings.ref='advanced_settings'
@@ -6053,7 +6067,7 @@ class PreferenceScreen(Screen):
                         size_hint =(1, 1),
                         #pos_hint = {'x':.01, 'y':.9},
                         background_down='',
-                        background_color=(200/250, 200/250, 200/250,.9),
+                        background_color=palette('neutral',.9),
                         markup=True)
         self.widgets['general_settings']=general_settings
         general_settings.ref='general_settings'
@@ -6064,7 +6078,7 @@ class PreferenceScreen(Screen):
                         pos_hint = {'x':.01, 'y':.6},
                         background_down='',
                         disabled=True,
-                        background_color=(100/250, 100/250, 100/250,.9),
+                        background_color=palette('base',.9),
                         markup=True)
         self.widgets['train']=train
         train.ref='train'
@@ -6074,7 +6088,7 @@ class PreferenceScreen(Screen):
                         size_hint =(1, 1),
                         pos_hint = {'x':.01, 'y':.7},
                         background_down='',
-                        background_color=(200/250, 200/250, 200/250,.9),
+                        background_color=palette('neutral',.9),
                         markup=True)
         self.widgets['about']=about
         about.ref='about'
@@ -6084,7 +6098,7 @@ class PreferenceScreen(Screen):
                         size_hint =(1, 1),
                         pos_hint = {'x':.01, 'y':.7},
                         background_down='',
-                        background_color=(100/250, 100/250, 100/250,.9),#(200/250, 200/250, 200/250,.9),
+                        background_color=palette('base',.9),
                         markup=True)
         self.widgets['account']=account
         account.ref='account'
@@ -6095,7 +6109,7 @@ class PreferenceScreen(Screen):
                         size_hint =(1, 1),
                         pos_hint = {'x':.01, 'y':.7},
                         background_down='',
-                        background_color=(200/250, 200/250, 200/250,.9),#(100/250, 100/250, 100/250,.9),
+                        background_color=palette('neutral',.9),
                         markup=True)
         self.widgets['network']=network
         network.ref='network'
@@ -6105,7 +6119,7 @@ class PreferenceScreen(Screen):
                         size_hint =(1, 1),
                         pos_hint = {'x':.01, 'y':.8},
                         background_down='',
-                        background_color=(200/250, 200/250, 200/250,.9),
+                        background_color=palette('neutral',.9),
                         markup=True)
         self.widgets['clean_mode']=clean_mode
         clean_mode.ref='clean_mode'
@@ -6114,9 +6128,8 @@ class PreferenceScreen(Screen):
         commission=RoundedButton(text=current_language['commission'],
                         size_hint =(1, 1),
                         pos_hint = {'x':.01, 'y':.5},
-                        background_normal='',
-                        # disabled=True,
-                        background_color=(100/250, 100/250, 100/250,.9),
+                        background_down='',
+                        background_color=palette('neutral',.9),
                         markup=True)
         self.widgets['commission']=commission
         commission.ref='commission'
@@ -6127,7 +6140,7 @@ class PreferenceScreen(Screen):
             size_hint =(.9, .18),
             pos_hint = {'x':.05, 'y':.78},
             background_down='',
-            background_color=(200/255, 200/255, 200/255,.9),
+            background_color=palette('neutral',.9),
             markup=True)
         self.widgets['logs']=logs
         logs.ref='logs'
@@ -6137,7 +6150,7 @@ class PreferenceScreen(Screen):
                         size_hint =(1, 1),
                         pos_hint = {'x':.01, 'y':.4},
                         background_down='',
-                        background_color=(200/250, 200/250, 200/250,.9),
+                        background_color=palette('neutral',.9),
                         markup=True)
         self.widgets['pins']=pins
         pins.ref='pins'
@@ -6151,7 +6164,7 @@ class PreferenceScreen(Screen):
             title_color=[0, 0, 0, 1],
             title_size='38',
             title_align='center',
-            separator_color=[255/255, 0/255, 0/255, .5])
+            separator_color=palette('highlight', .5))
         self.widgets['overlay_menu']=overlay_menu
         overlay_menu.ref='heat_overlay'
 
@@ -6192,7 +6205,7 @@ class PreferenceScreen(Screen):
 
     def heat_overlay(self):
         overlay_menu=self.widgets['overlay_menu']
-        overlay_menu.background_color=(0,0,0,.75)
+        overlay_menu.background_color=palette('dark_shade',.75)
         overlay_menu.title=''
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
@@ -6209,7 +6222,7 @@ class PreferenceScreen(Screen):
                         size_hint =(.96, .125),
                         pos_hint = {'x':.02, 'y':.5},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         self.widgets['duration_1']=duration_1
         duration_1.ref='duration_1'
@@ -6218,7 +6231,7 @@ class PreferenceScreen(Screen):
                         size_hint =(.96, .125),
                         pos_hint = {'x':.02, 'y':.3},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         self.widgets['duration_2']=duration_2
         duration_1.ref='duration_2'
@@ -6227,7 +6240,7 @@ class PreferenceScreen(Screen):
                         size_hint =(.96, .125),
                         pos_hint = {'x':.02, 'y':.1},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         self.widgets['duration_3']=duration_3
         duration_1.ref='duration_3'
@@ -6267,7 +6280,7 @@ class PreferenceScreen(Screen):
 
     def maint_overlay(self):
         overlay_menu=self.widgets['overlay_menu']
-        overlay_menu.background_color=(0,0,0,.75)
+        overlay_menu.background_color=palette('dark_shade',.75)
         overlay_menu.title=''
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
@@ -6286,7 +6299,7 @@ class PreferenceScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         self.widgets['continue_button']=continue_button
         continue_button.ref='continue_button'
@@ -6295,7 +6308,7 @@ class PreferenceScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         self.widgets['cancel_button']=cancel_button
         cancel_button.ref='cancel_button'
@@ -6336,7 +6349,7 @@ class PreferenceScreen(Screen):
                         size_hint =(.9, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         self.widgets['disable_button']=disable_button
         disable_button.ref='disable_button'
@@ -6345,14 +6358,14 @@ class PreferenceScreen(Screen):
                         size_hint =(.2, .25),
                         pos_hint = {'x':.75, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         self.widgets['light_button']=light_button
         light_button.ref='lights'
 
         disable_progress=CircularProgressBar()
         disable_progress._widget_size=200
-        disable_progress._progress_colour=(245/250, 216/250, 41/250,1)
+        disable_progress._progress_colour=palette('primary',1)
         self.widgets['disable_progress']=disable_progress
 
         def light_button_func(button,*args):
@@ -6438,14 +6451,14 @@ class PreferenceScreen(Screen):
                         size_hint =(.9, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         self.widgets['about_back_button']=about_back_button
         about_back_button.ref='about_back'
 
         def about_overlay_close(button):
             self.widgets['overlay_menu'].dismiss()
-        about_back_button.bind(on_press=about_overlay_close)
+        about_back_button.bind(on_release=about_overlay_close)
 
         self.widgets['overlay_layout'].add_widget(about_text)
         self.widgets['overlay_layout'].add_widget(version_info)
@@ -6456,7 +6469,7 @@ class PreferenceScreen(Screen):
 
     def general_settings_overlay(self):
         overlay_menu=self.widgets['overlay_menu']
-        overlay_menu.background_color=(0,0,0,.75)
+        overlay_menu.background_color=palette('dark_shade',.75)
         overlay_menu.title=''
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
@@ -6487,9 +6500,9 @@ class PreferenceScreen(Screen):
 
         def _swap_color(button,*args):
             if button.state=='down':
-                button.bg_color=(245/250, 216/250, 41/250,.85)
+                button.bg_color=palette('primary',.85)
             if button.state=='normal':
-                button.bg_color=(.5,.5,.5,1)
+                button.bg_color=palette('base',1)
 
 
         overlay_title=Label(text=current_language['general_settings_overlay'],
@@ -6508,7 +6521,7 @@ class PreferenceScreen(Screen):
                         size_hint =(.2, .125),
                         pos_hint = {'center_x':.2, 'y':.65},
                         background_down='',
-                        background_color=(.5,.5,.5,.85),
+                        background_color=palette('base',.85),
                         markup=True,
                         group='evoke',
                         allow_no_selection=False)
@@ -6522,7 +6535,7 @@ class PreferenceScreen(Screen):
                         size_hint =(.2, .125),
                         pos_hint = {'center_x':.2, 'y':.45},
                         background_down='',
-                        background_color=(.5,.5,.5,.85),
+                        background_color=palette('base',.85),
                         markup=True,
                         group='evoke',
                         allow_no_selection=False)
@@ -6648,7 +6661,7 @@ class PreferenceScreen(Screen):
 
     def advanced_settings_overlay(self):
         overlay_menu=self.widgets['overlay_menu']
-        overlay_menu.background_color=(0,0,0,.75)
+        overlay_menu.background_color=palette('dark_shade',.75)
         overlay_menu.title=''
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
@@ -6679,9 +6692,9 @@ class PreferenceScreen(Screen):
 
         def _swap_color(button,*args):
             if button.state=='down':
-                button.bg_color=(245/250, 216/250, 41/250,.85)
+                button.bg_color=palette('primary',.85)
             if button.state=='normal':
-                button.bg_color=(.5,.5,.5,1)
+                button.bg_color=palette('base',1)
 
 
         overlay_title=Label(text=current_language['advanced_settings_overlay'],
@@ -6745,7 +6758,7 @@ class PreferenceScreen(Screen):
                         size_hint =(.18, .125),
                         pos_hint = {'center_x':.625, 'center_y':.5},
                         background_down='',
-                        background_color=(.5,.5,.5,.85),
+                        background_color=palette('base',.85),
                         markup=True,
                         group='schedule',
                         allow_no_selection=False)
@@ -6759,7 +6772,7 @@ class PreferenceScreen(Screen):
                         size_hint =(.18, .125),
                         pos_hint = {'center_x':.375, 'center_y':.5},
                         background_down='',
-                        background_color=(.5,.5,.5,.85),
+                        background_color=palette('base',.85),
                         markup=True,
                         group='schedule',
                         allow_no_selection=False)
@@ -6865,21 +6878,21 @@ class PinScreen(Screen):
                     size_hint =(.4, .1),
                     pos_hint = {'x':.06, 'y':.015},
                     background_down='',
-                    background_color=(200/250, 200/250, 200/250,.85),
+                    background_color=palette('neutral',.85),
                     markup=True)
         self.widgets['back']=back
         back.ref='pin_back'
-        back.bind(on_press=self.Pin_back)
+        back.bind(on_release=self.Pin_back)
 
         back_main=RoundedButton(text=current_language['pin_back_main'],
                         size_hint =(.4, .1),
                         pos_hint = {'x':.52, 'y':.015},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['back_main']=back_main
         back_main.ref='pin_back_main'
-        back_main.bind(on_press=self.Pin_back_main)
+        back_main.bind(on_release=self.Pin_back_main)
 
         num_pad=RelativeLayout(size_hint =(.9, .65),
             pos_hint = {'center_x':.6, 'center_y':.4})
@@ -6889,7 +6902,7 @@ class PinScreen(Screen):
             size_hint =(.15, .15),
             pos_hint = {'x':0, 'y':.85},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         self.widgets['one']=one
         one.bind(on_release=self.one_func)
@@ -6898,7 +6911,7 @@ class PinScreen(Screen):
             size_hint =(.15, .15),
             pos_hint = {'x':.2, 'y':.85},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         self.widgets['two']=two
         two.bind(on_release=self.two_func)
@@ -6907,7 +6920,7 @@ class PinScreen(Screen):
             size_hint =(.15, .15),
             pos_hint = {'x':.4, 'y':.85},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         self.widgets['three']=three
         three.bind(on_release=self.three_func)
@@ -6916,7 +6929,7 @@ class PinScreen(Screen):
             size_hint =(.15, .15),
             pos_hint = {'x':0, 'y':.65},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         self.widgets['four']=four
         four.bind(on_release=self.four_func)
@@ -6925,7 +6938,7 @@ class PinScreen(Screen):
             size_hint =(.15, .15),
             pos_hint = {'x':.2, 'y':.65},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         self.widgets['five']=five
         five.bind(on_release=self.five_func)
@@ -6934,7 +6947,7 @@ class PinScreen(Screen):
             size_hint =(.15, .15),
             pos_hint = {'x':.4, 'y':.65},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         self.widgets['six']=six
         six.bind(on_release=self.six_func)
@@ -6943,7 +6956,7 @@ class PinScreen(Screen):
             size_hint =(.15, .15),
             pos_hint = {'x':0, 'y':.45},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         self.widgets['seven']=seven
         seven.bind(on_release=self.seven_func)
@@ -6952,7 +6965,7 @@ class PinScreen(Screen):
             size_hint =(.15, .15),
             pos_hint = {'x':.2, 'y':.45},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         self.widgets['eight']=eight
         eight.bind(on_release=self.eight_func)
@@ -6961,7 +6974,7 @@ class PinScreen(Screen):
             size_hint =(.15, .15),
             pos_hint = {'x':.4, 'y':.45},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         self.widgets['nine']=nine
         nine.bind(on_release=self.nine_func)
@@ -6970,7 +6983,7 @@ class PinScreen(Screen):
             size_hint =(.15, .15),
             pos_hint = {'x':0, 'y':.25},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.85),
+            background_color=palette('neutral',.85),
             markup=True)
         self.widgets['zero']=zero
         zero.bind(on_release=self.zero_func)
@@ -6979,7 +6992,7 @@ class PinScreen(Screen):
             size_hint =(.35, .15),
             pos_hint = {'x':.2, 'y':.25},
             background_down='',
-            background_color=(255/255, 100/255, 100/255,.85),
+            background_color=palette('highlight',.85),
             markup=True)
         self.widgets['backspace']=backspace
         backspace.bind(on_release=self.backspace_func)
@@ -6988,7 +7001,7 @@ class PinScreen(Screen):
             size_hint =(.15, .75),
             pos_hint = {'x':.6, 'y':.25},
             background_down='',
-            background_color=(100/255, 255/255, 100/255,.85),
+            background_color=palette('complement',.85),
             markup=True)
         self.widgets['enter']=enter
         enter.bind(on_release=self.enter_func)
@@ -7019,7 +7032,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['reset_confirm']=reset_confirm
         reset_confirm.ref='reset_confirm'
@@ -7028,7 +7041,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['reset_cancel']=reset_cancel
         reset_cancel.ref='reset_cancel'
@@ -7060,7 +7073,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['date_confirm']=date_confirm
         date_confirm.ref='date_confirm'
@@ -7069,7 +7082,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['date_cancel']=date_cancel
         date_cancel.ref='date_cancel'
@@ -7110,7 +7123,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['heat_override_confirm']=heat_override_confirm
         heat_override_confirm.ref='heat_override_confirm'
@@ -7119,7 +7132,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['heat_override_cancel']=heat_override_cancel
         heat_override_cancel.ref='heat_override_cancel'
@@ -7155,7 +7168,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['admin_confirm']=admin_confirm
         admin_confirm.ref='admin_confirm'
@@ -7164,7 +7177,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['admin_cancel']=admin_cancel
         admin_cancel.ref='admin_cancel'
@@ -7199,7 +7212,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['report_pending_confirm']=report_pending_confirm
         report_pending_confirm.ref='report_pending_confirm'
@@ -7208,7 +7221,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['report_pending_cancel']=report_pending_cancel
         report_pending_cancel.ref='report_pending_cancel'
@@ -7250,7 +7263,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['mount_confirm']=mount_confirm
         mount_confirm.ref='mount_confirm'
@@ -7259,7 +7272,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['mount_cancel']=mount_cancel
         mount_cancel.ref='mount_cancel'
@@ -7292,7 +7305,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['device_reload_confirm']=device_reload_confirm
         device_reload_confirm.ref='device_reload_confirm'
@@ -7301,7 +7314,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['device_reload_cancel']=device_reload_cancel
         device_reload_cancel.ref='device_reload_cancel'
@@ -7334,7 +7347,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['delete_devices_confirm']=delete_devices_confirm
         delete_devices_confirm.ref='delete_devices_confirm'
@@ -7344,7 +7357,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['delete_devices_cancel']=delete_devices_cancel
         delete_devices_cancel.ref='delete_devices_cancel'
@@ -7371,7 +7384,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['batch_add_confirm']=batch_add_confirm
         batch_add_confirm.ref='batch_add_confirm'
@@ -7380,7 +7393,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['batch_add_cancel']=batch_add_cancel
         batch_add_cancel.ref='batch_add_cancel'
@@ -7398,7 +7411,7 @@ class PinScreen(Screen):
 
         delete_progress=CircularProgressBar()
         delete_progress._widget_size=200
-        delete_progress._progress_colour=(180/255, 10/255, 10/255,1)
+        delete_progress._progress_colour=palette('highlight',1)
         self.widgets['delete_progress']=delete_progress
 
         report_state_overlay=PinPop('report_state')
@@ -7420,7 +7433,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['report_state_confirm']=report_state_confirm
         report_state_confirm.ref='report_state_confirm'
@@ -7429,7 +7442,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['report_state_cancel']=report_state_cancel
         report_state_cancel.ref='report_state_cancel'
@@ -7481,7 +7494,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['bcm_board_trans_confirm']=bcm_board_trans_confirm
         bcm_board_trans_confirm.ref='bcm_board_trans_confirm'
@@ -7490,7 +7503,7 @@ class PinScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_down='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['bcm_board_trans_cancel']=bcm_board_trans_cancel
         bcm_board_trans_cancel.ref='bcm_board_trans_cancel'
@@ -7588,7 +7601,7 @@ class PinScreen(Screen):
         w=self.widgets
         delete_progress=CircularProgressBar()
         delete_progress._widget_size=200
-        delete_progress._progress_colour=(180/255, 10/255, 10/255,1)
+        delete_progress._progress_colour=palette('highlight',1)
         self.widgets['delete_progress']=delete_progress
         scheduled_delete=partial(self.delete_devices_confirm_func)
         Clock.schedule_once(scheduled_delete, 2)
@@ -7738,21 +7751,21 @@ class DocumentScreen(Screen):
                     size_hint =(.4, .1),
                     pos_hint = {'x':.06, 'y':.015},
                     background_down='',
-                    background_color=(200/250, 200/250, 200/250,.85),
+                    background_color=palette('neutral',.85),
                     markup=True)
         self.widgets['back']=back
         back.ref='report_back'
-        back.bind(on_press=self.Report_back)
+        back.bind(on_release=self.Report_back)
 
         back_main=RoundedButton(text="[size=50][b][color=#000000]  Close Menu [/color][/b][/size]",
                         size_hint =(.4, .1),
                         pos_hint = {'x':.52, 'y':.015},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['back_main']=back_main
         back_main.ref='report_back_main'
-        back_main.bind(on_press=self.Report_back_main)
+        back_main.bind(on_release=self.Report_back_main)
 
         seperator_line=Image(source=gray_seperator_line,
                     allow_stretch=True,
@@ -7761,7 +7774,7 @@ class DocumentScreen(Screen):
                     pos_hint = {'x':.01, 'y':.13})
 
         dock=DenseRoundedColorLayout(
-            bg_color=(.15,.15,.15,.9),
+            bg_color=palette('secondary',.9),
             size_hint =(.45, .725),
             pos_hint = {'center_x':.175, 'center_y':.51})
         self.widgets['dock']=dock
@@ -7771,7 +7784,7 @@ class DocumentScreen(Screen):
             size_hint =(.055,.425),
             pos_hint = {'center_x':.94, 'center_y':.5},
             background_down='',
-            background_color=(250/250, 250/250, 250/250,.9),
+            background_color=palette('light_tint',.9),
             markup=True)
         self.widgets['dock_handle']=dock_handle
         dock_handle.bind(on_release=self.dock_handle_func)
@@ -7789,7 +7802,7 @@ class DocumentScreen(Screen):
             size_hint =(.5,.15),
             pos_hint = {'center_x':.5, 'center_y':.85},
             background_down='',
-            background_color=(0,0,0,1),
+            background_color=palette('dark_shade',1),
             markup=True)
         self.widgets['dock_reports']=dock_reports
         dock_reports.bind(state=self._swap_color)
@@ -7801,7 +7814,7 @@ class DocumentScreen(Screen):
             size_hint =(.5,.15),
             pos_hint = {'center_x':.5, 'center_y':.65},
             background_down='',
-            background_color=(0,0,0,1),
+            background_color=palette('dark_shade',1),
             markup=True)
         self.widgets['dock_maint']=dock_maint
         dock_maint.bind(state=self._swap_color)
@@ -7813,7 +7826,7 @@ class DocumentScreen(Screen):
             size_hint =(.5,.15),
             pos_hint = {'center_x':.5, 'center_y':.45},
             background_down='',
-            background_color=(0,0,0,1),
+            background_color=palette('dark_shade',1),
             markup=True)
         self.widgets['dock_install']=dock_install
         dock_install.bind(state=self._swap_color)
@@ -7825,7 +7838,7 @@ class DocumentScreen(Screen):
             size_hint =(.5,.15),
             pos_hint = {'center_x':.5, 'center_y':.25},
             background_down='',
-            background_color=(0,0,0,1),
+            background_color=palette('dark_shade',1),
             markup=True)
         self.widgets['dock_logs']=dock_logs
         dock_logs.bind(state=self._swap_color)
@@ -7851,27 +7864,27 @@ class DocumentScreen(Screen):
 
         report_scroll=OutlineModalScroll(
             scroll_timeout=100000,
-            bg_color=(0,0,0,0),
+            bg_color=palette('dark_shade',0),
             bar_width=8,
             do_scroll_y=True,
             do_scroll_x=False,
             size_hint_y=1,
             size_hint_x=.95,
             pos_hint = {'center_x':.5, 'center_y':.5})
-        report_scroll.bar_color=(245/250, 216/250, 41/250,.75)
-        report_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
+        report_scroll.bar_color=palette('primary',.75)
+        report_scroll.bar_inactive_color=palette('primary',.55)
         self.widgets['report_scroll']=report_scroll
 
         report_selector_scroll=OutlineScroll(
-            bg_color=(.25,.25,.25,.75),
+            bg_color=palette('secondary',.75),
             bar_width=8,
             do_scroll_y=True,
             do_scroll_x=False,
             size_hint_y=1,
             size_hint_x=1,
             pos_hint = {'center_x':.5, 'center_y':.5})
-        report_selector_scroll.bar_color=(245/250, 216/250, 41/250,.75)
-        report_selector_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
+        report_selector_scroll.bar_color=palette('primary',.75)
+        report_selector_scroll.bar_inactive_color=palette('primary',.55)
         self.widgets['report_selector_scroll']=report_selector_scroll
 
         report_selector_layout=GridLayout(
@@ -7897,27 +7910,27 @@ class DocumentScreen(Screen):
         self.widgets['manual_scroll_layout']=manual_scroll_layout
 
         manual_scroll=OutlineModalScroll(
-            bg_color=(0,0,0,0),
+            bg_color=palette('dark_shade',0),
             bar_width=8,
             do_scroll_y=True,
             do_scroll_x=False,
             size_hint_y=.865,
             size_hint_x=.95,
             pos_hint = {'center_x':.5, 'center_y':.565})
-        manual_scroll.bar_color=(245/250, 216/250, 41/250,.75)
-        manual_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
+        manual_scroll.bar_color=palette('primary',.75)
+        manual_scroll.bar_inactive_color=palette('primary',.55)
         self.widgets['manual_scroll']=manual_scroll
 
         manual_selector_scroll=OutlineScroll(
-            bg_color=(.25,.25,.25,.75),
+            bg_color=palette('secondary',.75),
             bar_width=8,
             do_scroll_y=True,
             do_scroll_x=False,
             size_hint_y=1,
             size_hint_x=1,
             pos_hint = {'center_x':.5, 'center_y':.5})
-        manual_selector_scroll.bar_color=(245/250, 216/250, 41/250,.75)
-        manual_selector_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
+        manual_selector_scroll.bar_color=palette('primary',.75)
+        manual_selector_scroll.bar_inactive_color=palette('primary',.55)
         self.widgets['manual_selector_scroll']=manual_selector_scroll
 
         manual_selector_layout=GridLayout(
@@ -7943,27 +7956,27 @@ class DocumentScreen(Screen):
         self.widgets['archive_scroll_layout']=archive_scroll_layout
 
         archive_scroll=OutlineModalScroll(
-            bg_color=(0,0,0,0),
+            bg_color=palette('dark_shade',0),
             bar_width=8,
             do_scroll_y=True,
             do_scroll_x=False,
             size_hint_y=.865,
             size_hint_x=.95,
             pos_hint = {'center_x':.5, 'center_y':.565})
-        archive_scroll.bar_color=(245/250, 216/250, 41/250,.75)
-        archive_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
+        archive_scroll.bar_color=palette('primary',.75)
+        archive_scroll.bar_inactive_color=palette('primary',.55)
         self.widgets['archive_scroll']=archive_scroll
 
         archive_selector_scroll=OutlineScroll(
-            bg_color=(.25,.25,.25,.75),
+            bg_color=palette('secondary',.75),
             bar_width=8,
             do_scroll_y=True,
             do_scroll_x=False,
             size_hint_y=1,
             size_hint_x=1,
             pos_hint = {'center_x':.5, 'center_y':.5})
-        archive_selector_scroll.bar_color=(245/250, 216/250, 41/250,.75)
-        archive_selector_scroll.bar_inactive_color=(245/250, 216/250, 41/250,.55)
+        archive_selector_scroll.bar_color=palette('primary',.75)
+        archive_selector_scroll.bar_inactive_color=palette('primary',.55)
         self.widgets['archive_selector_scroll']=archive_selector_scroll
 
         archive_selector_layout=GridLayout(
@@ -7983,7 +7996,7 @@ class DocumentScreen(Screen):
             pos_hint = {'center_x':.15, 'center_y':.5},
             expanded_size=(1,1),
             expanded_pos = {'center_x':.5, 'center_y':.5},
-            bg_color=(1,1,1,.9))
+            bg_color=palette('light_tint',.9))
         self.widgets['debug_box']=debug_box
         debug_box.widgets={}
         debug_box.bind(state=self.bg_color)
@@ -8022,7 +8035,7 @@ class DocumentScreen(Screen):
             pos_hint = {'center_x':.475, 'center_y':.5},
             expanded_size=(1,1),
             expanded_pos = {'center_x':.5, 'center_y':.5},
-            bg_color=(1,1,1,.9))
+            bg_color=palette('light_tint',.9))
         self.widgets['info_box']=info_box
         info_box.widgets={}
         info_box.bind(state=self.bg_color)
@@ -8061,7 +8074,7 @@ class DocumentScreen(Screen):
             pos_hint = {'center_x':.8, 'center_y':.5},
             expanded_size=(1,1),
             expanded_pos = {'center_x':.5, 'center_y':.5},
-            bg_color=(1,1,1,.9))
+            bg_color=palette('light_tint',.9))
         self.widgets['error_box']=error_box
         error_box.widgets={}
         error_box.bind(state=self.bg_color)
@@ -8148,7 +8161,7 @@ class DocumentScreen(Screen):
         if os.path.exists('logs/sys_report/report.jpg'):
             _curr_report_found=True
             curr_report=RoundedButton(
-                    background_color=(1,1,1,1),
+                    background_color=palette('light_tint',1),
                     size_hint=(1,None),
                     height=Window.height/7,
                     background_normal='',
@@ -8165,7 +8178,7 @@ class DocumentScreen(Screen):
             _old_reports_found=True
         for i in _report_paths:
             b=RoundedButton(
-                background_color=(1,1,1,1),
+                background_color=palette('light_tint',1),
                 size_hint=(1,None),
                 height=Window.height/7,
                 background_normal='',
@@ -8179,7 +8192,7 @@ class DocumentScreen(Screen):
             empty_label=RoundedLabelColor(
                 size_hint=(1,None),
                 height=Window.height/7,
-                bg_color=(1,1,1,1),
+                bg_color=palette('light_tint',1),
                 text='[color=#000000][size=28][b]System reports not found',
                 markup=True)
             w['report_selector_layout'].add_widget(empty_label)
@@ -8208,7 +8221,7 @@ class DocumentScreen(Screen):
             _old_manuals_found=True
         for i in _manual_paths:
             b=RoundedButton(
-                background_color=(1,1,1,1),
+                background_color=palette('light_tint',1),
                 size_hint=(1,None),
                 height=Window.height/7,
                 background_normal='',
@@ -8222,7 +8235,7 @@ class DocumentScreen(Screen):
             empty_label=RoundedLabelColor(
                 size_hint=(1,None),
                 height=Window.height/7,
-                bg_color=(1,1,1,1),
+                bg_color=palette('light_tint',1),
                 text='[color=#000000][size=28][b]No manuals found',
                 markup=True)
             w['manual_selector_layout'].add_widget(empty_label)
@@ -8251,7 +8264,7 @@ class DocumentScreen(Screen):
             _old_archives_found=True
         for i in _archive_paths:
             b=RoundedButton(
-                background_color=(1,1,1,1),
+                background_color=palette('light_tint',1),
                 size_hint=(1,None),
                 height=Window.height/7,
                 background_normal='',
@@ -8265,7 +8278,7 @@ class DocumentScreen(Screen):
             empty_label=RoundedLabelColor(
                 size_hint=(1,None),
                 height=Window.height/7,
-                bg_color=(1,1,1,1),
+                bg_color=palette('light_tint',1),
                 text='[color=#000000][size=28][b]Archived documents not found',
                 markup=True)
             w['archive_selector_layout'].add_widget(empty_label)
@@ -8300,8 +8313,8 @@ class DocumentScreen(Screen):
     def debug_box_populate(self,*args):
         w=self.widgets
         debug_box=w['debug_box']
-        darken=Animation(rgba=(1,1,1,1),d=.5)
-        lighten=Animation(rgba=(1,1,1,.9),d=.5)
+        darken=Animation(rgba=palette('light_tint',1),d=.5)
+        lighten=Animation(rgba=palette('light_tint',.9),d=.5)
         if debug_box.expanded:
             darken.start(debug_box.shape_color)
             debug_path='logs/log_files/debug'
@@ -8312,12 +8325,12 @@ class DocumentScreen(Screen):
 
                 @mainthread
                 def add_spinners():
-                    debug_box.add_widget(PreLoader(rel_size=.3,ref='1',speed=500,color=(0,0,0,1)))
-                    debug_box.add_widget(PreLoader(rel_size=.25,ref='2',speed=850,color=(0,0,0,1)))
-                    debug_box.add_widget(PreLoader(rel_size=.2,ref='3',speed=600,color=(0,0,0,1)))
-                    debug_box.add_widget(PreLoader(rel_size=.15,ref='4',speed=950,color=(0,0,0,1)))
-                    debug_box.add_widget(PreLoader(rel_size=.1,ref='5',speed=700,color=(0,0,0,1)))
-                    debug_box.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050,color=(0,0,0,1)))
+                    debug_box.add_widget(PreLoader(rel_size=.3,ref='1',speed=500,color=palette('dark_shade',1)))
+                    debug_box.add_widget(PreLoader(rel_size=.25,ref='2',speed=850,color=palette('dark_shade',1)))
+                    debug_box.add_widget(PreLoader(rel_size=.2,ref='3',speed=600,color=palette('dark_shade',1)))
+                    debug_box.add_widget(PreLoader(rel_size=.15,ref='4',speed=950,color=palette('dark_shade',1)))
+                    debug_box.add_widget(PreLoader(rel_size=.1,ref='5',speed=700,color=palette('dark_shade',1)))
+                    debug_box.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050,color=palette('dark_shade',1)))
 
                 @mainthread
                 def remove_spinners():
@@ -8405,7 +8418,7 @@ class DocumentScreen(Screen):
                             _func=f"[b]Function:[/b] {entry['function']}"
                             _line=f"[b]Line:[/b] {entry['line']}"
                             entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n    {_text}  \n\n    {general.pad_str(_file,40)}{_line} \n    {_func}  \n"
-                            color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
+                            color=palette('dark_shade',.5) if index%2==0 else (0,0,0,.25)
                             _data.append({'text':entry_text,'color':color})
                         data_chunker(_data)
                         self.data_processed_event.wait()
@@ -8438,8 +8451,8 @@ class DocumentScreen(Screen):
     def info_box_populate(self,*args):
         w=self.widgets
         info_box=w['info_box']
-        darken=Animation(rgba=(1,1,1,1),d=.5)
-        lighten=Animation(rgba=(1,1,1,.9),d=.5)
+        darken=Animation(rgba=palette('light_tint',1),d=.5)
+        lighten=Animation(rgba=palette('light_tint',.9),d=.5)
         if info_box.expanded:
             darken.start(info_box.shape_color)
             info_path='logs/log_files/info'
@@ -8450,12 +8463,12 @@ class DocumentScreen(Screen):
 
                 @mainthread
                 def add_spinners():
-                    info_box.add_widget(PreLoader(rel_size=.3,ref='1',speed=500,color=(0,0,0,1)))
-                    info_box.add_widget(PreLoader(rel_size=.25,ref='2',speed=850,color=(0,0,0,1)))
-                    info_box.add_widget(PreLoader(rel_size=.2,ref='3',speed=600,color=(0,0,0,1)))
-                    info_box.add_widget(PreLoader(rel_size=.15,ref='4',speed=950,color=(0,0,0,1)))
-                    info_box.add_widget(PreLoader(rel_size=.1,ref='5',speed=700,color=(0,0,0,1)))
-                    info_box.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050,color=(0,0,0,1)))
+                    info_box.add_widget(PreLoader(rel_size=.3,ref='1',speed=500,color=palette('dark_shade',1)))
+                    info_box.add_widget(PreLoader(rel_size=.25,ref='2',speed=850,color=palette('dark_shade',1)))
+                    info_box.add_widget(PreLoader(rel_size=.2,ref='3',speed=600,color=palette('dark_shade',1)))
+                    info_box.add_widget(PreLoader(rel_size=.15,ref='4',speed=950,color=palette('dark_shade',1)))
+                    info_box.add_widget(PreLoader(rel_size=.1,ref='5',speed=700,color=palette('dark_shade',1)))
+                    info_box.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050,color=palette('dark_shade',1)))
 
                 @mainthread
                 def remove_spinners():
@@ -8541,7 +8554,7 @@ class DocumentScreen(Screen):
                                 _file=f"[b]File:[/b] {entry['file']}"
                                 _func=f"[b]Function:[/b] {entry['function']}"
                                 entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n\n    {_text}  \n\n\n    {_file} \n"
-                                color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
+                                color=palette('dark_shade',.5) if index%2==0 else (0,0,0,.25)
                                 _data.append({'text':entry_text,'color':color})
                         data_chunker(_data)
                         self.data_processed_event.wait()
@@ -8574,8 +8587,8 @@ class DocumentScreen(Screen):
     def error_box_populate(self,*args):
         w=self.widgets
         error_box=w['error_box']
-        darken=Animation(rgba=(1,1,1,1),d=.5)
-        lighten=Animation(rgba=(1,1,1,.9),d=.5)
+        darken=Animation(rgba=palette('light_tint',1),d=.5)
+        lighten=Animation(rgba=palette('light_tint',.9),d=.5)
         if error_box.expanded:
             darken.start(error_box.shape_color)
             error_path='logs/log_files/errors'
@@ -8586,12 +8599,12 @@ class DocumentScreen(Screen):
 
                 @mainthread
                 def add_spinners():
-                    error_box.add_widget(PreLoader(rel_size=.3,ref='1',speed=500,color=(0,0,0,1)))
-                    error_box.add_widget(PreLoader(rel_size=.25,ref='2',speed=850,color=(0,0,0,1)))
-                    error_box.add_widget(PreLoader(rel_size=.2,ref='3',speed=600,color=(0,0,0,1)))
-                    error_box.add_widget(PreLoader(rel_size=.15,ref='4',speed=950,color=(0,0,0,1)))
-                    error_box.add_widget(PreLoader(rel_size=.1,ref='5',speed=700,color=(0,0,0,1)))
-                    error_box.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050,color=(0,0,0,1)))
+                    error_box.add_widget(PreLoader(rel_size=.3,ref='1',speed=500,color=palette('dark_shade',1)))
+                    error_box.add_widget(PreLoader(rel_size=.25,ref='2',speed=850,color=palette('dark_shade',1)))
+                    error_box.add_widget(PreLoader(rel_size=.2,ref='3',speed=600,color=palette('dark_shade',1)))
+                    error_box.add_widget(PreLoader(rel_size=.15,ref='4',speed=950,color=palette('dark_shade',1)))
+                    error_box.add_widget(PreLoader(rel_size=.1,ref='5',speed=700,color=palette('dark_shade',1)))
+                    error_box.add_widget(PreLoader(rel_size=.05,ref='6',speed=1050,color=palette('dark_shade',1)))
 
                 @mainthread
                 def remove_spinners():
@@ -8684,7 +8697,7 @@ class DocumentScreen(Screen):
                                 _level=f"[b]Level:[/b] {entry['level']}"
                                 _exc=bool('exc_info' in entry)
                                 entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n    {_text}  \n\n    {general.pad_str(_file,49)}{_line} \n    {general.pad_str(_func,47)}{_level}  \n"
-                                color=(0,0,0,.5) if index%2==0 else (0,0,0,.25)
+                                color=palette('dark_shade',.5) if index%2==0 else (0,0,0,.25)
                                 _data.append({'text':entry_text,'color':color})
                                 if _exc:
                                     _caught_exception='    '.join(entry['exc_info'].splitlines(True))
@@ -8720,19 +8733,19 @@ class DocumentScreen(Screen):
 
     def _swap_color(self,button,*args):
             if button.state=='down':
-                button.shape_color.rgba=(.05,.05,0,.7)
+                button.shape_color.rgba=palette('primary',.15) #palette('primary',.15)
             if button.state=='normal':
-                button.shape_color.rgba=(0,0,0,1)
+                button.shape_color.rgba=palette('dark_shade',1)
 
     def bg_color(self,button,*args):
         if hasattr(button,'expanded'):
             if button.expanded:
                 return
         if button.state=='normal':
-            button.shape_color.rgba=(1,1,1,.9)
+            button.shape_color.rgba=palette('light_tint',.9)
         if button.state=='down':
-            if button.shape_color.rgba==[1,1,1,.9]:
-                button.shape_color.rgba=(.9,.9,.9,.8)
+            if button.shape_color.rgba==palette('light_tint',.9):
+                button.shape_color.rgba=palette('light_tint',.8)
 
     def Report_back (self,button):
         self.parent.transition = SlideTransition(direction='right')
@@ -8758,11 +8771,11 @@ class TroubleScreen(Screen):
                     size_hint =(.4, .1),
                     pos_hint = {'x':.02, 'y':.015},
                     background_down='',
-                    background_color=(200/250, 200/250, 200/250,.85),
+                    background_color=palette('neutral',.85),
                     markup=True)
         self.widgets['back']=back
         back.ref='trouble_back'
-        back.bind(on_press=self.trouble_back)
+        back.bind(on_release=self.trouble_back)
 
         trouble_details=trouble_template('no_trouble')
         self.widgets['trouble_details']=trouble_details
@@ -8791,7 +8804,7 @@ class TroubleScreen(Screen):
         trouble_scroll.add_widget(trouble_layout)
 
         with self.canvas:
-            self.outline_color=Color(.65,.65,.65,.85)
+            self.outline_color=Color(*palette('neutral',.85))
             self.outline=Line(rectangle=(100, 100, 200, 200))
 
         def _update_rect(self, *args):
@@ -8836,21 +8849,21 @@ class MountScreen(Screen):
                         size_hint =(.4, .1),
                         pos_hint = {'x':.06, 'y':.015},
                         background_down='',
-                        background_color=(200/250, 200/250, 200/250,.9),
+                        background_color=palette('neutral',.9),
                         markup=True)
         self.widgets['back']=back
         back.ref='preferences_back'
-        back.bind(on_press=self.settings_back)
+        back.bind(on_release=self.settings_back)
 
         back_main=RoundedButton(text=current_language['preferences_back_main'],
                         size_hint =(.4, .1),
                         pos_hint = {'x':.52, 'y':.015},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.9),
+                        background_color=palette('primary',.9),
                         markup=True)
         self.widgets['back_main']=back_main
         back_main.ref='preferences_back_main'
-        back_main.bind(on_press=self.settings_back_main)
+        back_main.bind(on_release=self.settings_back_main)
 
         file_selector_external=FileChooserIconView(
             dirselect=True,
@@ -8900,51 +8913,51 @@ class MountScreen(Screen):
             size_hint =(.19, .1),
             pos_hint = {'center_x':.645, 'y':.39},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.9),
+            background_color=palette('neutral',.9),
             markup=True)
         self.widgets['import_button']=import_button
         import_button.ref='import_button'
-        import_button.bind(on_press=self.import_button_func)
+        import_button.bind(on_release=self.import_button_func)
 
         export_button=RoundedButton(text=current_language['export_button'],
             size_hint =(.19, .1),
             pos_hint = {'center_x':.855, 'y':.39},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.9),
+            background_color=palette('neutral',.9),
             markup=True)
         self.widgets['export_button']=export_button
         export_button.ref='export_button'
-        export_button.bind(on_press=self.export_button_func)
+        export_button.bind(on_release=self.export_button_func)
 
         rename_button=RoundedButton(text=current_language['rename_button'],
             size_hint =(.19, .1),
             pos_hint = {'center_x':.645, 'y':.265},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.9),
+            background_color=palette('neutral',.9),
             markup=True)
         self.widgets['rename_button']=rename_button
         rename_button.ref='rename_button'
-        rename_button.bind(on_press=self.rename_button_func)
+        rename_button.bind(on_release=self.rename_button_func)
 
         del_button=RoundedButton(text=current_language['del_button'],
             size_hint =(.19, .1),
             pos_hint = {'center_x':.855, 'y':.265},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.9),
+            background_color=palette('neutral',.9),
             markup=True)
         self.widgets['del_button']=del_button
         del_button.ref='del_button'
-        del_button.bind(on_press=self.del_button_func)
+        del_button.bind(on_release=self.del_button_func)
 
         refresh_button=RoundedButton(text=current_language['refresh_button'],
             size_hint =(.4, .1),
             pos_hint = {'center_x':.75, 'y':.14},
             background_down='',
-            background_color=(200/250, 200/250, 200/250,.9),
+            background_color=palette('neutral',.9),
             markup=True)
         self.widgets['refresh_button']=refresh_button
         refresh_button.ref='refresh_button'
-        refresh_button.bind(on_press=self.refresh_button_func)
+        refresh_button.bind(on_release=self.refresh_button_func)
 
         overlay_menu=Popup(
             size_hint=(.8, .8),
@@ -8952,7 +8965,7 @@ class MountScreen(Screen):
             title_color=[0, 0, 0, 1],
             title_size='38',
             title_align='center',
-            separator_color=[255/255, 0/255, 0/255, .5])
+            separator_color=palette('highlight', .5))
         self.widgets['overlay_menu']=overlay_menu
         overlay_menu.ref='heat_overlay'
 
@@ -8986,7 +8999,7 @@ class MountScreen(Screen):
     def import_overlay(self):
         w=self.widgets
         overlay_menu=w['overlay_menu']
-        overlay_menu.background_color=(0,0,0,.85)
+        overlay_menu.background_color=palette('dark_shade',.85)
         overlay_menu.title=''
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
@@ -9031,7 +9044,7 @@ class MountScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         **{f'{background_state}':''},#accessing **kwargs dict at the desired key based on double_slection value
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         w['continue_button']=continue_button
         continue_button.ref='continue_button'
@@ -9044,7 +9057,7 @@ class MountScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         w['cancel_button']=cancel_button
         cancel_button.ref='cancel_button'
@@ -9096,7 +9109,7 @@ class MountScreen(Screen):
     def export_overlay(self):
         w=self.widgets
         overlay_menu=w['overlay_menu']
-        overlay_menu.background_color=(0,0,0,.85)
+        overlay_menu.background_color=palette('dark_shade',.85)
         overlay_menu.title=''
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
@@ -9141,7 +9154,7 @@ class MountScreen(Screen):
             size_hint =(.35, .25),
             pos_hint = {'x':.05, 'y':.05},
             **{f'{background_state}':''},#accessing **kwargs dict at the desired key based on double_slection value
-            background_color=(245/250, 216/250, 41/250,.85),
+            background_color=palette('primary',.85),
             markup=True)
         w['continue_button']=continue_button
         continue_button.ref='continue_button'
@@ -9154,7 +9167,7 @@ class MountScreen(Screen):
             size_hint =(.35, .25),
             pos_hint = {'x':.6, 'y':.05},
             background_normal='',
-            background_color=(245/250, 216/250, 41/250,.85),
+            background_color=palette('primary',.85),
             markup=True)
         w['cancel_button']=cancel_button
         cancel_button.ref='cancel_button'
@@ -9206,7 +9219,7 @@ class MountScreen(Screen):
     def del_overlay(self):
         w=self.widgets
         overlay_menu=w['overlay_menu']
-        overlay_menu.background_color=(0,0,0,.85)
+        overlay_menu.background_color=palette('dark_shade',.85)
         overlay_menu.title=''
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
@@ -9243,7 +9256,7 @@ class MountScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         **{f'{background_state}':''},#accessing **kwargs dict at the desired key based on single_slection value
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         w['continue_button']=continue_button
         continue_button.ref='continue_button'
@@ -9256,7 +9269,7 @@ class MountScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         w['cancel_button']=cancel_button
         cancel_button.ref='cancel_button'
@@ -9283,7 +9296,7 @@ class MountScreen(Screen):
     def rename_overlay(self):
         w=self.widgets
         overlay_menu=w['overlay_menu']
-        overlay_menu.background_color=(0,0,0,.85)
+        overlay_menu.background_color=palette('dark_shade',.85)
         overlay_menu.title=''
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
@@ -9320,7 +9333,7 @@ class MountScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         **{f'{background_state}':''},#accessing **kwargs dict at the desired key based on single_slection value
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         w['continue_button']=continue_button
         continue_button.ref='continue_button'
@@ -9333,7 +9346,7 @@ class MountScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         w['cancel_button']=cancel_button
         cancel_button.ref='cancel_button'
@@ -9356,7 +9369,7 @@ class MountScreen(Screen):
         self.rename_text=''
         w=self.widgets
         overlay_menu=w['overlay_menu']
-        overlay_menu.background_color=(0,0,0,.85)
+        overlay_menu.background_color=palette('dark_shade',.85)
         overlay_menu.title=''
         overlay_menu.separator_height=0
         overlay_menu.auto_dismiss=True
@@ -9411,7 +9424,7 @@ class MountScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.05, 'y':.05},
                         **{f'{background_state}':''},#accessing **kwargs dict at the desired key based on single_slection value
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         w['save_button']=save_button
         save_button.ref='save_button'
@@ -9424,7 +9437,7 @@ class MountScreen(Screen):
                         size_hint =(.35, .25),
                         pos_hint = {'x':.6, 'y':.05},
                         background_normal='',
-                        background_color=(245/250, 216/250, 41/250,.85),
+                        background_color=palette('primary',.85),
                         markup=True)
         w['cancel_button']=cancel_button
         cancel_button.ref='cancel_button'
@@ -9501,22 +9514,22 @@ class AccountScreen(Screen):
             size_hint =(.4, .1),
             pos_hint = {'x':.06, 'y':.015},
             background_down='',
-            background_color=(200/255, 200/255, 200/255,.9),
+            background_color=palette('neutral',.9),
             markup=True)
         self.widgets['back']=back
         back.ref='settings_back'
-        back.bind(on_press=self.account_back)
+        back.bind(on_release=self.account_back)
 
         back_main=RoundedButton(
             text=current_language['preferences_back_main'],
             size_hint =(.4, .1),
             pos_hint = {'x':.52, 'y':.015},
             background_normal='',
-            background_color=(245/250, 216/250, 41/250,.9),
+            background_color=palette('primary',.9),
             markup=True)
         self.widgets['back_main']=back_main
         back_main.ref='preferences_back_main'
-        back_main.bind(on_press=self.account_back_main)
+        back_main.bind(on_release=self.account_back_main)
 
         screen_name=Label(
             text=current_language['account_screen_name'],
@@ -9527,7 +9540,7 @@ class AccountScreen(Screen):
         screen_name.ref='account_screen_name'
 
         information_box=RoundedColorLayoutButton(
-            bg_color=(0,0,0,.85),
+            bg_color=palette('dark_shade',.85),
             size_hint =(.35, .25),
             pos_hint = {'center_x':.225, 'center_y':.75},)
         self.widgets['information_box']=information_box
@@ -9568,7 +9581,7 @@ class AccountScreen(Screen):
         self.widgets['information_password']=information_password
 
         details_box=RoundedColorLayout(
-            bg_color=(0,0,0,.85),
+            bg_color=palette('dark_shade',.85),
             size_hint =(.35, .4),
             pos_hint = {'center_x':.225, 'center_y':.4},)
         self.widgets['details_box']=details_box
@@ -9597,7 +9610,7 @@ class AccountScreen(Screen):
         details_body.ref='details_body'
 
         status_box=RoundedColorLayout(
-            bg_color=(0,0,0,.85),
+            bg_color=palette('dark_shade',.85),
             size_hint =(.35, .675),
             pos_hint = {'center_x':.6, 'center_y':.5375},)
         self.widgets['status_box']=status_box
@@ -9620,10 +9633,10 @@ class AccountScreen(Screen):
         status_scroll=OutlineScroll(
             size_hint =(.9,.75),
             pos_hint = {'center_x':.5, 'center_y':.45},
-            bg_color=(1,1,1,.15),
+            bg_color=palette('light_tint',.15),
             bar_width=8,
-            bar_color=(245/250, 216/250, 41/250,.9),
-            bar_inactive_color=(245/250, 216/250, 41/250,.35),
+            bar_color=palette('primary',.9),
+            bar_inactive_color=palette('primary',.35),
             do_scroll_y=True,
             do_scroll_x=False)
 
@@ -9639,7 +9652,7 @@ class AccountScreen(Screen):
         for i in range(20):#status_request:
             btn = RoundedButton(
                 background_normal='',
-                background_color=(.1,.1,.1,1),
+                background_color=palette('secondary',1),
                 text=str(i),
                 size_hint_y=None,
                 height=40)
@@ -9648,7 +9661,7 @@ class AccountScreen(Screen):
 
 
         side_bar_box=RoundedColorLayout(
-            bg_color=(.5,.5,.5,.85),
+            bg_color=palette('base',.85),
             size_hint =(.175, .675),
             pos_hint = {'center_x':.9, 'center_y':.5375},)
         self.widgets['side_bar_box']=side_bar_box
@@ -9658,7 +9671,7 @@ class AccountScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.875},
             expanded_size=(5.143,1.185),
             expanded_pos = {'center_x':-1.785, 'center_y':.52},
-            bg_color=(0,0,0,.9),
+            bg_color=palette('dark_shade',.9),
             locked=lambda x: self.add_widget(PinLock(lambda :(self.unlock(),x()))))
         self.widgets['side_bar_connect']=side_bar_connect
         side_bar_connect.widgets={}
@@ -9687,7 +9700,7 @@ class AccountScreen(Screen):
             pos_hint = {'center_x':.9, 'center_y':.75},
             expanded_size=(1,1),
             expanded_pos = {'center_x':.5, 'center_y':.5},
-            bg_color=(0,0,0,0))
+            bg_color=palette('dark_shade',0))
         self.widgets['side_bar_connect_login']=side_bar_connect_login
         side_bar_connect_login.widgets={}
         side_bar_connect_login.bind(expanded=self.side_bar_connect_login_populate)
@@ -9714,7 +9727,7 @@ class AccountScreen(Screen):
             size_hint =(.1, .075),
             pos_hint = {'center_x':.1, 'center_y':.75},
             background_down='',
-            background_color=(200/255, 200/255, 200/255,0),
+            background_color=palette('base',0),
             markup=True,
             halign='center')
         self.widgets['side_bar_connect_login_back']=side_bar_connect_login_back
@@ -9774,9 +9787,9 @@ class AccountScreen(Screen):
             size_hint =(.425, .075),
             pos_hint = {'center_x':.5, 'center_y':.3},
             background_normal='',
-            background_color=(.1,.1,.1,1),
+            background_color=palette('secondary',1),
             disabled=True,
-            disabled_color=(1,1,1,1),
+            disabled_color=palette('light_tint',1),
             markup=True)
         self.widgets['side_bar_connect_login_send']=side_bar_connect_login_send
         side_bar_connect_login_send.bind(on_release=self.side_bar_connect_login_send_func)
@@ -9786,7 +9799,7 @@ class AccountScreen(Screen):
             size_hint =(.5, .075),
             pos_hint = {'center_x':.5, 'center_y':.075},
             background_down='',
-            background_color=(250/250, 250/250, 250/250,.9),
+            background_color=palette('light_tint',.9),
             markup=True)
         self.widgets['side_bar_connect_login_expand_button']=side_bar_connect_login_expand_button
         side_bar_connect_login_expand_button.bind(on_release=self.side_bar_connect_login_expand_button_func)
@@ -9857,9 +9870,9 @@ class AccountScreen(Screen):
             size_hint =(.425, .075),
             pos_hint = {'center_x':.5, 'center_y':.3},
             background_normal='',
-            background_color=(.1,.1,.1,1),
+            background_color=palette('secondary',1),
             disabled=True,
-            disabled_color=(1,1,1,1),
+            disabled_color=palette('light_tint',1),
             markup=True)
         self.widgets['side_bar_connect_send']=side_bar_connect_send
         side_bar_connect_send.bind(on_release=self.side_bar_connect_send_func)
@@ -9877,7 +9890,7 @@ class AccountScreen(Screen):
             size_hint =(.5, .075),
             pos_hint = {'center_x':.5, 'center_y':.075},
             background_down='',
-            background_color=(250/250, 250/250, 250/250,.9),
+            background_color=palette('light_tint',.9),
             markup=True)
         self.widgets['side_bar_connect_expand_button']=side_bar_connect_expand_button
         side_bar_connect_expand_button.bind(on_release=self.side_bar_connect_expand_button_func)
@@ -9896,7 +9909,7 @@ class AccountScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.6875},
             expanded_size=(5.143,1.185),
             expanded_pos = {'center_x':-1.785, 'center_y':.52},
-            bg_color=(0,0,0,.9),
+            bg_color=palette('dark_shade',.9),
             locked=lambda x: self.add_widget(PinLock(lambda :(self.unlock(),x()))))
         self.widgets['side_bar_unlink']=side_bar_unlink
         side_bar_unlink.widgets={}
@@ -9924,7 +9937,7 @@ class AccountScreen(Screen):
             size_hint =(.5, .075),
             pos_hint = {'center_x':.5, 'center_y':.075},
             background_down='',
-            background_color=(250/250, 250/250, 250/250,.9),
+            background_color=palette('light_tint',.9),
             markup=True)
         self.widgets['side_bar_unlink_expand_button']=side_bar_unlink_expand_button
         side_bar_unlink_expand_button.bind(on_release=self.side_bar_unlink_expand_button_func)
@@ -9943,7 +9956,7 @@ class AccountScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.5},
             expanded_size=(5.143,1.185),
             expanded_pos = {'center_x':-1.785, 'center_y':.52},
-            bg_color=(0,0,0,.9),
+            bg_color=palette('dark_shade',.9),
             locked=lambda x: self.add_widget(PinLock(lambda :(self.unlock(),x()))))
         self.widgets['side_bar_add']=side_bar_add
         side_bar_add.widgets={}
@@ -9975,7 +9988,7 @@ class AccountScreen(Screen):
         side_bar_add_body.ref='side_bar_add_body'
 
         with side_bar_add_body.canvas.before:
-            Color(0,0,0,1)
+            Color(*palette('dark_shade',1))
             side_bar_add_body.rect=Rectangle()
 
         # with side_bar_add_body.canvas.after:
@@ -10028,7 +10041,7 @@ class AccountScreen(Screen):
         self.widgets['side_bar_add_link_code_display']=side_bar_add_link_code_display
 
         side_bar_add_valid_box=RoundedColorLayout(
-            bg_color=(100/255, 255/255, 100/255,.75),
+            bg_color=palette('complement',.75),
             size_hint=(.1, .115),
             pos_hint={'center_x':.5875, 'center_y':.3})
         self.widgets['side_bar_add_valid_box']=side_bar_add_valid_box
@@ -10061,7 +10074,7 @@ class AccountScreen(Screen):
         with side_bar_add_qr_frame.canvas.before:
             qrf=side_bar_add_qr_frame
             length=qrf.width*.3
-            qrf.frame_color=Color(1,1,1)
+            qrf.frame_color=Color(*palette('light_tint'))
             qrf.bl_line=Line(points=[qrf.x,qrf.y+length,qrf.x,qrf.y,qrf.x+length,qrf.y],width=2)
             qrf.tl_line=Line(points=[qrf.x,qrf.top-length,qrf.x,qrf.top,qrf.x+length,qrf.top],width=2)
             qrf.tr_line=Line(points=[qrf.right-length,qrf.top,qrf.right,qrf.top,qrf.right,qrf.top-length],width=2)
@@ -10089,7 +10102,7 @@ class AccountScreen(Screen):
             size_hint =(.15, .075),
             pos_hint = {'center_x':.8, 'y':.725},
             background_normal='',
-            background_color=(.0, .5, .7,.85),
+            background_color=palette('accent',.85),
             markup=True)
         self.widgets['side_bar_add_qr_generate']=side_bar_add_qr_generate
         side_bar_add_qr_generate.bind(on_release=self.side_bar_add_qr_generate_func)
@@ -10099,7 +10112,7 @@ class AccountScreen(Screen):
             pos_hint = {'center_x':.06, 'center_y':.125},
             expanded_size=(.75,.8),
             expanded_pos = {'center_x':.5, 'center_y':.5},
-            bg_color=(1,1,1,0),
+            bg_color=palette('light_tint',0),
             modal_dim=(0,0,0,.75))
         # side_bar_add_app_icon_layout.shrink_anim=Animation(size_hint=side_bar_add_app_icon_layout.original_size,d=.15,t='in_sine')
         # side_bar_add_app_icon_layout.return_anim=Animation(pos_hint=side_bar_add_app_icon_layout.original_pos,d=.15,t='in_sine')
@@ -10177,7 +10190,7 @@ class AccountScreen(Screen):
             size_hint =(.5, .075),
             pos_hint = {'center_x':.5, 'center_y':.075},
             background_down='',
-            background_color=(250/250, 250/250, 250/250,.9),
+            background_color=palette('light_tint',.9),
             markup=True)
         self.widgets['side_bar_add_expand_button']=side_bar_add_expand_button
         side_bar_add_expand_button.bind(on_release=self.side_bar_add_expand_button_func)
@@ -10196,7 +10209,7 @@ class AccountScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.3125},
             expanded_size=(5.143,1.185),
             expanded_pos = {'center_x':-1.785, 'center_y':.52},
-            bg_color=(0,0,0,.9),
+            bg_color=palette('dark_shade',.9),
             locked=lambda x: self.add_widget(PinLock(lambda :(self.unlock(),x()))))
         self.widgets['side_bar_remove']=side_bar_remove
         side_bar_remove.widgets={}
@@ -10224,7 +10237,7 @@ class AccountScreen(Screen):
             size_hint =(.5, .075),
             pos_hint = {'center_x':.5, 'center_y':.075},
             background_down='',
-            background_color=(250/250, 250/250, 250/250,.9),
+            background_color=palette('light_tint',.9),
             markup=True)
         self.widgets['side_bar_remove_expand_button']=side_bar_remove_expand_button
         side_bar_remove_expand_button.bind(on_release=self.side_bar_remove_expand_button_func)
@@ -10243,7 +10256,7 @@ class AccountScreen(Screen):
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.125},
             background_normal='',
-            background_color=(0,0,0,.9),
+            background_color=palette('dark_shade',.9),
             markup=True)
         self.widgets['side_bar_set_pin']=side_bar_set_pin
         side_bar_set_pin.ref='side_bar_set_pin'
@@ -10252,12 +10265,12 @@ class AccountScreen(Screen):
 
         account_admin_hint=RoundedButton(
             text=f"[size=16][b][color=#ffffff]Enable Admin mode to edit fields[/size]",
-            color=(0,0,0,1),
+            color=palette('dark_shade',1),
             size_hint=(.2,.05),
             pos_hint = {'center_x':.5, 'y':.14},
             markup=True,
             background_normal='',
-            background_color=(0,0,0,.9))
+            background_color=palette('dark_shade',.9))
         self.widgets['account_admin_hint']=account_admin_hint
         account_admin_hint.bind(on_touch_up=self.prompt_unlock)
 
@@ -10338,8 +10351,8 @@ class AccountScreen(Screen):
     def side_bar_connect_populate(self,*args):
         self.clear_hints()
         sbc_parent=self.widgets['side_bar_box']
-        darken=Animation(rgba=(0,0,0,1))
-        lighten=Animation(rgba=(0,0,0,.85))
+        darken=Animation(rgba=palette('dark_shade',1))
+        lighten=Animation(rgba=palette('dark_shade',.85))
         side_bar_connect=self.widgets['side_bar_connect']
         side_bar_connect.clear_widgets()
         if side_bar_connect.expanded:
@@ -10379,8 +10392,8 @@ class AccountScreen(Screen):
 
     def side_bar_connect_login_populate(self,*args):
         self.clear_hints()
-        darken=Animation(rgba=(0,0,0,1),d=.25)
-        lighten=Animation(rgba=(0,0,0,0))
+        darken=Animation(rgba=palette('dark_shade',1),d=.25)
+        lighten=Animation(rgba=palette('dark_shade',0))
         side_bar_connect_login=self.widgets['side_bar_connect_login']
         side_bar_connect_login.clear_widgets()
         if side_bar_connect_login.expanded:
@@ -10422,8 +10435,8 @@ class AccountScreen(Screen):
 
     def side_bar_unlink_populate(self,*args):
         sbu_parent=self.widgets['side_bar_box']
-        darken=Animation(rgba=(0,0,0,1))
-        lighten=Animation(rgba=(0,0,0,.85))
+        darken=Animation(rgba=palette('dark_shade',1))
+        lighten=Animation(rgba=palette('dark_shade',.85))
         side_bar_unlink=self.widgets['side_bar_unlink']
         side_bar_unlink.clear_widgets()
         if side_bar_unlink.expanded:
@@ -10452,8 +10465,8 @@ class AccountScreen(Screen):
 
     def side_bar_add_populate(self,*args):
         sbm_parent=self.widgets['side_bar_box']
-        darken=Animation(rgba=(0,0,0,1))
-        lighten=Animation(rgba=(0,0,0,.85))
+        darken=Animation(rgba=palette('dark_shade',1))
+        lighten=Animation(rgba=palette('dark_shade',.85))
         side_bar_add=self.widgets['side_bar_add']
         side_bar_add.clear_widgets()
         if side_bar_add.expanded:
@@ -10507,8 +10520,8 @@ class AccountScreen(Screen):
     def side_bar_add_app_icon_layout_populate(self,*args):
         sba_icon=self.widgets['side_bar_add_app_icon_layout']
         sba_parent=self.widgets['side_bar_add']
-        darken=Animation(rgba=(1,1,1,1))
-        lighten=Animation(rgba=(1,1,1,0),d=.75)
+        darken=Animation(rgba=palette('light_tint',1))
+        lighten=Animation(rgba=palette('light_tint',0),d=.75)
         side_bar_add_app_icon=self.widgets['side_bar_add_app_icon_layout']
         side_bar_add_app_icon.clear_widgets()
         if side_bar_add_app_icon.expanded:
@@ -10537,8 +10550,8 @@ class AccountScreen(Screen):
 
     def side_bar_remove_populate(self,*args):
         sbr_parent=self.widgets['side_bar_box']
-        darken=Animation(rgba=(0,0,0,1))
-        lighten=Animation(rgba=(0,0,0,.85))
+        darken=Animation(rgba=palette('dark_shade',1))
+        lighten=Animation(rgba=palette('dark_shade',.85))
         side_bar_remove=self.widgets['side_bar_remove']
         side_bar_remove.clear_widgets()
         if side_bar_remove.expanded:
@@ -10568,7 +10581,7 @@ class AccountScreen(Screen):
     def side_bar_connect_login_expand_button_func(self,*args):
         sba=self.widgets['side_bar_connect_login']
         if sba.expanded:
-            a=Animation(rgba=(0,0,0,0),d=.25)
+            a=Animation(rgba=palette('dark_shade',0),d=.25)
             a.start(sba.shape_color)
             a.bind(on_complete=sba.shrink)
         if not sba.expanded:
@@ -10610,7 +10623,7 @@ class AccountScreen(Screen):
         if sba.expanded:
             Clock.schedule_once(shrink,0)
         else:
-            sba.shape_color.rgba=(1,1,1,.2)
+            sba.shape_color.rgba=palette('light_tint',.2)
 
     def side_bar_add_qr_generate_func(self,*args):
         w=self.widgets
@@ -10742,9 +10755,9 @@ class AccountScreen(Screen):
             if button.expanded:
                 return
         if button.state=='normal':
-            button.shape_color.rgba=(0,0,0,.9)
+            button.shape_color.rgba=palette('dark_shade',.9)
         if button.state=='down':
-            button.shape_color.rgba=(.05,.05,0,.7)
+            button.shape_color.rgba=palette('primary',.15)
 
     def prompt_unlock(self,button,touch,*args):
         if not button.collide_point(*touch.pos):
@@ -10778,7 +10791,7 @@ class AccountScreen(Screen):
             pp.remove_widget(p)
             pp.add_widget(p)
             with b.canvas.before:
-                b.screen_fade=Color(0,0,0,0)
+                b.screen_fade=Color(*palette('dark_shade',0))
                 Rectangle(size=Window.size)
             def modal(_touch):
                 if not b.collide_point(*_touch.pos):
@@ -10789,10 +10802,10 @@ class AccountScreen(Screen):
             def not_modal(_touch):
                 return super(ExpandableRoundedColorLayout,b).on_touch_down(_touch)
             setattr(b,'on_touch_down',modal)
-            a=Animation(rgba=(0,0,0,.75),d=.35)
+            a=Animation(rgba=palette('dark_shade',.75),d=.35)
             a.start(b.screen_fade)
             def unfade(*args):
-                a=Animation(rgba=(0,0,0,0),d=.25)
+                a=Animation(rgba=palette('dark_shade',0),d=.25)
                 a.start(b.screen_fade)
                 a.bind(on_complete=clear_prompt_fade)
                 setattr(b,'on_touch_down',not_modal)
@@ -10827,16 +10840,16 @@ class AccountScreen(Screen):
             w['side_bar_unlink'].disabled=False
             w['side_bar_add'].disabled=False
             w['side_bar_remove'].disabled=False
-            w['side_bar_unlink'].shape_color.rgba=(0,0,0,.9)
-            w['side_bar_add'].shape_color.rgba=(0,0,0,.9)
-            w['side_bar_remove'].shape_color.rgba=(0,0,0,.9)
+            w['side_bar_unlink'].shape_color.rgba=palette('dark_shade',.9)
+            w['side_bar_add'].shape_color.rgba=palette('dark_shade',.9)
+            w['side_bar_remove'].shape_color.rgba=palette('dark_shade',.9)
         else:
             w['side_bar_unlink'].disabled=True
             w['side_bar_add'].disabled=True
             w['side_bar_remove'].disabled=True
-            w['side_bar_unlink'].shape_color.rgba=(.1,.1,.1,.8)
-            w['side_bar_add'].   shape_color.rgba=(.1,.1,.1,.8)
-            w['side_bar_remove'].shape_color.rgba=(.1,.1,.1,.8)
+            w['side_bar_unlink'].shape_color.rgba=palette('secondary',.8)
+            w['side_bar_add'].   shape_color.rgba=palette('secondary',.8)
+            w['side_bar_remove'].shape_color.rgba=palette('secondary',.8)
 
     def generate_uid_qr(self,data,*args):
         qr=segno.make_qr(data)
@@ -10855,18 +10868,18 @@ class AccountScreen(Screen):
         gen=w['side_bar_add_qr_generate']
         if _dt>0:
             _time=str(timedelta(seconds=int(_dt)))[2:]
-            box.shape_color.rgba=(100/255, 255/255, 100/255,.75)
+            box.shape_color.rgba=palette('complement',.75)
             valid_text.text='[size=16][b][color=#000000]Valid'
             valid_time.text=f'[size=28][color=#000000]{_time}'
             gen.disabled=True
-            gen.shape_color.rgba=(.0, .2, .4,.5)
+            gen.shape_color.rgba=palette('accent',.5)
         else:
             self.uvt_event.cancel()
-            box.shape_color.rgba=(255/255, 100/255, 100/255,.85)
+            box.shape_color.rgba=palette('highlight',.85)
             valid_text.text='[size=16][b][color=#000000]Expired'
             valid_time.text='[size=28][color=#000000]00:00'
             gen.disabled=False
-            gen.shape_color.rgba=(.0, .5, .7,.85)
+            gen.shape_color.rgba=palette('accent',.85)
             config=App.get_running_app().config_
             config.set('account','link_code','')
             with open(preferences_path,'w') as configfile:
@@ -10962,11 +10975,11 @@ class AccountScreen(Screen):
         self.clear_hints()
         if (si.contains_valid_email and pi.text!=''):
             con_btn.disabled=False
-            con_btn.bg_color=(.0, .7, .9,1)
+            con_btn.bg_color=palette('accent',1)
             con_btn.color_swap()
         else:
             con_btn.disabled=True
-            con_btn.bg_color=(.1,.1,.1,1)
+            con_btn.bg_color=palette('secondary',1)
             con_btn.color_swap()
             if not focused and si.text!='' and not si.contains_valid_email:
                 if hasattr(self,'login_email_hint_icon'):
@@ -10974,7 +10987,7 @@ class AccountScreen(Screen):
                 self.login_email_hint_icon=h=RoundedLabelColor(
                     text='[b][size=20]!',
                     markup=True,
-                    bg_color=(1,0,0,.25),
+                    bg_color=palette('highlight',.25),
                     size_hint =(.025, .05),
                     pos_hint = {'center_x':.725, 'center_y':.7})
                 if hasattr(h,'parent'):
@@ -11001,11 +11014,11 @@ class AccountScreen(Screen):
         self.clear_hints()
         if (si.contains_valid_email and pi.text!=''):
             con_btn.disabled=False
-            con_btn.bg_color=(.0, .7, .9,1)
+            con_btn.bg_color=palette('accent',1)
             con_btn.color_swap()
         else:
             con_btn.disabled=True
-            con_btn.bg_color=(.1,.1,.1,1)
+            con_btn.bg_color=palette('secondary',1)
             con_btn.color_swap()
             if not focused and si.text!='' and not si.contains_valid_email:
                 if hasattr(self,'email_hint_icon'):
@@ -11013,7 +11026,7 @@ class AccountScreen(Screen):
                 self.email_hint_icon=h=RoundedLabelColor(
                     text='[b][size=20]!',
                     markup=True,
-                    bg_color=(1,0,0,.25),
+                    bg_color=palette('highlight',.25),
                     size_hint =(.025, .05),
                     pos_hint = {'center_x':.725, 'center_y':.7})
                 if hasattr(h,'parent'):
@@ -11082,22 +11095,22 @@ class NetworkScreen(Screen):
             size_hint =(.4, .1),
             pos_hint = {'x':.06, 'y':.015},
             background_down='',
-            background_color=(200/255, 200/255, 200/255,.9),
+            background_color=palette('neutral',.9),
             markup=True)
         self.widgets['back']=back
         back.ref='settings_back'
-        back.bind(on_press=self.network_back)
+        back.bind(on_release=self.network_back)
 
         back_main=RoundedButton(
             text=current_language['preferences_back_main'],
             size_hint =(.4, .1),
             pos_hint = {'x':.52, 'y':.015},
             background_normal='',
-            background_color=(245/250, 216/250, 41/250,.9),
+            background_color=palette('primary',.9),
             markup=True)
         self.widgets['back_main']=back_main
         back_main.ref='preferences_back_main'
-        back_main.bind(on_press=self.network_back_main)
+        back_main.bind(on_release=self.network_back_main)
 
         screen_name=Label(
             text=current_language['network_screen_name'],
@@ -11108,7 +11121,7 @@ class NetworkScreen(Screen):
         screen_name.ref='network_screen_name'
 
         information_box=ExpandableRoundedColorLayout(
-            bg_color=(0,0,0,.85),
+            bg_color=palette('dark_shade',.85),
             size_hint =(.35, .25),
             pos_hint = {'center_x':.225, 'center_y':.75},
             expanded_size=(.9,.8),
@@ -11121,7 +11134,7 @@ class NetworkScreen(Screen):
             size_hint =(.5, .175),
             pos_hint = {'center_x':.5, 'center_y':.15},
             background_down='',
-            background_color=(250/250, 250/250, 250/250,.9),
+            background_color=palette('light_tint',.9),
             markup=True)
         self.widgets['information_expand_button']=information_expand_button
         information_expand_button.bind(on_release=self.information_expand_button_func)
@@ -11173,7 +11186,7 @@ class NetworkScreen(Screen):
         self.widgets['information_signal']=information_signal
 
         details_box=ExpandableRoundedColorLayout(
-            bg_color=(0,0,0,.85),
+            bg_color=palette('dark_shade',.85),
             size_hint =(.35, .4),
             pos_hint = {'center_x':.225, 'center_y':.4},
             expanded_size=(.9,.8),
@@ -11187,7 +11200,7 @@ class NetworkScreen(Screen):
             size_hint =(.5, .125),
             pos_hint = {'center_x':.5, 'center_y':.15},
             background_down='',
-            background_color=(250/250, 250/250, 250/250,.9),
+            background_color=palette('light_tint',.9),
             markup=True)
         self.widgets['details_expand_button']=details_expand_button
         details_expand_button.bind(on_release=self.details_expand_button_func)
@@ -11247,7 +11260,7 @@ class NetworkScreen(Screen):
         self.widgets['details_security']=details_security
 
         details_connect_box=RoundedColorLayout(
-            bg_color=(.1,.1,.1,.85),
+            bg_color=palette('secondary',.85),
             size_hint =(.4, .6),
             pos_hint = {'center_x':.7, 'center_y':.5},)
         self.widgets['details_connect_box']=details_connect_box
@@ -11270,11 +11283,11 @@ class NetworkScreen(Screen):
         details_password_interior_box=LabelColor(
             size_hint =(.9,.75),
             pos_hint = {'center_x':.5, 'center_y':.45},
-            bg_color=(1,1,1,.15))
+            bg_color=palette('light_tint',.15))
         self.widgets['details_password_interior_box']=details_password_interior_box
 
         details_ssid_known=RoundedLabelColor(
-            bg_color=(.0, .35, .45,1),
+            bg_color=palette('accent',1),
             size_hint =(.5, .15),
             pos_hint = {'center_x':.5, 'center_y':.7},
             text='[b][size=16]Network is Known (Saved)',
@@ -11298,16 +11311,16 @@ class NetworkScreen(Screen):
             size_hint =(.6, .1),
             pos_hint = {'center_x':.5, 'center_y':.25},
             background_normal='',
-            background_color=(.1,.1,.1,1),
+            background_color=palette('secondary',1),
             disabled=True,
-            disabled_color=(1,1,1,1),
+            disabled_color=palette('light_tint',1),
             markup=True)
         self.widgets['details_network_connect']=details_network_connect
-        details_network_connect.bind(on_press=self.details_network_connect_func)
+        details_network_connect.bind(on_release=self.details_network_connect_func)
         details_network_connect.bind(disabled=self.details_network_connect_disabled)
 
         status_box=RoundedColorLayout(
-            bg_color=(0,0,0,.85),
+            bg_color=palette('dark_shade',.85),
             size_hint =(.35, .675),
             pos_hint = {'center_x':.6, 'center_y':.5375},)
         status_box.widgets={}
@@ -11331,10 +11344,10 @@ class NetworkScreen(Screen):
         status_scroll=OutlineScroll(
             size_hint =(.9,.75),
             pos_hint = {'center_x':.5, 'center_y':.45},
-            bg_color=(1,1,1,.15),
+            bg_color=palette('light_tint',.15),
             bar_width=8,
-            bar_color=(245/250, 216/250, 41/250,.9),
-            bar_inactive_color=(245/250, 216/250, 41/250,.35),
+            bar_color=palette('primary',.9),
+            bar_inactive_color=palette('primary',.35),
             do_scroll_y=True,
             do_scroll_x=False)
 
@@ -11348,7 +11361,7 @@ class NetworkScreen(Screen):
         status_scroll_layout.bind(minimum_height=status_scroll_layout.setter('height'))
 
         side_bar_box=RoundedColorLayout(
-            bg_color=(.5,.5,.5,.85),
+            bg_color=palette('base',.85),
             size_hint =(.175, .675),
             pos_hint = {'center_x':.9, 'center_y':.5375},)
         self.widgets['side_bar_box']=side_bar_box
@@ -11358,7 +11371,7 @@ class NetworkScreen(Screen):
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.875},
             background_normal='',
-            background_color=(0,0,0,.85),
+            background_color=palette('dark_shade',.85),
             markup=True)
         self.widgets['side_bar_scan']=side_bar_scan
         side_bar_scan.ref='side_bar_scan'
@@ -11370,7 +11383,7 @@ class NetworkScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.6875},
             expanded_size=(5.143,1.185),
             expanded_pos = {'center_x':-1.785, 'center_y':.52},
-            bg_color=(0,0,0,.85))
+            bg_color=palette('dark_shade',.85))
         side_bar_manual.widgets={}
         self.widgets['side_bar_manual']=side_bar_manual
         side_bar_manual.bind(state=self.bg_color)
@@ -11397,7 +11410,7 @@ class NetworkScreen(Screen):
             size_hint =(.5, .075),
             pos_hint = {'center_x':.5, 'center_y':.075},
             background_down='',
-            background_color=(250/250, 250/250, 250/250,.9),
+            background_color=palette('light_tint',.9),
             markup=True)
         self.widgets['side_bar_manual_expand_button']=side_bar_manual_expand_button
         side_bar_manual_expand_button.bind(on_release=self.side_bar_manual_expand_button_func)
@@ -11474,9 +11487,9 @@ class NetworkScreen(Screen):
             size_hint =(.425, .075),
             pos_hint = {'center_x':.5, 'center_y':.25},
             background_normal='',
-            background_color=(.1,.1,.1,1),
+            background_color=palette('secondary',1),
             disabled=True,
-            disabled_color=(1,1,1,1),
+            disabled_color=palette('light_tint',1),
             markup=True)
         self.widgets['side_bar_manual_connect']=side_bar_manual_connect
         side_bar_manual_connect.bind(on_release=self.side_bar_manual_connect_func)
@@ -11487,7 +11500,7 @@ class NetworkScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.5},
             expanded_size=(5.143,1.185),
             expanded_pos = {'center_x':-1.785, 'center_y':.52},
-            bg_color=(0,0,0,.85),)
+            bg_color=palette('dark_shade',.85),)
         side_bar_known.widgets={}
         self.widgets['side_bar_known']=side_bar_known
         side_bar_known.bind(state=self.bg_color)
@@ -11515,7 +11528,7 @@ class NetworkScreen(Screen):
             size_hint =(.5, .075),
             pos_hint = {'center_x':.5, 'center_y':.075},
             background_down='',
-            background_color=(250/250, 250/250, 250/250,.9),
+            background_color=palette('light_tint',.9),
             markup=True)
         self.widgets['side_bar_known_expand_button']=side_bar_known_expand_button
         side_bar_known_expand_button.bind(on_release=self.side_bar_known_expand_button_func)
@@ -11530,7 +11543,7 @@ class NetworkScreen(Screen):
         self.widgets['side_bar_known_expand_lines']=side_bar_known_expand_lines
 
         side_bar_known_instructions=LabelColor(
-            bg_color=(0,0,0,1),
+            bg_color=palette('dark_shade',1),
             text=current_language['side_bar_known_instructions'],
             markup=True,
             size_hint =(.35, .4),
@@ -11550,7 +11563,7 @@ class NetworkScreen(Screen):
         side_bar_known_instructions.bind(pos=update_lines, size=update_lines)
 
         side_bar_known_status_box=RoundedColorLayout(
-            bg_color=(.1,.1,.1,.85),
+            bg_color=palette('secondary',.85),
             size_hint =(.4, .6),
             pos_hint = {'center_x':.7, 'center_y':.5},)
         side_bar_known_status_box.widgets={}
@@ -11575,10 +11588,10 @@ class NetworkScreen(Screen):
         side_bar_known_status_scroll=OutlineScroll(
             size_hint =(.9,.75),
             pos_hint = {'center_x':.5, 'center_y':.45},
-            bg_color=(1,1,1,.15),
+            bg_color=palette('light_tint',.15),
             bar_width=8,
-            bar_color=(245/250, 216/250, 41/250,.9),
-            bar_inactive_color=(245/250, 216/250, 41/250,.35),
+            bar_color=palette('primary',.9),
+            bar_inactive_color=palette('primary',.35),
             do_scroll_y=True,
             do_scroll_x=False)
         self.widgets['side_bar_known_status_scroll']=side_bar_known_status_scroll
@@ -11597,7 +11610,7 @@ class NetworkScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.3125},
             expanded_size=(5.143,1.185),
             expanded_pos = {'center_x':-1.785, 'center_y':.52},
-            bg_color=(0,0,0,.85))
+            bg_color=palette('dark_shade',.85))
         self.widgets['side_bar_auto']=side_bar_auto
         side_bar_auto.bind(state=self.bg_color)
         side_bar_auto.bind(expanded=self.side_bar_auto_populate)
@@ -11624,7 +11637,7 @@ class NetworkScreen(Screen):
             size_hint =(.5, .075),
             pos_hint = {'center_x':.5, 'center_y':.075},
             background_down='',
-            background_color=(250/250, 250/250, 250/250,.9),
+            background_color=palette('light_tint',.9),
             markup=True)
         self.widgets['side_bar_auto_expand_button']=side_bar_auto_expand_button
         side_bar_auto_expand_button.bind(on_release=self.side_bar_auto_expand_button_func)
@@ -11639,7 +11652,7 @@ class NetworkScreen(Screen):
         self.widgets['side_bar_auto_expand_lines']=side_bar_auto_expand_lines
 
         side_bar_auto_instructions=LabelColor(
-            bg_color=(0,0,0,1),
+            bg_color=palette('dark_shade',1),
             text=current_language['side_bar_auto_instructions'],
             markup=True,
             size_hint =(.3, .4),
@@ -11659,7 +11672,7 @@ class NetworkScreen(Screen):
         side_bar_auto_instructions.bind(pos=update_lines, size=update_lines)
 
         side_bar_auto_status_box=RoundedColorLayout(
-            bg_color=(.1,.1,.1,.85),
+            bg_color=palette('secondary',.85),
             size_hint =(.4, .6),
             pos_hint = {'center_x':.7, 'center_y':.5},)
         side_bar_auto_status_box.widgets={}
@@ -11684,10 +11697,10 @@ class NetworkScreen(Screen):
         side_bar_auto_status_scroll=OutlineAutoScroll(
             size_hint =(.9,.75),
             pos_hint = {'center_x':.5, 'center_y':.45},
-            bg_color=(1,1,1,.15),
+            bg_color=palette('light_tint',.15),
             bar_width=8,
-            bar_color=(245/250, 216/250, 41/250,.9),
-            bar_inactive_color=(245/250, 216/250, 41/250,.35),
+            bar_color=palette('primary',.9),
+            bar_inactive_color=palette('primary',.35),
             do_scroll_y=True,
             do_scroll_x=False,
             effect_cls=ScrollEffect)
@@ -11707,7 +11720,7 @@ class NetworkScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.125},
             expanded_size=(5.143,1.185),
             expanded_pos = {'center_x':-1.785, 'center_y':.52},
-            bg_color=(0,0,0,.85))
+            bg_color=palette('dark_shade',.85))
         self.widgets['side_bar_disconnect']=side_bar_disconnect
         side_bar_disconnect.widgets={}
         side_bar_disconnect.bind(state=self.bg_color)
@@ -11734,7 +11747,7 @@ class NetworkScreen(Screen):
             size_hint =(.5, .075),
             pos_hint = {'center_x':.5, 'center_y':.075},
             background_down='',
-            background_color=(250/250, 250/250, 250/250,.9),
+            background_color=palette('light_tint',.9),
             markup=True)
         self.widgets['side_bar_disconnect_expand_button']=side_bar_disconnect_expand_button
         side_bar_disconnect_expand_button.bind(on_release=self.side_bar_disconnect_expand_button_func)
@@ -11767,8 +11780,8 @@ class NetworkScreen(Screen):
             text='[b][size=16]Disconnect: ',
             size_hint =(.3, .05),
             pos_hint = {'x':.4, 'center_y':.7},
-            background_normal='',
-            background_color=(.0, .35, .45,1),
+            background_down='',
+            background_color=palette('accent',1),
             markup=True)
         self.widgets['side_bar_disconnect_temp_btn']=side_bar_disconnect_temp_btn
         side_bar_disconnect_temp_btn.bind(on_release=self.side_bar_disconnect_temp_btn_func)
@@ -11784,8 +11797,8 @@ class NetworkScreen(Screen):
             text='[b][size=16]Forget: ',
             size_hint =(.3, .05),
             pos_hint = {'x':.4, 'center_y':.55},
-            background_normal='',
-            background_color=(.5,.1,.1,1),
+            background_down='',
+            background_color=palette('highlight',.9),
             markup=True)
         self.widgets['side_bar_disconnect_rmv_btn']=side_bar_disconnect_rmv_btn
         side_bar_disconnect_rmv_btn.bind(on_release=self.side_bar_disconnect_rmv_btn_func)
@@ -11804,8 +11817,8 @@ class NetworkScreen(Screen):
             size_hint =(.125, .05),
             pos_hint = {'center_x':.475, 'center_y':.4},
             background_down='',
-            background_color=(.0,.35,.45,1),
-            second_color=(.1,.1,.1,.85),
+            background_color=palette('accent',1),
+            second_color=palette('secondary',.85),
             allow_no_selection=False)
         self.widgets['side_bar_disconnect_status_btn_on']=side_bar_disconnect_status_btn_on
         side_bar_disconnect_status_btn_on.bind(state=self.set_network_status_file)
@@ -11817,8 +11830,8 @@ class NetworkScreen(Screen):
             size_hint =(.125, .05),
             pos_hint = {'center_x':.625, 'center_y':.4},
             background_down='',
-            background_color=(.0,.35,.45,1),
-            second_color=(.1,.1,.1,.85),
+            background_color=palette('accent',1),
+            second_color=palette('secondary',.85),
             allow_no_selection=False)
         self.widgets['side_bar_disconnect_status_btn_off']=side_bar_disconnect_status_btn_off
         side_bar_disconnect_status_btn_off.bind(state=self.set_network_status_file)
@@ -11838,7 +11851,7 @@ class NetworkScreen(Screen):
         side_bar_disconnect.bind(pos=update_lines, size=update_lines)
 
         account_admin_hint=MinimumBoundingLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
-                color=(0,0,0,1),
+                color=palette('dark_shade',1),
                 pos_hint = {'center_x':.5, 'y':.14},
                 markup=True)
         self.widgets['account_admin_hint']=account_admin_hint
@@ -11941,9 +11954,9 @@ class NetworkScreen(Screen):
             if button.expanded:
                 return
         if button.state=='normal':
-            button.shape_color.rgba=(0,0,0,.9)
+            button.shape_color.rgba=palette('dark_shade',.9)
         if button.state=='down':
-            button.shape_color.rgba=(.05,.05,0,.7)
+            button.shape_color.rgba=palette('primary',.15)
     def network_back(self,button):
         self.parent.transition = SlideTransition(direction='right')
         self.manager.current='preferences'
@@ -11984,7 +11997,7 @@ class NetworkScreen(Screen):
                 prefix='>  '
                 suffix='  <'
                 func=self.widgets['information_box'].expand
-            c=(.0, .5, .7,.8) if current else (.1,.1,.1,1)
+            c=palette('accent',.85) if current else palette('secondary',1)
             btn = RoundedButton(
                 background_normal='',
                 background_color=c,
@@ -12006,8 +12019,8 @@ class NetworkScreen(Screen):
         self._scan.start()
     def information_box_populate(self,*args):
         information_box=self.widgets['information_box']
-        darken=Animation(rgba=(0,0,0,.95))
-        lighten=Animation(rgba=(0,0,0,.85))
+        darken=Animation(rgba=palette('dark_shade',.95))
+        lighten=Animation(rgba=palette('dark_shade',.85))
         information_box.clear_widgets()
         if information_box.expanded:
             darken.start(information_box.shape_color)
@@ -12051,8 +12064,8 @@ class NetworkScreen(Screen):
                 information_box.add_widget(i)
     def details_box_populate(self,*args):
         details_box=self.widgets['details_box']
-        darken=Animation(rgba=(0,0,0,.95))
-        lighten=Animation(rgba=(0,0,0,.85))
+        darken=Animation(rgba=palette('dark_shade',.95))
+        lighten=Animation(rgba=palette('dark_shade',.85))
         if details_box.expanded:
             darken.start(details_box.shape_color)
             w=self.widgets
@@ -12096,8 +12109,8 @@ class NetworkScreen(Screen):
                 details_box.add_widget(i)
     def side_bar_manual_populate(self,*args):
         sbm_parent=self.widgets['side_bar_box']
-        darken=Animation(rgba=(0,0,0,.95))
-        lighten=Animation(rgba=(0,0,0,.85))
+        darken=Animation(rgba=palette('dark_shade',.95))
+        lighten=Animation(rgba=palette('dark_shade',.85))
         side_bar_manual=self.widgets['side_bar_manual']
         side_bar_manual.clear_widgets()
         if side_bar_manual.expanded:
@@ -12136,8 +12149,8 @@ class NetworkScreen(Screen):
                 side_bar_manual.add_widget(i)
     def side_bar_known_populate(self,*args):
         sbn_parent=self.widgets['side_bar_box']
-        darken=Animation(rgba=(0,0,0,.95))
-        lighten=Animation(rgba=(0,0,0,.85))
+        darken=Animation(rgba=palette('dark_shade',.95))
+        lighten=Animation(rgba=palette('dark_shade',.85))
         side_bar_known=self.widgets['side_bar_known']
         side_bar_known.clear_widgets()
         if side_bar_known.expanded:
@@ -12167,8 +12180,8 @@ class NetworkScreen(Screen):
                 side_bar_known.add_widget(i)
     def side_bar_auto_populate(self,*args):
         sba_parent=self.widgets['side_bar_box']
-        darken=Animation(rgba=(0,0,0,.95))
-        lighten=Animation(rgba=(0,0,0,.85))
+        darken=Animation(rgba=palette('dark_shade',.95))
+        lighten=Animation(rgba=palette('dark_shade',.85))
         side_bar_auto=self.widgets['side_bar_auto']
         side_bar_auto.clear_widgets()
         if side_bar_auto.expanded:
@@ -12203,8 +12216,8 @@ class NetworkScreen(Screen):
                 config.set('network','status','True')
         status=App.get_running_app().config_.getboolean('network','status')
         sbd_parent=self.widgets['side_bar_box']
-        darken=Animation(rgba=(0,0,0,.95))
-        lighten=Animation(rgba=(0,0,0,.85))
+        darken=Animation(rgba=palette('dark_shade',.95))
+        lighten=Animation(rgba=palette('dark_shade',.85))
         side_bar_disconnect=self.widgets['side_bar_disconnect']
         side_bar_disconnect.clear_widgets()
         if side_bar_disconnect.expanded:
@@ -12634,9 +12647,9 @@ class NetworkScreen(Screen):
 
         def add_bubble(profile,button):
             scroll=self.widgets['side_bar_known_status_scroll']
-            cnct=BubbleButton(markup=True,text='[b][size=18]Connect',size_hint_y=.3,background_color=(0,.7,1,1))
+            cnct=BubbleButton(markup=True,text='[b][size=18]Connect',size_hint_y=.3,background_color=palette('accent',1))
             cnct.bind(on_release=partial(self.known_connect_func,profile))
-            rmv=BubbleButton(markup=True,text='[b][size=18]Forget',size_hint_y=.2,background_color=(1,0,0,1))
+            rmv=BubbleButton(markup=True,text='[b][size=18]Forget',size_hint_y=.2,background_color=palette('highlight',1))
             rmv.bind(on_release=partial(self.remove_known_profile_func,profile))
             dtl=BubbleButton(markup=True,text='[b][size=18]Details',size_hint_y=.2)
             dtl.bind(on_release=partial(self.swap_to_details,profile))
@@ -12650,7 +12663,7 @@ class NetworkScreen(Screen):
                 size_hint =(.5,7.5),
                 pos_hint = {'right':0, 'center_y':.5},
                 background_image=opaque_bubble,
-                background_color=(.05,.05,.05,1))
+                background_color=palette('secondary',1))
 
             b.add_widget(cnct)
             b.add_widget(rmv)
@@ -12661,7 +12674,7 @@ class NetworkScreen(Screen):
         def add_button(profile):
             btn = RoundedButton(
                     background_normal='',
-                    background_color=(.1,.1,.1,1),
+                    background_color=palette('secondary',1),
                     text='[b][size=16]'+str(profile),
                     markup=True,
                     size_hint_y=None,
@@ -12689,7 +12702,7 @@ class NetworkScreen(Screen):
             layout=self.widgets['side_bar_auto_status_scroll_layout']
             btn = DraggableRoundedLabelColor(
                 index=index,
-                bg_color=(.1,.1,.1,1),
+                bg_color=palette('secondary',1),
                 text=f'[b][size=16]{str(profile)}',
                 markup=True,
                 size_hint_y=None,
@@ -12797,11 +12810,11 @@ class NetworkScreen(Screen):
         pi=self.widgets['side_bar_manual_password_input']
         if (si.text!='' and security_input.text!='[b][size=16]Enter Security Type' and pi.text!=''):
             con_btn.disabled=False
-            con_btn.bg_color=(.0, .7, .9,1)
+            con_btn.bg_color=palette('accent',1)
             con_btn.color_swap()
         else:
             con_btn.disabled=True
-            con_btn.bg_color=(.1,.1,.1,1)
+            con_btn.bg_color=palette('secondary',1)
             con_btn.color_swap()
 
     def side_bar_manual_password_input_clear(self,button,focused,*args):
@@ -12869,22 +12882,22 @@ class AnalyticScreen(Screen):
             size_hint =(.4, .1),
             pos_hint = {'x':.06, 'y':.015},
             background_down='',
-            background_color=(0,0,0,1),
+            background_color=palette('dark_shade',1),
             markup=True)
         self.widgets['back']=back
         # back.ref='settings_back'
-        back.bind(on_press=self.account_back)
+        back.bind(on_release=self.account_back)
 
         back_main=RoundedButton(
             text=current_language['preferences_back_main'],
             size_hint =(.4, .1),
             pos_hint = {'x':.52, 'y':.015},
             background_normal='',
-            background_color=(245/250, 216/250, 41/250,.9),
+            background_color=palette('primary',.9),
             markup=True)
         self.widgets['back_main']=back_main
         back_main.ref='preferences_back_main'
-        back_main.bind(on_press=self.account_back_main)
+        back_main.bind(on_release=self.account_back_main)
 
         screen_name=Label(
             text=current_language['analytic_screen_name'],
@@ -12895,7 +12908,7 @@ class AnalyticScreen(Screen):
         screen_name.ref='analytic_screen_name'
 
         details_box=RoundedColorLayout(
-            bg_color=(0,0,0,.85),
+            bg_color=palette('dark_shade',.85),
             size_hint =(.775, .675),
             pos_hint = {'x':.025, 'center_y':.52},)
         self.widgets['details_box']=details_box
@@ -12913,7 +12926,7 @@ class AnalyticScreen(Screen):
             pos_hint = {'x':.05, 'y':.875},
             expanded_size=(.98,.98),
             expanded_pos={'x':.01,'y':.01},
-            bg_color=(1,1,1,.8))
+            bg_color=palette('light_tint',.8))
         details_hint.widgets={}
         self.widgets['details_hint']=details_hint
         details_hint.bind(state=self.bg_color_white)
@@ -12939,10 +12952,10 @@ class AnalyticScreen(Screen):
         details_scroll=OutlineScroll(
             size_hint =(.96,.8),
             pos_hint = {'center_x':.5, 'center_y':.425},
-            bg_color=(1,1,1,.15),
+            bg_color=palette('light_tint',.15),
             bar_width=8,
-            bar_color=(245/250, 216/250, 41/250,.9),
-            bar_inactive_color=(245/250, 216/250, 41/250,.35),
+            bar_color=palette('primary',.9),
+            bar_inactive_color=palette('primary',.35),
             do_scroll_y=True,
             do_scroll_x=False)
 
@@ -12952,7 +12965,7 @@ class AnalyticScreen(Screen):
         details_atmosphere_box=RoundedColorLayout(##################################
             size_hint =(.99, .3),
             pos_hint = {'center_x':.5, 'top':.99},
-            bg_color=(0,0,0,.75))
+            bg_color=palette('dark_shade',.75))
         self.widgets['details_atmosphere_box']=details_atmosphere_box
 
         details_atmosphere_title=Label(
@@ -12967,7 +12980,7 @@ class AnalyticScreen(Screen):
             pos_hint = {'x':.125, 'y':.05},
             expanded_size=(1,1),
             expanded_pos={'x':0,'y':0},
-            bg_color=(1,1,1,.8))
+            bg_color=palette('light_tint',.8))
         building_balance.widgets={}
         self.widgets['building_balance']=building_balance
         building_balance.bind(state=self.bg_color_white)
@@ -12994,7 +13007,7 @@ class AnalyticScreen(Screen):
             size_hint =(.15, .2),
             pos_hint = {'x':.825, 'y':.025},
             background_down='',
-            background_color=(0,0,0,.9),
+            background_color=palette('dark_shade',.9),
             markup=True)
         self.widgets['building_balance_back']=building_balance_back
         # back.ref='settings_back'
@@ -13008,7 +13021,7 @@ class AnalyticScreen(Screen):
             size_hint =(.15, .1),
             pos_hint = {'center_x':.5, 'y':.025},
             background_down='',
-            background_color=(0,0,0,.9),
+            background_color=palette('dark_shade',.9),
             markup=True)
         self.widgets['details_hint_back']=details_hint_back
         # back.ref='settings_back'
@@ -13019,7 +13032,7 @@ class AnalyticScreen(Screen):
             pos_hint = {'x':.8, 'y':.875},
             expanded_size=(.98,.98),
             expanded_pos={'x':.01,'y':.01},
-            bg_color=(1,1,1,.8))
+            bg_color=palette('light_tint',.8))
         details_custom.widgets={}
         self.widgets['details_custom']=details_custom
         details_custom.bind(state=self.bg_color_white)
@@ -13039,7 +13052,7 @@ class AnalyticScreen(Screen):
             size_hint =(.15, .1),
             pos_hint = {'x':.65, 'y':.025},
             background_down='',
-            background_color=(0,0,0,.9),
+            background_color=palette('dark_shade',.9),
             markup=True)
         self.widgets['details_custom_cancel']=details_custom_cancel
         # back.ref='settings_back'
@@ -13050,7 +13063,7 @@ class AnalyticScreen(Screen):
             size_hint =(.15, .1),
             pos_hint = {'x':.825, 'y':.025},
             background_down='',
-            background_color=(0,0,0,.9),
+            background_color=palette('dark_shade',.9),
             markup=True)
         self.widgets['details_custom_generate']=details_custom_generate
         # back.ref='settings_back'
@@ -13064,7 +13077,7 @@ class AnalyticScreen(Screen):
             pos_hint = {'x':.05, 'y':.85})
 
         side_bar_box=RoundedColorLayout(
-            bg_color=(.15,.15,.15,.85),
+            bg_color=palette('secondary',.85),
             size_hint =(.15, .675),
             pos_hint = {'x':.825, 'center_y':.52},)
         self.widgets['side_bar_box']=side_bar_box
@@ -13074,7 +13087,7 @@ class AnalyticScreen(Screen):
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.875},
             background_normal='',
-            background_color=(245/250, 216/250, 41/250,.25),
+            background_color=palette('primary',.25),
             markup=True,
             group='side',
             allow_no_selection=False,
@@ -13082,67 +13095,67 @@ class AnalyticScreen(Screen):
         self.widgets['side_bar_building']=side_bar_building
         side_bar_building.bind(state=self.bg_color)
         # side_bar_connect.ref='side_bar_connect'
-        side_bar_building.bind(on_press=self.load_building)
+        side_bar_building.bind(on_release=self.load_building)
 
         side_bar_equipment=RoundedToggleButton(
             text="[size=20][color=#ffffff][b]Equipment",
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.6875},
             background_normal='',
-            background_color=(0,0,0,.9),
+            background_color=palette('dark_shade',.9),
             markup=True,
             group='side',
             allow_no_selection=False)
         self.widgets['side_bar_equipment']=side_bar_equipment
         side_bar_equipment.bind(state=self.bg_color)
         # side_bar_unlink.ref='side_bar_unlink'
-        # side_bar_unlink.bind(on_press=self.remove_connection)
+        # side_bar_unlink.bind(on_release=self.remove_connection)
 
         side_bar_remote=RoundedToggleButton(
             text="[size=20][color=#ffffff][b]Remote-Access",
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.5},
             background_normal='',
-            background_color=(0,0,0,.9),
+            background_color=palette('dark_shade',.9),
             markup=True,
             group='side',
             allow_no_selection=False)
         self.widgets['side_bar_remote']=side_bar_remote
         side_bar_remote.bind(state=self.bg_color)
         # side_bar_add.ref='side_bar_add'
-        # side_bar_add.bind(on_press=self.side_bar_add)
+        # side_bar_add.bind(on_release=self.side_bar_add)
 
         side_bar_fault=RoundedToggleButton(
             text="[size=20][color=#ffffff][b]Faults",
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.3125},
             background_normal='',
-            background_color=(0,0,0,.9),
+            background_color=palette('dark_shade',.9),
             markup=True,
             group='side',
             allow_no_selection=False)
         self.widgets['side_bar_fault']=side_bar_fault
         side_bar_fault.bind(state=self.bg_color)
         # side_bar_remove.ref='side_bar_remove'
-        # side_bar_remove.bind(on_press=self.side_bar_remove)
+        # side_bar_remove.bind(on_release=self.side_bar_remove)
 
         side_bar_refresh=RoundedToggleButton(
             text="[size=20][color=#ffffff][b]Reports",
             size_hint =(.9, .15),
             pos_hint = {'center_x':.5, 'center_y':.125},
             background_normal='',
-            background_color=(0,0,0,.9),
+            background_color=palette('dark_shade',.9),
             markup=True,
             group='side',
             allow_no_selection=False)
         self.widgets['side_bar_refresh']=side_bar_refresh
         side_bar_refresh.bind(state=self.bg_color)
         # side_bar_refresh.ref='side_bar_refresh'
-        # side_bar_refresh.bind(on_press=self.side_bar_refresh)
+        # side_bar_refresh.bind(on_release=self.side_bar_refresh)
 
 
         account_admin_hint=MinimumBoundingLabel(text=f"[size=18][color=#ffffff]Enable Admin mode to edit fields[/size]",
-                color=(0,0,0,1),
+                color=palette('dark_shade',1),
                 pos_hint = {'center_x':.5, 'y':.2},
                 markup=True)
         self.widgets['account_admin_hint']=account_admin_hint
@@ -13202,8 +13215,8 @@ class AnalyticScreen(Screen):
 
     def building_balance_populate(self,*args):
         balance=self.widgets['building_balance']
-        darken=Animation(rgba=(1,1,1,1))
-        lighten=Animation(rgba=(1,1,1,.8))
+        darken=Animation(rgba=palette('light_tint',1))
+        lighten=Animation(rgba=palette('light_tint',.8))
         balance.clear_widgets()
         if balance.expanded:
             darken.start(balance.shape_color)
@@ -13225,8 +13238,8 @@ class AnalyticScreen(Screen):
 
     def details_custom_populate(self,*args):
         details_custom=self.widgets['details_custom']
-        darken=Animation(rgba=(1,1,1,1))
-        lighten=Animation(rgba=(1,1,1,.8))
+        darken=Animation(rgba=palette('light_tint',1))
+        lighten=Animation(rgba=palette('light_tint',.8))
         details_custom.clear_widgets()
         if details_custom.expanded:
             darken.start(details_custom.shape_color)
@@ -13246,8 +13259,8 @@ class AnalyticScreen(Screen):
 
     def details_hint_populate(self,*args):
         details_hint=self.widgets['details_hint']
-        darken=Animation(rgba=(1,1,1,1))
-        lighten=Animation(rgba=(1,1,1,.8))
+        darken=Animation(rgba=palette('light_tint',1))
+        lighten=Animation(rgba=palette('light_tint',.8))
         details_hint.clear_widgets()
         if details_hint.expanded:
             darken.start(details_hint.shape_color)
@@ -13298,18 +13311,18 @@ class AnalyticScreen(Screen):
             if button.expanded:
                 return
         if button.state=='normal':
-            button.shape_color.rgba=(0,0,0,.9)
+            button.shape_color.rgba=palette('dark_shade',.9)
         if button.state=='down':
-            button.shape_color.rgba=(245/250, 216/250, 41/250,.25)
+            button.shape_color.rgba=palette('primary',.25)
 
     def bg_color_white(self,button,*args):
         if hasattr(button,'expanded'):
             if button.expanded:
                 return
         if button.state=='normal':
-            button.shape_color.rgba=(1,1,1,.8)
+            button.shape_color.rgba=palette('light_tint',.8)
         if button.state=='down':
-            button.shape_color.rgba=(.8,.8,.8,.5)
+            button.shape_color.rgba=palette('light_tint',.5)
 
     def  get_balance(self,*args):
         if os.name=='nt':
@@ -13425,14 +13438,14 @@ def listen(app_object,*args):
 
         if 1 in {i[0]:i[1] for i in trouble_log.items() if i[0] != 'short_duration'}.values():#if any troubles detected; short duration no longer trouble
             main_screen.widgets['trouble_button'].source=trouble_icon
-            main_screen.widgets['trouble_button'].color=(1,1,1,1)
+            main_screen.widgets['trouble_button'].color=palette('light_tint',1)
             if 'trouble_details' in troubles_screen.widgets:
                 trouble_display.remove_widget(troubles_screen.widgets['trouble_details'])
                 del troubles_screen.widgets['trouble_details']
         else:#if no troubles detected
             if main_screen.widgets['trouble_button'].source==trouble_icon:
                 main_screen.widgets['trouble_button'].source=trouble_icon_dull
-                main_screen.widgets['trouble_button'].color=(1,1,1,.15)
+                main_screen.widgets['trouble_button'].color=palette('light_tint',.15)
             if 'trouble_details' not in troubles_screen.widgets:
                 trouble_details=trouble_template('no_trouble')
                 troubles_screen.widgets['trouble_details']=trouble_details
@@ -13580,7 +13593,6 @@ class Hood_Control(App):
         self.limited=self.config_.getboolean("config","limited",fallback=False)
         Clock.schedule_once(partial(language_setter,config=self.config_))
         self.context_screen=ScreenManager()
-        # self.context_screen.add_widget(DocumentScreen(name='documents'))
         self.context_screen.add_widget(ControlGrid(name='main'))
         self.context_screen.add_widget(ActuationScreen(name='alert'))
         self.context_screen.add_widget(SettingsScreen(name='settings'))
