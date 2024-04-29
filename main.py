@@ -282,19 +282,18 @@ class MarkupSpinnerOption(SpinnerOption):
         kwargs['markup']=True
         super(MarkupSpinnerOption,self).__init__(**kwargs)
 
-class ColorMarkupSpinnerOption(RoundedButton):
-    def  __init__(self, **kwargs):
-        kwargs['markup']=True
-        super(ColorMarkupSpinnerOption,self).__init__(**kwargs)
-        self.background_down=''
-        self.background_normal=''
-        self.size_hint_y=None
-        self.height=48
 
 class MarkupSpinner(Spinner):
     def __init__(self, **kwargs):
         super(MarkupSpinner,self).__init__(**kwargs)
         self.option_cls = MarkupSpinnerOption
+        self.option_cls.option_color=self.background_color
+
+    def _update_dropdown(self, *largs):
+        super(MarkupSpinner,self)._update_dropdown(*largs)
+        for i in self._dropdown.children[0].children:
+            i.background_color=self.background_color
+            i.background_color[3]=.99
 
 class PinPop(Popup):
     def __init__(self,name, **kwargs):
@@ -2835,8 +2834,6 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
                 Rectangle(size=Window.size)
 
     def populate_details(self,*args):
-        save_func=App.get_running_app().context_screen.get_screen('main').save_service_details
-
         service_details={
         "title":f"{self.service_data['title']}",
         "icon":f"{self.service_data['icon']}",
@@ -2854,6 +2851,11 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             pos_hint = {'center_x':.5, 'center_y':.925},)
         schedule_details_title.ref='schedule_details_title'
 
+        schedule_details_name_label_top=MinimumBoundingLabel(
+            text= '[size=18][color=#000000][b]'+service_details['title'],
+            markup=True,
+            pos_hint = {'center_x':.5, 'center_y':.85},)
+
         ##### left #####
 
         schedule_details_interval_label=MinimumBoundingLabel(
@@ -2870,23 +2872,70 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             size_hint =(.3, .05),
             pos_hint = {'right':.475, 'center_y':.75},
             background_down='',
-            background_color=palette('primary',.85))
+            background_color=palette('highlight',.85))
+
+        schedule_details_start_label=MinimumBoundingLabel(
+            text= current_language['schedule_details_start_label'],
+            markup=True,
+            pos_hint = {'x':.05, 'center_y':.65},)
+        schedule_details_start_label.ref='schedule_details_start_label'
+
+        schedule_details_start_input=MarkupSpinner(
+            disabled=False,
+            text='[b][size=16]Current Date',
+            markup=True,
+            values=('[b][size=16]Due Now','[b][size=16]No Start Date','[b][size=16]Current Date'),
+            size_hint =(.3, .05),
+            pos_hint = {'right':.475, 'center_y':.65},
+            background_down='',
+            background_color=palette('highlight',.85))
 
         schedule_details_expire_label=MinimumBoundingLabel(
             text= current_language['schedule_details_expire_label'],
             markup=True,
-            pos_hint = {'x':.05, 'center_y':.65},)
+            pos_hint = {'x':.05, 'center_y':.55},)
         schedule_details_expire_label.ref='schedule_details_expire_label'
 
         schedule_details_expire_input=MarkupSpinner(
             disabled=False,
-            text=f'[b][size=16]No Expiration',
+            text='[b][size=16]No Expiration',
             markup=True,
             values=('[b][size=16]1 Year','[b][size=16]2 Years','[b][size=16]3 Years','[b][size=16]No Expiration'),
             size_hint =(.3, .05),
-            pos_hint = {'right':.475, 'center_y':.65},
+            pos_hint = {'right':.475, 'center_y':.55},
             background_down='',
-            background_color=palette('light_tint',.85))
+            background_color=palette('highlight',.85))
+
+        schedule_details_icon_label=MinimumBoundingLabel(
+            text= current_language['schedule_details_icon_label'],
+            markup=True,
+            pos_hint = {'x':.05, 'center_y':.4},)
+        schedule_details_icon_label.ref='schedule_details_icon_label'
+
+        schedule_details_icon_input=ExpandableIcon(
+            source=service_details['icon'],
+            size_hint=(.15,.15),
+            pos_hint = {'center_x':.35, 'center_y':.4},
+            expanded_size=(1,1),
+            expanded_pos = {'center_x':.5, 'center_y':.5},
+            bg_color=palette('light_tint',0))
+        self.widgets['schedule_details_icon_input']=schedule_details_icon_input
+        schedule_details_icon_input.bind(expanded=self.schedule_details_icon_input_populate)
+        schedule_details_icon_input.bind(animating=partial(general.stripargs,schedule_details_icon_input.clear_widgets))
+        schedule_details_icon_input.bind(animating=lambda *args:setattr(schedule_details_icon_input,'color',(1,1,1,0)))
+
+        schedule_details_icon_input_x_icon=IconButton(
+            source=overlay_x_icon_black,
+            size_hint=(.08,.08),
+            pos_hint={'x':.92,'y':.9})
+        self.widgets['schedule_details_icon_input_x_icon']=schedule_details_icon_input_x_icon
+        schedule_details_icon_input_x_icon.bind(on_release=schedule_details_icon_input.shrink)
+
+        schedule_details_icon_select_layout=StackLayout(
+            size_hint=(.9,.8),
+            spacing=10,
+            pos_hint={'center_x':.5,'center_y':.45})
+        self.widgets['schedule_details_icon_select_layout']=schedule_details_icon_select_layout
 
         ##### middle #####
 
@@ -2899,45 +2948,85 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
 
         ##### right #####
 
+        schedule_details_hidden_button=IconButton(
+            color=(1,1,1,0),
+            source=hidden_black,
+            size_hint =(.07, .07),
+            pos_hint = {'center_x':.8375, 'center_y':.825},
+            disabled=True)
+        self.widgets['schedule_details_hidden_button']=schedule_details_hidden_button
+        schedule_details_hidden_button.bind(on_release=self.schedule_details_vendor_pin_visibility)
+
+        schedule_details_custom_pin_label=MinimumBoundingLabel(
+            text= current_language['schedule_details_custom_pin_label'],
+            markup=True,
+            pos_hint = {'x':.55, 'center_y':.75},)
+        schedule_details_custom_pin_label.ref='schedule_details_custom_pin_label'
+
+        schedule_details_custom_pin_input=RoundedButton(
+            text=current_language['schedule_details_custom_pin_input'],
+            size_hint =(.275, .07),
+            pos_hint = {'right':.975, 'center_y':.75},
+            background_normal='',
+            background_color=palette('secondary',.85),
+            markup=True,
+            disabled=True)
+        schedule_details_custom_pin_input.password=''
+        schedule_details_title.ref='schedule_details_custom_pin_input'
+        self.widgets['schedule_details_custom_pin_input']=schedule_details_custom_pin_input
+        schedule_details_custom_pin_input.bind(on_release=self.set_vendor_pin)
+
         schedule_details_locked_label=MinimumBoundingLabel(
             text= current_language['schedule_details_locked_label'],
             markup=True,
-            pos_hint = {'x':.55, 'center_y':.75},)
+            pos_hint = {'x':.55, 'center_y':.65},)
         schedule_details_locked_label.ref='schedule_details_locked_label'
 
         schedule_details_locked_input=MarkupSpinner(
             disabled=False,
             text=f'[b][size=16]{service_details["default_locked"]}',
             markup=True,
-            values=('[b][size=16]Lock with Admin pin','[b][size=16]Add Vendor pin','[b][size=16]No pin Required'),
+            values=('[b][size=16]Admin pin Required','[b][size=16]Add Vendor pin','[b][size=16]No pin Required'),
             size_hint =(.3, .05),
-            pos_hint = {'right':.975, 'center_y':.75},
-            background_down='',
-            background_color=palette('light_tint',.85))
-        schedule_details_locked_input.bind(text=self.schedule_details_locked_input_validate)
-
-        schedule_details_custom_pin_label=MinimumBoundingLabel(
-            text= current_language['schedule_details_custom_pin_label'],
-            markup=True,
-            pos_hint = {'x':.55, 'center_y':.65},)
-        schedule_details_custom_pin_label.ref='schedule_details_custom_pin_label'
-
-        schedule_details_custom_pin_input=RoundedButton(
-            text=current_language['schedule_details_custom_pin_input'],
-            size_hint =(.275, .07),
             pos_hint = {'right':.975, 'center_y':.65},
             background_down='',
-            background_color=palette('base',.85),
+            background_color=palette('highlight',.85))
+        schedule_details_locked_input.bind(text=self.schedule_details_locked_input_validate)
+
+        schedule_details_vendor_name_label=MinimumBoundingLabel(
+            text= current_language['schedule_details_vendor_name_label'],
             markup=True,
-            disabled=True)
-        schedule_details_title.ref='schedule_details_custom_pin_input'
-        self.widgets['schedule_details_custom_pin_input']=schedule_details_custom_pin_input
-        schedule_details_custom_pin_input.bind(on_release=self.set_vendor_pin)
+            pos_hint = {'x':.55, 'center_y':.55},)
+        schedule_details_vendor_name_label.ref='schedule_details_vendor_name_label'
+
+        schedule_details_vendor_name_input=TextInput(
+            disabled=False,
+            multiline=False,
+            hint_text='Enter Vendor Name - (Optional)',
+            size_hint =(.4, .05),
+            pos_hint = {'x':.55, 'center_y':.50})
+        self.widgets['schedule_details_vendor_name_input']=schedule_details_vendor_name_input
+        schedule_details_vendor_name_input.bind(focus=self.schedule_details_vendor_name_input_clear)
+
+        schedule_details_notes_label=MinimumBoundingLabel(
+            text= current_language['schedule_details_notes_label'],
+            markup=True,
+            pos_hint = {'x':.55, 'center_y':.45},)
+        schedule_details_notes_label.ref='schedule_details_notes_label'
+
+        schedule_details_notes_input=TextInput(
+            disabled=False,
+            multiline=True,
+            hint_text='Additional Schedule/Vendor Notes',
+            size_hint =(.4, .15),
+            pos_hint = {'x':.55, 'center_y':.35})
+        self.widgets['schedule_details_notes_input']=schedule_details_notes_input
+        schedule_details_notes_input.bind(focus=self.schedule_details_notes_input_clear)
 
         ##### bottom #####
 
         schedule_details_name_label=MinimumBoundingLabel(
-            text= '[size=18][color=#ffffff][b]'+service_details['title'],
+            text= '[size=18][color=#000000][b][i]'+service_details['title'],
             markup=True,
             pos_hint = {'center_x':.5, 'center_y':.2},)
 
@@ -2946,24 +3035,42 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             size_hint =(.7, .1),
             pos_hint = {'center_x':.5, 'y':.05},
             background_down='',
-            background_color=palette('complement',.85),
+            background_color=palette('neutral',.85),
             markup=True)
         schedule_details_title.ref='schedule_save_button'
         save_button.bind(on_release=self.animate_success_clear)
-        save_button.bind(on_release=partial(save_func,service_details))
+        save_button.bind(on_release=partial(self.add_service,service_details))
 
         self.add_widget(schedule_details_title)
+        self.add_widget(schedule_details_name_label_top)
         self.add_widget(schedule_details_interval_label)
         self.add_widget(schedule_details_interval_input)
         self.add_widget(schedule_details_locked_label)
         self.add_widget(schedule_details_locked_input)
+        self.add_widget(schedule_details_hidden_button)
         self.add_widget(schedule_details_custom_pin_label)
         self.add_widget(schedule_details_custom_pin_input)
+        self.add_widget(schedule_details_vendor_name_label)
+        self.add_widget(schedule_details_vendor_name_input)
+        self.add_widget(schedule_details_notes_label)
+        self.add_widget(schedule_details_notes_input)
+        self.add_widget(schedule_details_start_label)
+        self.add_widget(schedule_details_start_input)
         self.add_widget(schedule_details_expire_label)
         self.add_widget(schedule_details_expire_input)
+        self.add_widget(schedule_details_icon_label)
+        self.add_widget(schedule_details_icon_input)
         self.add_widget(schedule_details_seperator_line)
         self.add_widget(schedule_details_name_label)
         self.add_widget(save_button)
+
+    def add_service(self,service_details,*args):
+        save_func=App.get_running_app().context_screen.get_screen('main').save_service_details
+        w=self.widgets
+
+        updated_service_details=service_details
+
+        save_func(updated_service_details)
 
     def set_vendor_pin(self,*args):
         def set_pin(*args):
@@ -2983,19 +3090,28 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         def save_pin(pin,*args):
             w=self.widgets
             b=w['schedule_details_custom_pin_input']
-            b.text=f'[b][size=20][color=#000000]{pin}'
+            b.password=pin
+            b.text=f'[b][size=20][color=#000000]* * * * * *'
+            hb=w['schedule_details_hidden_button']
+            hb.color=(1,1,1,1)
+            hb.disabled=False
 
         set_pin()
 
     def schedule_details_locked_input_validate(self,button,text,*args):
         w=self.widgets
         b=w['schedule_details_custom_pin_input']
+        hb=w['schedule_details_hidden_button']
         if text=='[b][size=16]Add Vendor pin':
             b.disabled=False
-            b.bg_color=palette('accent',.85)
+            b.bg_color=palette('base',.85)
+            b.text="[size=20][b][color=#000000]Create Pin"
+            hb.color=(1,1,1,0)
+            hb.disabled=True
         else:
             b.disabled=True
-            b.bg_color=palette('base',.85)
+            b.bg_color=palette('secondary',.85)
+            b.text=current_language['schedule_details_custom_pin_input']
         b.color_swap()
 
     def on_dim_saturation(self,*args):
@@ -3017,7 +3133,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         a.start(self)
 
     def animate_dim(self,*args):
-        Animation(dim_saturation=.65,d=1).start(self)
+        Animation(dim_saturation=.9,d=1).start(self)
 
     def animate_success_clear(self,*args):
         self.clear_widgets()
@@ -3046,6 +3162,87 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         self.clear(cb=True)
         super(ModalDenseRoundedColorLayout, self).on_touch_up(touch)
         return True
+
+    def schedule_details_icon_input_populate(self,*args):
+        darken=Animation(rgba=palette('light_tint',.95),d=.75)
+        lighten=Animation(rgba=palette('light_tint',.0),d=.05)
+        w=self.widgets
+        icon=w['schedule_details_icon_input']
+        layout=w['schedule_details_icon_select_layout']
+        layout.clear_widgets()
+        icon.clear_widgets()
+        if icon.expanded:
+            self.remove_widget(icon)
+            self.add_widget(icon)#needed to draw children on top
+            darken.start(icon.shape_color)
+            _icons_to_add=[
+                add_schedule_icon,
+                edit_schedule_icon,
+                schedule_icon_image
+            ]
+            ratio=icon.width/8
+            for i in _icons_to_add:
+                pib=PathIconButton(
+                        source=i,
+                        size_hint=(None,None),
+                        size=(ratio,ratio))
+                pib.bind(on_release=icon.shrink)
+                pib.bind(on_release=lambda *args,i=i:setattr(icon,'source',i))
+                layout.add_widget(pib)
+            all_widgets=[
+                w['schedule_details_icon_input_x_icon'],
+                w['schedule_details_icon_select_layout']
+                ]
+            for i in all_widgets:
+                icon.add_widget(i)
+        elif not icon.expanded:
+            icon.color=(1,1,1,1)
+            lighten.start(icon.shape_color)
+
+    def schedule_details_vendor_name_input_clear(self,button,focused,*args):
+        w=self.widgets
+        vni=w['schedule_details_vendor_name_input']
+        p=vni.parent
+        if p:
+            p.remove_widget(vni)
+            p.add_widget(vni)
+        if focused:
+            vni.text=''
+            vni.font_size=32
+            vni.pos_hint={'center_x':.5, 'center_y':.6}
+            vni.size_hint=(.8, .1)
+        else:
+            vni.font_size=15
+            vni.pos_hint={'x':.55, 'center_y':.50}
+            vni.size_hint=(.4, .05)
+
+    def schedule_details_notes_input_clear(self,button,focused,*args):
+        w=self.widgets
+        ni=w['schedule_details_notes_input']
+        p=ni.parent
+        if p:
+            p.remove_widget(ni)
+            p.add_widget(ni)
+        if focused:
+            ni.text=''
+            ni.font_size=32
+            ni.pos_hint={'center_x':.5, 'center_y':.7}
+            ni.size_hint=(.8, .35)
+        else:
+            ni.font_size=15
+            ni.pos_hint={'x':.55, 'center_y':.35}
+            ni.size_hint=(.4, .15)
+
+    def schedule_details_vendor_pin_visibility(self,*args):
+        w=self.widgets
+        hb=w['schedule_details_hidden_button']
+        pib=w['schedule_details_custom_pin_input']
+        if hb.source==visible_black:
+            hb.source=hidden_black
+            pib.text='[b][size=20][color=#000000]* * * * * *'
+        else:
+            hb.source=visible_black
+            pib.text=f"[size=20][b][color=#000000]{pib.password}"
 
 class OutlineModalScroll(ScrollView):
     def __init__(self,bg_color=palette('dark_shade',1), **kwargs):
@@ -3112,7 +3309,16 @@ class ServicesIconButton(IconButton):
     def on_release(self,*args):
         print(self.data)
 
+class PathIconButton(IconButton):
+    def __init__(self, **kwargs):
+        super(PathIconButton,self).__init__(**kwargs)
 
+    def on_state(self,button,state,*args):
+        if state=='down':
+            self.color=palette('primary',.65)
+            self.add_widget(CirclePulseEmit(0,style='quick'))
+        else:
+            self.color=palette('light_tint',1)
 
 
 #<<<<<<<<<< SCREENS >>>>>>>>>>#
@@ -3411,10 +3617,10 @@ class ControlGrid(Screen):
         schedule_dock_scroll=OutlineScroll(
             size_hint =(.65,.9),
             pos_hint = {'x':.125, 'center_y':.5},
-            bg_color=palette('neutral',.85),
+            bg_color=palette('secondary',.85),
             bar_width=8,
-            bar_color=palette('primary',.9),
-            bar_inactive_color=palette('primary',.35),
+            bar_color=palette('primary',.35),
+            bar_inactive_color=palette('primary',.15),
             do_scroll_y=True,
             do_scroll_x=False)
         self.widgets['schedule_dock_scroll']=schedule_dock_scroll
@@ -3710,11 +3916,11 @@ class ControlGrid(Screen):
         try:
             for i in services.values():
                 card=RoundedColorLayout(
-                    bg_color=palette('secondary',.85),
+                    bg_color=palette('light_tint',.85),
                     size_hint =(1, None),
                     height=150)
                 title=MinimumBoundingLabel(
-                    text=f"[color=#000000][size=20][b]{i['title']}",
+                    text=f"[color=#000000][size=24][b]{i['title']}",
                     pos_hint = {'center_x':.525, 'center_y':.7},
                     markup=True)
                 icon=Image(
@@ -3722,11 +3928,11 @@ class ControlGrid(Screen):
                     size_hint =(.4,.4),
                     pos_hint={'center_x':.1,'center_y':.7})
                 add_button=RoundedButton(
-                    text='[color=#000000][size=18]Add Service',
+                    text='[color=#ffffff][size=18]Add Service',
                     size_hint =(.7, .3),
                     pos_hint = {'center_x':.5, 'y':.05},
                     background_normal='',
-                    background_color=palette('complement',.85),
+                    background_color=palette('dark_shade',.85),
                     markup=True)
                 add_button.bind(on_release=partial(self.add_service_prompt_details,i))
                 add_button.bind(on_release=self.schedule_dock_handle_func)
@@ -3750,7 +3956,7 @@ class ControlGrid(Screen):
         layout.add_widget(service_icon)
 
         details_box=ModalDenseRoundedColorLayout(
-            bg_color=palette('dark_shade',.85),
+            bg_color=palette('light_tint',.95),
             size_hint =(.6, .725),
             pos_hint = {'center_x':.5, 'center_y':.5},
             fade_in=True,
