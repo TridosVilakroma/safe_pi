@@ -2930,6 +2930,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         schedule_details_icon_input.bind(expanded=self.schedule_details_icon_input_populate)
         schedule_details_icon_input.bind(animating=partial(general.stripargs,schedule_details_icon_input.clear_widgets))
         schedule_details_icon_input.bind(animating=lambda *args:setattr(schedule_details_icon_input,'color',(1,1,1,0)))
+        schedule_details_icon_input.bind(animating=lambda *args:setattr(schedule_details_icon_input,'opacity',0))
 
         schedule_details_icon_input_x_icon=IconButton(
             source=overlay_x_icon_black,
@@ -3173,13 +3174,15 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         return True
 
     def schedule_details_icon_input_populate(self,*args):
-        darken=Animation(rgba=palette('light_tint',.95),d=.75)
+        darken=Animation(rgba=palette('light_tint',.95),d=.25)
         lighten=Animation(rgba=palette('light_tint',.0),d=.05)
+        fade_in=Animation(opacity=1,d=.75)
         w=self.widgets
         icon=w['schedule_details_icon_input']
         layout=w['schedule_details_icon_select_layout']
         layout.clear_widgets()
         icon.clear_widgets()
+        fade_in.start(icon)
         if icon.expanded:
             self.remove_widget(icon)
             self.add_widget(icon)#needed to draw children on top
