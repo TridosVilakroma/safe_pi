@@ -2856,6 +2856,13 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             markup=True,
             pos_hint = {'center_x':.5, 'center_y':.85},)
 
+        schedule_details_x_icon=IconButton(
+            source=overlay_x_icon_black,
+            size_hint=(.08,.08),
+            pos_hint={'x':.92,'y':.9})
+        self.widgets['schedule_details_x_icon']=schedule_details_x_icon
+        schedule_details_x_icon.bind(on_release=lambda *args:self.clear(cb=True))
+
         ##### left #####
 
         schedule_details_interval_label=MinimumBoundingLabel(
@@ -3042,6 +3049,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         save_button.bind(on_release=partial(self.add_service,service_details))
 
         self.add_widget(schedule_details_title)
+        self.add_widget(schedule_details_x_icon)
         self.add_widget(schedule_details_name_label_top)
         self.add_widget(schedule_details_interval_label)
         self.add_widget(schedule_details_interval_input)
@@ -3102,16 +3110,18 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         w=self.widgets
         b=w['schedule_details_custom_pin_input']
         hb=w['schedule_details_hidden_button']
+        hb.color=(1,1,1,0)
+        hb.disabled=True
         if text=='[b][size=16]Add Vendor pin':
             b.disabled=False
+            b.password=''
             b.bg_color=palette('base',.85)
             b.text="[size=20][b][color=#000000]Create Pin"
-            hb.color=(1,1,1,0)
-            hb.disabled=True
         else:
             b.disabled=True
             b.bg_color=palette('secondary',.85)
             b.text=current_language['schedule_details_custom_pin_input']
+
         b.color_swap()
 
     def on_dim_saturation(self,*args):
@@ -3159,7 +3169,6 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
     def on_touch_up(self, touch):
         if self.collide_point(*touch.pos):
             return True
-        self.clear(cb=True)
         super(ModalDenseRoundedColorLayout, self).on_touch_up(touch)
         return True
 
