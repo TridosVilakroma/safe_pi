@@ -282,7 +282,6 @@ class MarkupSpinnerOption(SpinnerOption):
         kwargs['markup']=True
         super(MarkupSpinnerOption,self).__init__(**kwargs)
 
-
 class MarkupSpinner(Spinner):
     def __init__(self, **kwargs):
         super(MarkupSpinner,self).__init__(**kwargs)
@@ -2880,6 +2879,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             pos_hint = {'right':.475, 'center_y':.75},
             background_down='',
             background_color=palette('highlight',.85))
+        self.widgets['schedule_details_interval_input']=schedule_details_interval_input
 
         schedule_details_start_label=MinimumBoundingLabel(
             text= current_language['schedule_details_start_label'],
@@ -2896,6 +2896,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             pos_hint = {'right':.475, 'center_y':.65},
             background_down='',
             background_color=palette('highlight',.85))
+        self.widgets['schedule_details_start_input']=schedule_details_start_input
 
         schedule_details_expire_label=MinimumBoundingLabel(
             text= current_language['schedule_details_expire_label'],
@@ -2912,6 +2913,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             pos_hint = {'right':.475, 'center_y':.55},
             background_down='',
             background_color=palette('highlight',.85))
+        self.widgets['schedule_details_expire_input']=schedule_details_expire_input
 
         schedule_details_icon_label=MinimumBoundingLabel(
             text= current_language['schedule_details_icon_label'],
@@ -2999,6 +3001,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             pos_hint = {'right':.975, 'center_y':.65},
             background_down='',
             background_color=palette('highlight',.85))
+        self.widgets['schedule_details_locked_input']=schedule_details_locked_input
         schedule_details_locked_input.bind(text=self.schedule_details_locked_input_validate)
 
         schedule_details_vendor_name_label=MinimumBoundingLabel(
@@ -3047,7 +3050,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             markup=True)
         schedule_details_title.ref='schedule_save_button'
         save_button.bind(on_release=self.animate_success_clear)
-        save_button.bind(on_release=partial(self.add_service,service_details))
+        save_button.bind(on_release=self.add_service)
 
         self.add_widget(schedule_details_title)
         self.add_widget(schedule_details_x_icon)
@@ -3073,13 +3076,24 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         self.add_widget(schedule_details_name_label)
         self.add_widget(save_button)
 
-    def add_service(self,service_details,*args):
-        save_func=App.get_running_app().context_screen.get_screen('main').save_service_details
+    def add_service(self,*args):
         w=self.widgets
+        _strip=general.strip_markup
 
-        updated_service_details=service_details
+        service_details={
+            "title"              :  _strip(self.service_data['title']),
+            "icon_path"          :  _strip(w['schedule_details_icon_input'].source),
+            "interval"           :  _strip(w['schedule_details_interval_input'].text),
+            "intervals"          :  self.service_data['intervals'],
+            "start_date"         :  _strip(w['schedule_details_start_input'].text),
+            "expiration"         :  _strip(w['schedule_details_expire_input'].text),
+            "security"           :  _strip(w['schedule_details_locked_input'].text),
+            "vendor_name"        :  _strip(w['schedule_details_vendor_name_input'].text),
+            "vendor_pin"         :  _strip(w['schedule_details_custom_pin_input'].password),
+            "notes"              :  _strip(w['schedule_details_notes_input'].text)
+            }
 
-        save_func(updated_service_details)
+        App.get_running_app().context_screen.get_screen('main').save_service_details(service_details)
 
     def set_vendor_pin(self,*args):
         def set_pin(*args):
@@ -3969,7 +3983,7 @@ class ControlGrid(Screen):
 
         details_box=ModalDenseRoundedColorLayout(
             bg_color=palette('light_tint',.95),
-            size_hint =(.6, .725),
+            size_hint =(.775, .875),
             pos_hint = {'center_x':.5, 'center_y':.5},
             fade_in=True,
             call_back=lambda *args:w['schedule_box_layout'].remove_widget(service_icon),
