@@ -204,4 +204,3 @@ def strip_markup(text):
             processed_text+=item
         return processed_text.strip()
 
-print(strip_markup("[size=30][b][color=#000000]  30 Minutes [/color][/b]"))
