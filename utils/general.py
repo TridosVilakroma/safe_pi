@@ -129,3 +129,79 @@ def reverse_readline(filename, buf_size=8192):
         # Don't yield None if the file was empty
         if segment is not None:
             yield segment.decode()
+
+def strip_markup(text):
+        '''Return the text with all the markup removed::
+
+            >>> strip_markup('[b]Hello world[/b]')
+            >>> 'Hello world'
+
+        '''
+        s = re.split(r'(\[.*?\])', text)
+        s = [x for x in s if x != '']
+        processed_text=''
+        for item in s:
+            if item == '[b]':
+                continue
+            elif item == '[/b]':
+                continue
+            elif item == '[i]':
+                continue
+            elif item == '[/i]':
+                continue
+            elif item == '[u]':
+                continue
+            elif item == '[/u]':
+                continue
+            elif item == '[s]':
+                continue
+            elif item == '[/s]':
+                continue
+            elif item[:6] == '[size=':
+                continue
+            elif item == '[/size]':
+                continue
+            elif item[:7] == '[color=':
+                continue
+            elif item == '[/color]':
+                continue
+            elif item[:6] == '[font=':
+                continue
+            elif item == '[/font]':
+                continue
+            elif item[:13] == '[font_family=':
+                continue
+            elif item == '[/font_family]':
+                continue
+            elif item[:14] == '[font_context=':
+                continue
+            elif item == '[/font_context]':
+                continue
+            elif item[:15] == '[font_features=':
+                continue
+            elif item == '[/font_features]':
+                continue
+            elif item[:15] == '[text_language=':
+                continue
+            elif item == '[/text_language]':
+                continue
+            elif item[:5] == '[sub]':
+                continue
+            elif item == '[/sub]':
+                continue
+            elif item[:5] == '[sup]':
+                continue
+            elif item == '[/sup]':
+                continue
+            elif item[:5] == '[ref=':
+                continue
+            elif item == '[/ref]':
+                continue
+            elif item[:8] == '[anchor=':
+                continue
+            item = item.replace('&bl;', '[').replace(
+                '&br;', ']').replace('&amp;', '&')
+            processed_text+=item
+        return processed_text.strip()
+
+print(strip_markup("[size=30][b][color=#000000]  30 Minutes [/color][/b]"))
