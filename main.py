@@ -2838,6 +2838,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         "icon":f"{self.service_data['icon']}",
         "intervals":self.service_data['intervals'],
         "default_interval":self.service_data['default_interval'],
+        "default_increment":self.service_data["default_increment"],
         "default_locked":self.service_data["default_locked"]
         }
 
@@ -2870,16 +2871,42 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             pos_hint = {'x':.05, 'center_y':.75},)
         schedule_details_interval_label.ref='schedule_details_interval_label'
 
-        schedule_details_interval_input=MarkupSpinner(
+        schedule_details_interval_input_left=MarkupSpinner(
             disabled=False,
-            text=f'[b][size=16]{service_details["default_interval"]} Month(s)',
+            text=f'[b][size=16]{service_details["default_interval"]}',
             markup=True,
-            values=(f'[b][size=16]{i} Month(s)' for i in service_details['intervals']),
-            size_hint =(.3, .05),
+            values=(f'[b][size=16]{i}' for i in service_details['intervals']),
+            size_hint =(.15, .05),
+            pos_hint = {'right':.325, 'center_y':.75},
+            background_down='',
+            background_color=palette('highlight',.85))
+        schedule_details_interval_input_left.values.append('[b][size=16]Custom')
+        schedule_details_interval_input_left.increment=service_details["default_increment"]
+        self.widgets['schedule_details_interval_input_left']=schedule_details_interval_input_left
+        schedule_details_interval_input_left.bind(text=self.filter_custom_interval)
+
+        schedule_details_interval_input_right=MarkupSpinner(
+            disabled=False,
+            text=f'[b][size=16]{service_details["default_increment"]}',
+            markup=True,
+            values=('[b][size=16]Day(s)','[b][size=16]Week(s)','[b][size=16]Month(s)','[b][size=16]Year(s)'),
+            size_hint =(.15, .05),
             pos_hint = {'right':.475, 'center_y':.75},
             background_down='',
             background_color=palette('highlight',.85))
-        self.widgets['schedule_details_interval_input']=schedule_details_interval_input
+        self.widgets['schedule_details_interval_input_right']=schedule_details_interval_input_right
+        schedule_details_interval_input_right.bind(text=self.interval_translate)
+
+        schedule_details_interval_input_left_textinput=TextInput(
+            disabled=False,
+            multiline=False,
+            hint_text='Enter Custom Interval',
+            font_size=32,
+            pos_hint={'center_x':.5, 'center_y':.6},
+            size_hint=(.8, .1),
+            input_filter='int')
+        self.widgets['schedule_details_interval_input_left_textinput']=schedule_details_interval_input_left_textinput
+        schedule_details_interval_input_left_textinput.bind(focus=self.schedule_details_interval_input_left_textinput_clear)
 
         schedule_details_start_label=MinimumBoundingLabel(
             text= current_language['schedule_details_start_label'],
@@ -2889,9 +2916,9 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
 
         schedule_details_start_input=MarkupSpinner(
             disabled=False,
-            text='[b][size=16]Current Date',
+            text='[b][size=16]Not Currently Due',
             markup=True,
-            values=('[b][size=16]Due Now','[b][size=16]No Start Date','[b][size=16]Current Date'),
+            values=('[b][size=16]Due Now','[b][size=16]Not Currently Due'),
             size_hint =(.3, .05),
             pos_hint = {'right':.475, 'center_y':.65},
             background_down='',
@@ -3056,7 +3083,8 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         self.add_widget(schedule_details_x_icon)
         self.add_widget(schedule_details_name_label_top)
         self.add_widget(schedule_details_interval_label)
-        self.add_widget(schedule_details_interval_input)
+        self.add_widget(schedule_details_interval_input_left)
+        self.add_widget(schedule_details_interval_input_right)
         self.add_widget(schedule_details_locked_label)
         self.add_widget(schedule_details_locked_input)
         self.add_widget(schedule_details_hidden_button)
@@ -3080,20 +3108,126 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         w=self.widgets
         _strip=general.strip_markup
 
+
+        _interval=_strip(w['schedule_details_interval_input_left'].text)
+        _interval_coefficient=_strip(w['schedule_details_interval_input_right'].text)
+        if _interval_coefficient=='Day(s)':
+            _interval_coefficient=1
+        elif _interval_coefficient=='Week(s)':
+            _interval_coefficient=7
+        elif _interval_coefficient=='Month(s)':
+            _interval_coefficient=30
+        elif _interval_coefficient=='Year(s)':
+            _interval_coefficient=365
+        _interval=timedelta(int(int(_interval)*_interval_coefficient)).days
+
+        _start_date=_strip(w['schedule_details_start_input'].text)
+        if _start_date=='No Start Date':
+            _start_date=0
+        elif _start_date=='Current Date':
+            _start_date=datetime.now().isoformat()
+        elif _start_date=='Due Now':
+            _start_date=datetime.now().isoformat()
+
+        _expiration=_strip(w['schedule_details_expire_input'].text)
+        if _expiration=='No Expiration':
+            _expiration=timedelta().total_seconds()
+        else:
+            _expiration=timedelta().total_seconds()
+
+        _service_date=_strip(w['schedule_details_start_input'].text)
+        if _service_date=='Due Now':
+            _service_date=datetime.now().isoformat()
+
+
+        _security=''
+
+
+        _notes=''
+
+
+
         service_details={
             "title"              :  _strip(self.service_data['title']),
-            "icon_path"          :  _strip(w['schedule_details_icon_input'].source),
-            "interval"           :  _strip(w['schedule_details_interval_input'].text),
-            "intervals"          :  self.service_data['intervals'],
-            "start_date"         :  _strip(w['schedule_details_start_input'].text),
-            "expiration"         :  _strip(w['schedule_details_expire_input'].text),
-            "security"           :  _strip(w['schedule_details_locked_input'].text),
+            "icon"               :  _strip(w['schedule_details_icon_input'].source),
+            "increment"          :  _strip(w['schedule_details_interval_input_right'].text),
+            "current_interval"   :  str(_interval),
+            "creation_date"      :  datetime.now().isoformat(),
+            "expiration"         :  str(_expiration),                  #
+            "service_date"       :  _service_date,                                                    #
+            "security"           :  _strip(w['schedule_details_locked_input'].text),                  #
             "vendor_name"        :  _strip(w['schedule_details_vendor_name_input'].text),
             "vendor_pin"         :  _strip(w['schedule_details_custom_pin_input'].password),
-            "notes"              :  _strip(w['schedule_details_notes_input'].text)
+            "notes"              :  _strip(w['schedule_details_notes_input'].text)                    #
             }
 
         App.get_running_app().context_screen.get_screen('main').save_service_details(service_details)
+
+    def interval_translate(self,_,text,*args):
+        w=self.widgets
+        t=general.strip_markup(text)
+        x=w['schedule_details_interval_input_left']
+        xi=x.increment
+        xt=general.strip_markup(x.text)
+        if t == xi:
+            return
+        #traslation neccessary
+        key=f"{xi}_{t}"
+        d={
+            "Day(s)_Week(s)"    :  .143,
+            "Day(s)_Month(s)"   :  .033,
+            "Day(s)_Year(s)"    :  .00273972602,
+            "Week(s)_Day(s)"    :   7,
+            "Week(s)_Month(s)"  :  .25,
+            "Week(s)_Year(s)"   :  .01923076923,
+            "Month(s)_Day(s)"   :   30,
+            "Month(s)_Week(s)"  :   4,
+            "Month(s)_Year(s)"  :  .08333333333,
+            "Year(s)_Day(s)"    :   365,
+            "Year(s)_Week(s)"   :   52,
+            "Year(s)_Month(s)"  :   12
+        }
+        Clock.schedule_once(lambda *args:setattr(x,'text','[b][size=16]'+str(max(int(float(xt)*d[key]),1))))
+        Clock.schedule_once(lambda *args:setattr(x,'increment',t))
+        Clock.schedule_once(self.interval_input_left_value_setter)
+
+    def interval_input_left_value_setter(self,*args):
+        w=self.widgets
+        x=w['schedule_details_interval_input_left']
+        t=general.strip_markup(w['schedule_details_interval_input_right'].text)
+        d={
+            "Day(s)"     :  ["1","2","3","4","5","6","7"],
+            "Week(s)"    :  ["1","2","3","4"],
+            "Month(s)"   :  ["1","2","3","4","5","6","7","8","9","10","11","12"],
+            "Year(s)"    :  ["1","2","3"],
+        }
+        _vals=d[t]
+        _vals.append('Custom')
+        x.values=(f'[b][size=16]{i}' for i in _vals)
+
+    def filter_custom_interval(self,_,text,*args):
+        w=self.widgets
+        x=w['schedule_details_interval_input_left']
+        t=general.strip_markup(text)
+        kb=w['schedule_details_interval_input_left_textinput']
+        if t!='Custom':
+            return
+        self.add_widget(kb)
+        kb.focused=True
+
+    def schedule_details_interval_input_left_textinput_clear(self,_,focused,*args):
+        if focused:
+            return
+        w=self.widgets
+        x=w['schedule_details_interval_input_left']
+        ti=w['schedule_details_interval_input_left_textinput']
+        t=ti.text
+        if len(t)>8:
+            t=t[:8]
+        t=f'[b][size=16]{t}'
+        Clock.schedule_once(lambda *args:setattr(x,'text',t))
+        ti.text=''
+        ti.parent.remove_widget(ti)
 
     def set_vendor_pin(self,*args):
         def set_pin(*args):
