@@ -3023,7 +3023,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             disabled=False,
             text=f'[b][size=16]{service_details["default_locked"]}',
             markup=True,
-            values=('[b][size=16]Admin pin Required','[b][size=16]Add Vendor pin','[b][size=16]No pin Required'),
+            values=('[b][size=16]Admin Pin Required','[b][size=16]Add Vendor Pin','[b][size=16]No Pin Required'),
             size_hint =(.3, .05),
             pos_hint = {'right':.975, 'center_y':.65},
             background_down='',
@@ -3119,7 +3119,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             _interval_coefficient=30
         elif _interval_coefficient=='Year(s)':
             _interval_coefficient=365
-        _interval=timedelta(int(int(_interval)*_interval_coefficient)).days
+        _interval=str(timedelta(int(int(_interval)*_interval_coefficient)).days)
 
         _start_date=_strip(w['schedule_details_start_input'].text)
         if _start_date=='No Start Date':
@@ -3131,34 +3131,47 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
 
         _expiration=_strip(w['schedule_details_expire_input'].text)
         if _expiration=='No Expiration':
-            _expiration=timedelta().total_seconds()
+            _expiration=str(timedelta().days)
         else:
-            _expiration=timedelta().total_seconds()
+            _expiration=str(timedelta().days)
 
         _service_date=_strip(w['schedule_details_start_input'].text)
         if _service_date=='Due Now':
             _service_date=datetime.now().isoformat()
+        else:
+            _service_date=datetime.now().isoformat()
+
+        _increment=_strip(w['schedule_details_interval_input_right'].text)
+        _increment=_increment.lower()[:-3]
+
+        _security=_strip(w['schedule_details_locked_input'].text)
+        if _security=='No Pin Required':
+            _security=''
+        elif _security=='Add Vendor Pin':
+            _security='vendor'
+        elif _security=='Admin Pin Required':
+            _security='admin'
 
 
-        _security=''
+        _notes=_strip(w['schedule_details_notes_input'].text)
+        if not _notes:
+            _notes="Schedule Created"
 
-
-        _notes=''
 
 
 
         service_details={
             "title"              :  _strip(self.service_data['title']),
             "icon"               :  _strip(w['schedule_details_icon_input'].source),
-            "increment"          :  _strip(w['schedule_details_interval_input_right'].text),
-            "current_interval"   :  str(_interval),
+            "increment"          :  _increment,
+            "current_interval"   :  _interval,
             "creation_date"      :  datetime.now().isoformat(),
-            "expiration"         :  str(_expiration),                  #
-            "service_date"       :  _service_date,                                                    #
-            "security"           :  _strip(w['schedule_details_locked_input'].text),                  #
+            "expiration"         :  _expiration,
+            "service_date"       :  _service_date,
+            "security"           :  _security,
             "vendor_name"        :  _strip(w['schedule_details_vendor_name_input'].text),
             "vendor_pin"         :  _strip(w['schedule_details_custom_pin_input'].password),
-            "notes"              :  _strip(w['schedule_details_notes_input'].text)                    #
+            "notes"              :  {str(datetime.now()):_notes}
             }
 
         App.get_running_app().context_screen.get_screen('main').save_service_details(service_details)
@@ -3261,7 +3274,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         hb=w['schedule_details_hidden_button']
         hb.color=(1,1,1,0)
         hb.disabled=True
-        if text=='[b][size=16]Add Vendor pin':
+        if text=='[b][size=16]Add Vendor Pin':
             b.disabled=False
             b.password=''
             b.bg_color=palette('base',.85)
