@@ -153,6 +153,18 @@ edit_schedule_icon=r'media/edit_icon.png'
 
 #<<<<<<<<<< CUSTOM WIDGETS >>>>>>>>>>#
 
+class AutoWrapTextInput(TextInput):
+    '''A multiline `TextInput` that unfocuses with the 'enter' key'''
+
+    def __init__(self, **kwargs):
+        super(AutoWrapTextInput,self).__init__(**kwargs)
+
+    def _key_down(self, key, repeat=False):
+        if key[2] == 'enter':
+            self.focus=False
+            return
+        return super(AutoWrapTextInput,self)._key_down(key, repeat)
+
 class RoundedButton(Button):
     def __init__(self,**kwargs):
         super(RoundedButton,self).__init__(**kwargs)
@@ -3052,7 +3064,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             pos_hint = {'x':.55, 'center_y':.45},)
         schedule_details_notes_label.ref='schedule_details_notes_label'
 
-        schedule_details_notes_input=TextInput(
+        schedule_details_notes_input=AutoWrapTextInput(
             disabled=False,
             multiline=True,
             hint_text='Additional Schedule/Vendor Notes',
@@ -3380,7 +3392,6 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             p.remove_widget(vni)
             p.add_widget(vni)
         if focused:
-            vni.text=''
             vni.font_size=32
             vni.pos_hint={'center_x':.5, 'center_y':.6}
             vni.size_hint=(.8, .1)
@@ -3397,7 +3408,6 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             p.remove_widget(ni)
             p.add_widget(ni)
         if focused:
-            ni.text=''
             ni.font_size=32
             ni.pos_hint={'center_x':.5, 'center_y':.7}
             ni.size_hint=(.8, .35)
