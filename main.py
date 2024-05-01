@@ -2943,16 +2943,40 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             pos_hint = {'x':.05, 'center_y':.55},)
         schedule_details_expire_label.ref='schedule_details_expire_label'
 
-        schedule_details_expire_input=MarkupSpinner(
+        schedule_details_expire_input_left=MarkupSpinner(
             disabled=False,
-            text='[b][size=16]No Expiration',
+            text='[b][size=16]Schedule Does Not Expire',
             markup=True,
-            values=('[b][size=16]1 Year','[b][size=16]2 Years','[b][size=16]3 Years','[b][size=16]No Expiration'),
-            size_hint =(.3, .05),
+            values=('[b][size=16]1','[b][size=16]2','[b][size=16]3','[b][size=16]Custom','[b][size=16]No Expiration'),
+            size_hint =(.30, .05),
             pos_hint = {'right':.475, 'center_y':.55},
             background_down='',
             background_color=palette('highlight',.85))
-        self.widgets['schedule_details_expire_input']=schedule_details_expire_input
+        self.widgets['schedule_details_expire_input_left']=schedule_details_expire_input_left
+        schedule_details_expire_input_left.bind(text=self.filter_custom_expiration)
+
+        schedule_details_expire_input_right=MarkupSpinner(
+            disabled=False,
+            text='[b][size=16]Year(s)',
+            markup=True,
+            values=('[b][size=16]Day(s)','[b][size=16]Week(s)','[b][size=16]Month(s)','[b][size=16]Year(s)','[b][size=16]No Expiration'),
+            size_hint =(.15, .05),
+            pos_hint = {'right':.475, 'center_y':.55},
+            background_down='',
+            background_color=palette('highlight',.85))
+        self.widgets['schedule_details_expire_input_right']=schedule_details_expire_input_right
+        schedule_details_expire_input_right.bind(text=self.filter_custom_expiration_right)
+
+        schedule_details_expire_input_left_textinput=TextInput(
+            disabled=False,
+            multiline=False,
+            hint_text='Enter Custom Expiration',
+            font_size=32,
+            pos_hint={'center_x':.5, 'center_y':.6},
+            size_hint=(.8, .1),
+            input_filter='int')
+        self.widgets['schedule_details_expire_input_left_textinput']=schedule_details_expire_input_left_textinput
+        schedule_details_expire_input_left_textinput.bind(focus=self.schedule_details_expire_input_left_textinput_clear)
 
         schedule_details_icon_label=MinimumBoundingLabel(
             text= current_language['schedule_details_icon_label'],
@@ -3109,7 +3133,8 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         self.add_widget(schedule_details_start_label)
         self.add_widget(schedule_details_start_input)
         self.add_widget(schedule_details_expire_label)
-        self.add_widget(schedule_details_expire_input)
+        self.add_widget(schedule_details_expire_input_left)
+        # self.add_widget(schedule_details_expire_input_right)
         self.add_widget(schedule_details_icon_label)
         self.add_widget(schedule_details_icon_input)
         self.add_widget(schedule_details_seperator_line)
@@ -3141,7 +3166,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         elif _start_date=='Due Now':
             _start_date=datetime.now().isoformat()
 
-        _expiration=_strip(w['schedule_details_expire_input'].text)
+        _expiration=_strip(w['schedule_details_expire_input_left'].text)
         if _expiration=='No Expiration':
             _expiration=str(timedelta().days)
         else:
@@ -3253,6 +3278,55 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         Clock.schedule_once(lambda *args:setattr(x,'text',t))
         ti.text=''
         ti.parent.remove_widget(ti)
+
+    def filter_custom_expiration(self,_,text,*args):
+        w=self.widgets
+        x=w['schedule_details_expire_input_left']
+        z=w['schedule_details_expire_input_right']
+        t=general.strip_markup(text)
+        kb=w['schedule_details_expire_input_left_textinput']
+        if t in ('Schedule Does Not Expire','No Expiration') :
+            x.pos_hint['right']=.475
+            x.size_hint_x=.3
+            z.text='[b][size=16]Year(s)'
+            if z in self.children:
+                self.remove_widget(z)
+            if t=='No Expiration':
+                x.text='[b][size=16]Schedule Does Not Expire'
+            return
+        else:
+            x.pos_hint['right']=.325
+            x.size_hint_x=.15
+            if z not in self.children:
+                self.add_widget(z)
+
+        if t!='Custom':
+            return
+        self.add_widget(kb)
+        kb.focused=True
+
+    def schedule_details_expire_input_left_textinput_clear(self,_,focused,*args):
+        if focused:
+            return
+        w=self.widgets
+        x=w['schedule_details_expire_input_left']
+        ti=w['schedule_details_expire_input_left_textinput']
+        t=ti.text
+        if len(t)>8:
+            t=t[:8]
+        t=f'[b][size=16]{t}'
+        Clock.schedule_once(lambda *args:setattr(x,'text',t))
+        ti.text=''
+        ti.parent.remove_widget(ti)
+
+    def filter_custom_expiration_right(self,_,text,*args):
+        w=self.widgets
+        x=w['schedule_details_expire_input_right']
+        z=w['schedule_details_expire_input_left']
+        t=general.strip_markup(text)
+        if t!='No Expiration':
+            return
+        z.text='[b][size=16]Schedule Does Not Expire'
 
     def set_vendor_pin(self,*args):
         def set_pin(*args):
