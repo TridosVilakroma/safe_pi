@@ -67,7 +67,8 @@ def create_dir_tree(root, tree):
             create_dir_tree(path, value)
         else:
             if path.exists():
-                continue
+                if path.stat().st_size:
+                    continue
             with open(path, 'w') as f:
                 logger.debug(f'creating file: {path.name}')
                 f.write(value)
