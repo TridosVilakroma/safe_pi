@@ -3167,16 +3167,26 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             _start_date=datetime.now().isoformat()
 
         _expiration=_strip(w['schedule_details_expire_input_left'].text)
-        if _expiration=='No Expiration':
-            _expiration=str(timedelta().days)
+        _expiration_coefficient=_strip(w['schedule_details_expire_input_right'].text)
+        if _expiration=='Schedule Does Not Expire':
+            _expiration=''
         else:
-            _expiration=str(timedelta().days)
+            if _expiration_coefficient=='Day(s)':
+                _expiration_coefficient=1
+            elif _expiration_coefficient=='Week(s)':
+                _expiration_coefficient=7
+            elif _expiration_coefficient=='Month(s)':
+                _expiration_coefficient=30
+            elif _expiration_coefficient=='Year(s)':
+                _expiration_coefficient=365
+            _expiration=str(timedelta(int(int(_expiration)*_expiration_coefficient)).days)
+
 
         _service_date=_strip(w['schedule_details_start_input'].text)
-        if _service_date=='Due Now':
+        if _service_date!='Due Now':
             _service_date=datetime.now().isoformat()
         else:
-            _service_date=datetime.now().isoformat()
+            _service_date=''
 
         _increment=_strip(w['schedule_details_interval_input_right'].text)
         _increment=_increment.lower()[:-3]
