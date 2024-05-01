@@ -11533,7 +11533,11 @@ class AccountScreen(Screen):
                 leih.parent.remove_widget(leih)
 
     def side_bar_connect_login_send_func(self,*args):
-        pass
+        w=self.widgets
+        email=w['side_bar_connect_login_email_input'].text
+        password=w['side_bar_connect_login_password_input'].text
+        response=server.authUser(email,password)
+        # App.get_running_app().notifications.toast(response['message'])
 
     def side_bar_connect_send_func(self,*args):
         w=self.widgets
