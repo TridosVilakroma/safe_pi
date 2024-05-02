@@ -410,9 +410,30 @@ class ServicesStackLayout(StackLayout):
         self.fade_in=Animation(opacity=1,d=1.5,t='in_quad')
         self.fade_out=Animation(opacity=0,d=1.5,t='in_quad')
 
+    @property
+    def sub_children(self):
+        l=[]
+        for child in self.children:
+            for _sub_child in child.children:
+                l.append(_sub_child)
+        return l
+
     def add_widget(self, widget,load=False,index=0):
+        layout=FloatLayout(
+            size=widget.size,
+            size_hint=(None,None))
+        title=Label(
+            markup=True,
+            pos_hint={'center_x':.5,"top":0},
+            text='[size=12][color=#000000][b]'+widget.data['title'],
+            halign='center',
+            size_hint_y=None)
+        title.bind(width=lambda *x: title.setter('text_size')(title, (title.width, None)))
+        title.bind(texture_size=lambda *x: title.setter('height')(title, title.texture_size[1]))
+        layout.add_widget(widget)
+        layout.add_widget(title)
         if load:
-            return super(ServicesStackLayout,self).add_widget(widget,index)
+            return super(ServicesStackLayout,self).add_widget(layout,index)
         pause=PauseTouch(0)
         amnt=len(self.children)
         widget.opacity=0
@@ -424,11 +445,11 @@ class ServicesStackLayout(StackLayout):
             fade=Animation(opacity=1,d=(amnt*.1)+1.5,t='in_quad')
             fade.start(widget)
             fade.bind(on_complete=pause.unpause)
-            return super(ServicesStackLayout,self).add_widget(widget,index)
+            return super(ServicesStackLayout,self).add_widget(layout,index)
         self.fade_in.start(widget)
         self.fade_in.bind(on_complete=pause.unpause)
-        return super(ServicesStackLayout,self).add_widget(widget,index)
-    
+        return super(ServicesStackLayout,self).add_widget(layout,index)
+
     def remove_widget(self, widget,unload=False):
         if unload:
             self._remove_widget(widget)
@@ -438,13 +459,14 @@ class ServicesStackLayout(StackLayout):
         Clock.schedule_once(lambda *args:self._remove_widget(widget),1.5)
 
     def _remove_widget(self,widget,*args):
-        return super(ServicesStackLayout,self).remove_widget(widget)
+        super(ServicesStackLayout,self).remove_widget(widget.parent)
+        widget.parent.remove_widget(widget)
 
     def clear_widgets(self, children=None,unload=False):
         if children is None or children is self.children:
             children = self.children[:]
         remove_widget = self._remove_widget if unload else self.remove_widget
-        for child in children:
+        for child in self.sub_children:
             remove_widget(child)
 
 class DraggableRoundedButton(DragBehavior,Button):
@@ -3569,6 +3591,7 @@ class ServicesIconButton(IconButton):
     def __init__(self,data, **kwargs):
         super(ServicesIconButton,self).__init__(**kwargs)
         self.data=data
+        self.pos_hint={'center_x':.5,'center_y':.5}
 
     def on_state(self,button,state,*args):
         if state=='down':
@@ -3857,7 +3880,7 @@ class ControlGrid(Screen):
 
         schedule_box_layout=ServicesStackLayout(
             size_hint=(.9,.8),
-            spacing=10,
+            spacing=[20,35],
             pos_hint={'center_x':.5,'center_y':.45})
         self.widgets['schedule_box_layout']=schedule_box_layout
 
@@ -3921,7 +3944,7 @@ class ControlGrid(Screen):
         add_service_icon=ServicesIconButton(
             source=add_schedule_icon,
             size_hint=(None,None),
-            data=None)
+            data={'title':"Add Schedule"})
         self.widgets['add_service_icon']=add_service_icon
         add_service_icon.bind(on_release=self.schedule_dock_handle_func)
 
@@ -4232,8 +4255,7 @@ class ControlGrid(Screen):
             data=details)
         service_icon.add_widget(CirclePulseEmit(6))
         layout.add_widget(service_icon,index=1)
-
-        if w['add_service_icon'] in layout.children:
+        if w['add_service_icon'] in layout.sub_children:
             layout.remove_widget(w['add_service_icon'],unload=True)
 
         details_box=ModalDenseRoundedColorLayout(
@@ -4244,14 +4266,13 @@ class ControlGrid(Screen):
             call_back=partial(self.service_not_saved_reset,service_icon),
             data=details)
         details_box.target=service_icon
-
         self.add_widget(details_box)
 
     def service_not_saved_reset(self,service_icon,*args):
         w=self.widgets
         x=w['add_service_icon']
         w['schedule_box_layout'].remove_widget(service_icon,unload=True)
-        if x not in self.children:
+        if x not in w['schedule_box_layout'].sub_children:
             w['schedule_box_layout'].add_widget(x,load=True)
 
     def save_service_details(self,data,*args):
@@ -4287,7 +4308,7 @@ class ControlGrid(Screen):
                 size_hint=(None,None),
                 data=i)
             layout.add_widget(service_icon,load=True)
-        if w['add_service_icon'] not in layout.children:
+        if w['add_service_icon'] not in layout.sub_children:
             asi=w['add_service_icon']
             asi.size=(ratio,ratio)
             layout.add_widget(asi,load=True)
