@@ -425,7 +425,7 @@ class ServicesStackLayout(StackLayout):
         title=Label(
             markup=True,
             pos_hint={'center_x':.5,"top":0},
-            text='[size=12][color=#000000][b]'+widget.data['title'],
+            text='[size=14][color=#000000][b]'+widget.data['title'],
             halign='center',
             size_hint_y=None)
         title.bind(width=lambda *x: title.setter('text_size')(title, (title.width, None)))
@@ -3600,8 +3600,6 @@ class ServicesIconButton(IconButton):
         else:
             self.color=palette('light_tint',1)
 
-    def on_release(self,*args):
-        print(self.data)
 
 class PathIconButton(IconButton):
     def __init__(self, **kwargs):
@@ -4300,13 +4298,14 @@ class ControlGrid(Screen):
         w=self.widgets
         layout=w['schedule_box_layout']
         layout.clear_widgets(unload=True)
-        ratio=layout.width/11
+        ratio=layout.width/9.25
         for i in  loaded_data:
             service_icon=ServicesIconButton(
                 source=i['icon'],
                 size=(ratio,ratio),
                 size_hint=(None,None),
                 data=i)
+            service_icon.bind(on_release=self.open_schedule_details)
             layout.add_widget(service_icon,load=True)
         if w['add_service_icon'] not in layout.sub_children:
             asi=w['add_service_icon']
@@ -4325,6 +4324,10 @@ class ControlGrid(Screen):
         for i in active_widgets:
             container.add_widget(i)
         container_fade_in.start(container)
+
+    def open_schedule_details(self,icon,*args):
+        print(icon.data)
+
 
     def msg_icon_notifications(self,*args):
         unseen_messages=[i for i in messages.active_messages if i.seen==False]
