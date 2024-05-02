@@ -410,32 +410,41 @@ class ServicesStackLayout(StackLayout):
         self.fade_in=Animation(opacity=1,d=1.5,t='in_quad')
         self.fade_out=Animation(opacity=0,d=1.5,t='in_quad')
 
-    def add_widget(self, widget,load=False):
+    def add_widget(self, widget,load=False,index=0):
         if load:
-            return super(ServicesStackLayout,self).add_widget(widget)
+            return super(ServicesStackLayout,self).add_widget(widget,index)
         pause=PauseTouch(0)
         amnt=len(self.children)
         widget.opacity=0
         if amnt>2:
-            for index,i in enumerate(reversed(self.children),1):
-                anim=Animation(opacity=1,d=index*.1)
+            for _index,i in enumerate(reversed(self.children),1):
+                anim=Animation(opacity=1,d=_index*.1)
                 anim.start(i)
                 anim.bind(on_complete=lambda *args,i=i: self.flicker_anim.start(i))
             fade=Animation(opacity=1,d=(amnt*.1)+1.5,t='in_quad')
             fade.start(widget)
             fade.bind(on_complete=pause.unpause)
-            return super(ServicesStackLayout,self).add_widget(widget)
+            return super(ServicesStackLayout,self).add_widget(widget,index)
         self.fade_in.start(widget)
         self.fade_in.bind(on_complete=pause.unpause)
-        return super(ServicesStackLayout,self).add_widget(widget)
+        return super(ServicesStackLayout,self).add_widget(widget,index)
     
-    def remove_widget(self, widget):
+    def remove_widget(self, widget,unload=False):
+        if unload:
+            self._remove_widget(widget)
         pause=PauseTouch(1.5)
         self.fade_out.start(widget)
         Clock.schedule_once(lambda *args:self._remove_widget(widget),1.5)
 
     def _remove_widget(self,widget,*args):
         return super(ServicesStackLayout,self).remove_widget(widget)
+
+    def clear_widgets(self, children=None,unload=False):
+        if children is None or children is self.children:
+            children = self.children[:]
+        remove_widget = self._remove_widget if unload else self.remove_widget
+        for child in children:
+            remove_widget(child)
 
 class DraggableRoundedButton(DragBehavior,Button):
     def _do_touch_up(self, touch, *largs):
@@ -3145,7 +3154,6 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         w=self.widgets
         _strip=general.strip_markup
 
-
         _interval=_strip(w['schedule_details_interval_input_left'].text)
         _interval_coefficient=_strip(w['schedule_details_interval_input_right'].text)
         if _interval_coefficient=='Day(s)':
@@ -3181,7 +3189,6 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
                 _expiration_coefficient=365
             _expiration=str(timedelta(int(int(_expiration)*_expiration_coefficient)).days)
 
-
         _service_date=_strip(w['schedule_details_start_input'].text)
         if _service_date!='Due Now':
             _service_date=datetime.now().isoformat()
@@ -3199,13 +3206,9 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
         elif _security=='Admin Pin Required':
             _security='admin'
 
-
         _notes=_strip(w['schedule_details_notes_input'].text)
         if not _notes:
             _notes="Schedule Created"
-
-
-
 
         service_details={
             "title"              :  _strip(self.service_data['title']),
@@ -3222,6 +3225,7 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             }
 
         App.get_running_app().context_screen.get_screen('main').save_service_details(service_details)
+        App.get_running_app().context_screen.get_screen('main').load_service_details()
 
     def interval_translate(self,_,text,*args):
         w=self.widgets
@@ -3444,19 +3448,18 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             self.remove_widget(icon)
             self.add_widget(icon)#needed to draw children on top
             darken.start(icon.shape_color)
-            _icons_to_add=[
-                add_schedule_icon,
-                edit_schedule_icon,
-                schedule_icon_image
-            ]
+            _icons_to_add=[]
+            icon_dir=pathlib.Path('media/schedule_icons')
+            for i in os.listdir(icon_dir):
+                _icons_to_add.append(pathlib.Path(icon_dir).joinpath(pathlib.Path(i)))
             ratio=icon.width/8
             for i in _icons_to_add:
                 pib=PathIconButton(
-                        source=i,
+                        source=str(i),
                         size_hint=(None,None),
                         size=(ratio,ratio))
                 pib.bind(on_release=icon.shrink)
-                pib.bind(on_release=lambda *args,i=i:setattr(icon,'source',i))
+                pib.bind(on_release=lambda *args,i=str(i):setattr(icon,'source',i))
                 layout.add_widget(pib)
             all_widgets=[
                 w['schedule_details_icon_input_x_icon'],
@@ -3914,6 +3917,13 @@ class ControlGrid(Screen):
         schedule_edit_button.bind(on_release=self.schedule_edit_icon_func)
         schedule_edit_button.color=palette('light_tint',.65)
 
+        add_service_icon=ServicesIconButton(
+            source=add_schedule_icon,
+            size_hint=(None,None),
+            data=None)
+        self.widgets['add_service_icon']=add_service_icon
+        add_service_icon.bind(on_release=self.schedule_dock_handle_func)
+
         schedule_box.add_widget(schedule_title)
         schedule_box.add_widget(schedule_box_layout)
 
@@ -4220,18 +4230,28 @@ class ControlGrid(Screen):
             size_hint=(None,None),
             data=details)
         service_icon.add_widget(CirclePulseEmit(6))
-        layout.add_widget(service_icon)
+        layout.add_widget(service_icon,index=1)
+
+        if w['add_service_icon'] in layout.children:
+            layout.remove_widget(w['add_service_icon'],unload=True)
 
         details_box=ModalDenseRoundedColorLayout(
             bg_color=palette('light_tint',.95),
             size_hint =(.775, .875),
             pos_hint = {'center_x':.5, 'center_y':.5},
             fade_in=True,
-            call_back=lambda *args:w['schedule_box_layout'].remove_widget(service_icon),
+            call_back=partial(self.service_not_saved_reset,service_icon),
             data=details)
         details_box.target=service_icon
 
         self.add_widget(details_box)
+
+    def service_not_saved_reset(self,service_icon,*args):
+        w=self.widgets
+        x=w['add_service_icon']
+        w['schedule_box_layout'].remove_widget(service_icon,unload=True)
+        if x not in self.children:
+            w['schedule_box_layout'].add_widget(x,load=True)
 
     def save_service_details(self,data,*args):
         try:
@@ -4257,6 +4277,7 @@ class ControlGrid(Screen):
             return
         w=self.widgets
         layout=w['schedule_box_layout']
+        layout.clear_widgets(unload=True)
         ratio=layout.width/11
         for i in  loaded_data:
             service_icon=ServicesIconButton(
@@ -4265,6 +4286,10 @@ class ControlGrid(Screen):
                 size_hint=(None,None),
                 data=i)
             layout.add_widget(service_icon,load=True)
+        if w['add_service_icon'] not in layout.children:
+            asi=w['add_service_icon']
+            asi.size=(ratio,ratio)
+            layout.add_widget(asi,load=True)
 
     def load_active_container(self,*args):
         container_fade_in=Animation(opacity=1,d=.5)
