@@ -437,12 +437,30 @@ class ServicesStackLayout(StackLayout):
         pause=PauseTouch(0)
         amnt=len(self.children)
         widget.opacity=0
-        if amnt>2:
+        if 9>amnt>2:
             for _index,i in enumerate(reversed(self.children),1):
                 anim=Animation(opacity=1,d=_index*.1)
                 anim.start(i)
                 anim.bind(on_complete=lambda *args,i=i: self.flicker_anim.start(i))
             fade=Animation(opacity=1,d=(amnt*.1)+1.5,t='in_quad')
+            fade.start(widget)
+            fade.bind(on_complete=pause.unpause)
+            return super(ServicesStackLayout,self).add_widget(layout,index)
+        elif 17>amnt>8:
+            for _index,i in enumerate(reversed(self.children),1):
+                anim=Animation(opacity=1,d=_index*.05)
+                anim.start(i)
+                anim.bind(on_complete=lambda *args,i=i: self.flicker_anim.start(i))
+            fade=Animation(opacity=1,d=(amnt*.05)+1.5,t='in_quad')
+            fade.start(widget)
+            fade.bind(on_complete=pause.unpause)
+            return super(ServicesStackLayout,self).add_widget(layout,index)
+        elif amnt>2:
+            for _index,i in enumerate(reversed(self.children),1):
+                anim=Animation(opacity=1,d=_index*.025)
+                anim.start(i)
+                anim.bind(on_complete=lambda *args,i=i: self.flicker_anim.start(i))
+            fade=Animation(opacity=1,d=(amnt*.025)+1.5,t='in_quad')
             fade.start(widget)
             fade.bind(on_complete=pause.unpause)
             return super(ServicesStackLayout,self).add_widget(layout,index)
@@ -2860,9 +2878,81 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
 
     dim_saturation=NumericProperty(0)
 
-    def __init__(self, bg_color=palette('secondary', 0.95),call_back=None,fade_in=False,data={}, **kwargs):
+    def __init__(self, bg_color=palette('secondary', 0.95),call_back=None,fade_in=False, **kwargs):
+        self.register_event_type('on_expanded')
         self.target_size_hint=kwargs['size_hint']
         super(ModalDenseRoundedColorLayout,self).__init__(bg_color, **kwargs)
+        self.widgets={}
+        self.fade_in=fade_in
+        self.call_back=call_back
+        if fade_in:
+            with self.canvas.before:
+                self.dim_color=Color(*palette('dark_shade',0))
+                Rectangle(size=Window.size)
+        else:
+            with self.canvas.before:
+                self.dim_color=Color(*palette('dark_shade',.65))
+                Rectangle(size=Window.size)
+
+    def on_expanded(self,*args):
+        '''overwrite to add children once expanded'''
+        pass
+
+    def on_dim_saturation(self,*args):
+        self.dim_color.rgba=palette('dark_shade',self.dim_saturation)
+
+    def on_touch_down(self, touch):
+        super(ModalDenseRoundedColorLayout, self).on_touch_down(touch)
+        return True
+
+    def on_touch_up(self, touch):
+        if self.collide_point(*touch.pos):
+            return True
+        super(ModalDenseRoundedColorLayout, self).on_touch_up(touch)
+        return True
+
+    def on_parent(self,*args):
+        parent=self.parent
+        if not parent:
+            return
+        if self.fade_in:
+            Clock.schedule_once(self.animate_dim)
+            if self.target_size_hint:
+                self.size_hint=(0,0)
+                Clock.schedule_once(self.animate_size)
+
+    def animate_size(self,*args):
+        a=Animation(size_hint=self.target_size_hint,d=.5,t='out_sine')
+        a.bind(on_complete=lambda *args:(Window.dispatch_children('on_expanded')))
+        a.start(self)
+
+    def animate_dim(self,*args):
+        Animation(dim_saturation=.9,d=1).start(self)
+
+    def animate_success_clear(self,*args):
+        self.clear_widgets()
+        a=Animation(size_hint=(0,0),d=.5,t='in_back')
+        a.bind(on_complete=self.clear)
+        a.start(self)
+        Animation(dim_saturation=0,d=.5).start(self)
+
+    def clear(self,*args,cb=False):
+        #cb == call self.callback if True
+        self.dim_saturation=0
+        if hasattr(self,'parent'):
+            if self.parent is None:
+                return
+            self.parent.remove_widget(self)
+        if self.call_back and cb:
+            self.call_back()
+
+class ScheduleCreationLayout(ModalDenseRoundedColorLayout):
+
+    dim_saturation=NumericProperty(0)
+
+    def __init__(self, bg_color=palette('secondary', 0.95),call_back=None,fade_in=False,data={}, **kwargs):
+        self.target_size_hint=kwargs['size_hint']
+        super(ScheduleCreationLayout,self).__init__(bg_color,call_back=call_back,fade_in=fade_in, **kwargs)
         self.widgets={}
         self.fade_in=fade_in
         self.call_back=call_back
@@ -3448,13 +3538,13 @@ class ModalDenseRoundedColorLayout(DenseRoundedColorLayout):
             self.call_back()
 
     def on_touch_down(self, touch):
-        super(ModalDenseRoundedColorLayout, self).on_touch_down(touch)
+        super(ScheduleCreationLayout, self).on_touch_down(touch)
         return True
 
     def on_touch_up(self, touch):
         if self.collide_point(*touch.pos):
             return True
-        super(ModalDenseRoundedColorLayout, self).on_touch_up(touch)
+        super(ScheduleCreationLayout, self).on_touch_up(touch)
         return True
 
     def schedule_details_icon_input_populate(self,*args):
@@ -3600,7 +3690,6 @@ class ServicesIconButton(IconButton):
         else:
             self.color=palette('light_tint',1)
 
-
 class PathIconButton(IconButton):
     def __init__(self, **kwargs):
         super(PathIconButton,self).__init__(**kwargs)
@@ -3611,7 +3700,6 @@ class PathIconButton(IconButton):
             self.add_widget(CirclePulseEmit(0,style='quick'))
         else:
             self.color=palette('light_tint',1)
-
 
 #<<<<<<<<<< SCREENS >>>>>>>>>>#
 
@@ -4256,7 +4344,7 @@ class ControlGrid(Screen):
         if w['add_service_icon'] in layout.sub_children:
             layout.remove_widget(w['add_service_icon'],unload=True)
 
-        details_box=ModalDenseRoundedColorLayout(
+        details_box=ScheduleCreationLayout(
             bg_color=palette('light_tint',.95),
             size_hint =(.775, .875),
             pos_hint = {'center_x':.5, 'center_y':.5},
@@ -4305,7 +4393,7 @@ class ControlGrid(Screen):
                 size=(ratio,ratio),
                 size_hint=(None,None),
                 data=i)
-            service_icon.bind(on_release=self.open_schedule_details)
+            service_icon.bind(on_release=self.open_schedule_detail_view)
             layout.add_widget(service_icon,load=True)
         if w['add_service_icon'] not in layout.sub_children:
             asi=w['add_service_icon']
@@ -4325,9 +4413,44 @@ class ControlGrid(Screen):
             container.add_widget(i)
         container_fade_in.start(container)
 
-    def open_schedule_details(self,icon,*args):
-        print(icon.data)
+    def open_schedule_detail_view(self,icon,*args):
+        layout=ModalDenseRoundedColorLayout(
+            bg_color=palette('light_tint'),
+            size_hint =(.775, .875),
+            pos_hint = {'center_x':.5, 'center_y':.5},
+            fade_in=True)
+        self.add_widget(layout)
+        layout._icon=icon
+        layout.bind(on_expanded=self.populate_schedule_detail_view)
 
+    def populate_schedule_detail_view(self,layout,*args):
+        w=self.widgets
+        data=layout._icon.data
+        x_btn=IconButton(
+            source=overlay_x_icon_black,
+            size_hint=(.08,.08),
+            pos_hint={'x':.92,'y':.9})
+        x_btn.bind(on_release=layout.clear)
+
+        ##### top #####
+
+        view_title=Label(
+            text='[size=24][color=#000000][b]'+data['title']+' Details',
+            markup=True,
+            size_hint =(.4, .05),
+            pos_hint = {'center_x':.5, 'center_y':.925},)
+        view_title.ref='view_title'
+
+        view_title_seperator=LabelColor(
+            size_hint =(.8, .002),
+            pos_hint = {'center_x':.5, 'center_y':.875},
+            bg_color=palette('additional'))
+        view_title.ref='view_title'
+
+
+        layout.add_widget(x_btn)
+        layout.add_widget(view_title)
+        layout.add_widget(view_title_seperator)
 
     def msg_icon_notifications(self,*args):
         unseen_messages=[i for i in messages.active_messages if i.seen==False]
