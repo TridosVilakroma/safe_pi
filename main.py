@@ -432,6 +432,7 @@ class ServicesStackLayout(StackLayout):
     def remove_widget(self, widget,unload=False):
         if unload:
             self._remove_widget(widget)
+            return
         pause=PauseTouch(1.5)
         self.fade_out.start(widget)
         Clock.schedule_once(lambda *args:self._remove_widget(widget),1.5)
