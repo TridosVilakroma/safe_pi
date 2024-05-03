@@ -419,13 +419,14 @@ class ServicesStackLayout(StackLayout):
         return l
 
     def add_widget(self, widget,load=False,index=0):
+        ratio=self.width/8
         layout=FloatLayout(
-            size=widget.size,
+            size=(ratio,ratio),
             size_hint=(None,None))
         title=Label(
             markup=True,
-            pos_hint={'center_x':.5,"top":0},
-            text='[size=14][color=#000000][b]'+widget.data['title'],
+            pos_hint={'center_x':.5,"top":.30},
+            text='[size=20][color=#000000][b]'+widget.data['title'],
             halign='center',
             size_hint_y=None)
         title.bind(width=lambda *x: title.setter('text_size')(title, (title.width, None)))
@@ -564,6 +565,18 @@ class RoundedToggleButton(ToggleButton):
         self.state = 'normal' if self.state == 'down' else 'down'
 
 class LayoutButton(FloatLayout,RoundedButton):
+    #uncomment block of code to see hit boxes for your button
+
+    # def __init__(self, **kwargs):
+    #     super(LayoutButton,self).__init__(**kwargs)
+    #     with self.canvas.before:
+    #             self.colour = Color(*palette('highlight',1))
+    #             self.rect = Rectangle(size=self.size, pos=self.pos)
+    #     self.bind(size=self._update_rect, pos=self._update_rect)
+
+    # def _update_rect(self, instance, *args):
+    #     self.rect.pos = instance.pos
+    #     self.rect.size = instance.size
     pass
 
 class trouble_template(Button):
@@ -3681,7 +3694,7 @@ class ServicesIconButton(IconButton):
     def __init__(self,data, **kwargs):
         super(ServicesIconButton,self).__init__(**kwargs)
         self.data=data
-        self.pos_hint={'center_x':.5,'center_y':.5}
+        self.pos_hint={'center_x':.5,'center_y':.65}
 
     def on_state(self,button,state,*args):
         if state=='down':
@@ -3966,7 +3979,7 @@ class ControlGrid(Screen):
 
         schedule_box_layout=ServicesStackLayout(
             size_hint=(.9,.8),
-            spacing=[20,35],
+            spacing=[22,40],
             pos_hint={'center_x':.5,'center_y':.45})
         self.widgets['schedule_box_layout']=schedule_box_layout
 
@@ -4029,7 +4042,7 @@ class ControlGrid(Screen):
 
         add_service_icon=ServicesIconButton(
             source=add_schedule_icon,
-            size_hint=(None,None),
+            size_hint=(.7,.7),
             data={'title':"Add Schedule"})
         self.widgets['add_service_icon']=add_service_icon
         add_service_icon.bind(on_release=self.schedule_dock_handle_func)
@@ -4333,11 +4346,9 @@ class ControlGrid(Screen):
     def add_service_prompt_details(self,details,*args):
         w=self.widgets
         layout=w['schedule_box_layout']
-        ratio=layout.width/11
         service_icon=ServicesIconButton(
             source=details['icon'],
-            size=(ratio,ratio),
-            size_hint=(None,None),
+            size_hint=(.7,.7),
             data=details)
         service_icon.add_widget(CirclePulseEmit(6))
         layout.add_widget(service_icon,index=1)
@@ -4386,18 +4397,15 @@ class ControlGrid(Screen):
         w=self.widgets
         layout=w['schedule_box_layout']
         layout.clear_widgets(unload=True)
-        ratio=layout.width/9.25
         for i in  loaded_data:
             service_icon=ServicesIconButton(
                 source=i['icon'],
-                size=(ratio,ratio),
-                size_hint=(None,None),
+                size_hint=(.7,.7),
                 data=i)
             service_icon.bind(on_release=self.open_schedule_detail_view)
             layout.add_widget(service_icon,load=True)
         if w['add_service_icon'] not in layout.sub_children:
             asi=w['add_service_icon']
-            asi.size=(ratio,ratio)
             layout.add_widget(asi,load=True)
 
     def load_active_container(self,*args):
