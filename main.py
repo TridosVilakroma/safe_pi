@@ -3714,6 +3714,74 @@ class PathIconButton(IconButton):
         else:
             self.color=palette('light_tint',1)
 
+class ProxyFloatLayout(FloatLayout):
+    '''Used to set size of children according to another widget'''
+
+    def __init__(self,proxied, **kwargs):
+        super(ProxyFloatLayout,self).__init__(**kwargs)
+        self.proxied=proxied
+
+    def do_layout(self, *largs, **kwargs):
+        # optimize layout by preventing looking at the same attribute in a loop
+        w, h = self.proxied.size
+        sw, sh = kwargs.get('size', self.size)
+        x, y = kwargs.get('pos', self.pos)
+        for c in self.children:
+            # size
+            shw, shh = c.size_hint
+            shw_min, shh_min = c.size_hint_min
+            shw_max, shh_max = c.size_hint_max
+
+            if shw is not None and shh is not None:
+                c_w = shw * w
+                c_h = shh * h
+
+                if shw_min is not None and c_w < shw_min:
+                    c_w = shw_min
+                elif shw_max is not None and c_w > shw_max:
+                    c_w = shw_max
+
+                if shh_min is not None and c_h < shh_min:
+                    c_h = shh_min
+                elif shh_max is not None and c_h > shh_max:
+                    c_h = shh_max
+                c.size = c_w, c_h
+            elif shw is not None:
+                c_w = shw * w
+
+                if shw_min is not None and c_w < shw_min:
+                    c_w = shw_min
+                elif shw_max is not None and c_w > shw_max:
+                    c_w = shw_max
+                c.width = c_w
+            elif shh is not None:
+                c_h = shh * h
+
+                if shh_min is not None and c_h < shh_min:
+                    c_h = shh_min
+                elif shh_max is not None and c_h > shh_max:
+                    c_h = shh_max
+                c.height = c_h
+
+            # pos
+            for key, value in c.pos_hint.items():
+                if key == 'x':
+                    c.x = x + value * sw
+                elif key == 'right':
+                    c.right = x + value * sw
+                elif key == 'pos':
+                    c.pos = x + value[0] * sw, y + value[1] * sh
+                elif key == 'y':
+                    c.y = y + value * sh
+                elif key == 'top':
+                    c.top = y + value * sh
+                elif key == 'center':
+                    c.center = x + value[0] * sw, y + value[1] * sh
+                elif key == 'center_x':
+                    c.center_x = x + value * sw
+                elif key == 'center_y':
+                    c.center_y = y + value * sh
+
 #<<<<<<<<<< SCREENS >>>>>>>>>>#
 
 class ControlGrid(Screen):
@@ -4427,9 +4495,17 @@ class ControlGrid(Screen):
             size_hint =(.775, .875),
             pos_hint = {'center_x':.5, 'center_y':.5},
             fade_in=True)
+        layout.clocks=[]
         self.add_widget(layout)
         layout._icon=icon
         layout.bind(on_expanded=self.populate_schedule_detail_view)
+
+        def _close_view(*args):
+            if layout.parent:
+                return
+            for clock in layout.clocks:
+                clock.cancel()
+        layout.bind(parent=_close_view)
 
     def populate_schedule_detail_view(self,layout,*args):
         w=self.widgets
@@ -4455,10 +4531,99 @@ class ControlGrid(Screen):
             bg_color=palette('additional'))
         view_title.ref='view_title'
 
+        ##### left #####
 
+        view_left_scroll=OutlineScroll(
+            size_hint =(.45,.6),
+            pos_hint = {'x':.0325, 'y':.225},
+            bg_color=palette('base',.15),
+            bar_width=8,
+            bar_color=palette('highlight',.75),
+            bar_inactive_color=palette('highlight',.35),
+            do_scroll_y=True,
+            do_scroll_x=False)
+
+        view_left_scroll_layout=ProxyFloatLayout(
+            proxied=layout,
+            size_hint_y=3)
+
+        view_countdown_label=MinimumBoundingLabel(
+            text=current_language['view_countdown_label'],
+            markup=True,
+            pos_hint = {'x':.025, 'center_y':.975},)
+        view_countdown_label.ref='view_countdown_label'
+
+        view_countdown=RoundedLabelColor(
+            bg_color=palette('primary',.25),
+            color=palette('secondary'),
+            size_hint =(.25, .075),
+            pos_hint = {'right':.95, 'center_y':.975},
+            markup=True)
+        self.view_countdown_update(view_countdown,data)
+        layout.clocks.append(Clock.schedule_interval(partial(self.view_countdown_update,view_countdown,data),1))
+
+        ##### middle #####
+
+        view_seperator_line=Image(
+            source=gray_seperator_line_vertical,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.0015, .5),
+            pos_hint = {'center_x':.5, 'center_y':.55})
+
+        ##### right #####
+
+
+        ##### bottom #####
+
+        save_view_button=RoundedButton(
+            text=current_language['save_view_button'],
+            size_hint =(.7, .1),
+            pos_hint = {'center_x':.5, 'y':.05},
+            background_down='',
+            background_color=palette('neutral',.85),
+            markup=True)
+        save_view_button.ref='save_view_button'
+        save_view_button.bind(on_release=layout.animate_success_clear)
+        save_view_button.bind(on_release=self.view_update_save)
+
+        #top
         layout.add_widget(x_btn)
         layout.add_widget(view_title)
         layout.add_widget(view_title_seperator)
+        #left
+        layout.add_widget(view_left_scroll)
+        view_left_scroll.add_widget(view_left_scroll_layout)
+        view_left_scroll_layout.add_widget(view_countdown_label)
+        view_left_scroll_layout.add_widget(view_countdown)
+        #mid
+        layout.add_widget(view_seperator_line)
+        #right
+        #bottom
+        layout.add_widget(save_view_button)
+
+    def view_update_save(self,*args):
+        print('save and update?')
+
+    def view_countdown_update(self,label,data,*args):
+        sd=datetime.fromisoformat(data['service_date'])
+        ci=timedelta(int(data['current_interval']))
+        due_date=sd+ci
+        ct=datetime.now()
+        remaining_time=due_date.replace(microsecond=0)-ct.replace(microsecond=0)
+        if remaining_time.days<=0:
+            remaining_time=timedelta()
+        if remaining_time>ci/2:
+            label.bg_color=palette('complement',.25)
+        elif remaining_time>ci/10:
+            label.bg_color=palette('primary',.25)
+        elif remaining_time>timedelta():
+            label.bg_color=palette('highlight',.25)
+        else:
+            label.text='[size=24]Due Now'
+            label.bg_color=palette('highlight',.95)
+            return
+        label.text='[size=24]'+str(remaining_time)
 
     def msg_icon_notifications(self,*args):
         unseen_messages=[i for i in messages.active_messages if i.seen==False]
