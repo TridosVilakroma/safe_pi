@@ -3788,7 +3788,8 @@ class ScrollableLabel(Label):
         super(ScrollableLabel,self).__init__(**kwargs)
         self.bg_color=bg_color
         self.size_hint=(1,None)
-        self.bind(texture_size=self.setter('size'))
+        self.bind(texture_size=lambda *args:self.setter('height')(self, self.texture_size[1]))
+        self.bind(width=lambda *x: self.setter('text_size')(self, (self.width*.99, None)))
 
         with self.canvas.before:
             self.shape_color = Color(*self.bg_color)
@@ -4470,7 +4471,7 @@ class ControlGrid(Screen):
         try:
             with open('logs/configurations/scheduled_services.json','r+') as f:
                 loaded_data = json.load(f)
-                loaded_data.append(data)
+                loaded_data[data['creation_date']]=data
                 f.seek(0)
                 json.dump(loaded_data, f, indent=4)
                 f.truncate()
@@ -4491,7 +4492,7 @@ class ControlGrid(Screen):
         w=self.widgets
         layout=w['schedule_box_layout']
         layout.clear_widgets(unload=True)
-        for i in  loaded_data:
+        for i in  loaded_data.values():
             service_icon=ServicesIconButton(
                 source=i['icon'],
                 size_hint=(.7,.7),
@@ -4531,6 +4532,7 @@ class ControlGrid(Screen):
                 return
             for clock in layout.clocks:
                 clock.cancel()
+            self.save_service_details(layout._icon.data)
         layout.bind(parent=_close_view)
 
     def populate_schedule_detail_view(self,layout,*args):
@@ -4659,12 +4661,14 @@ class ControlGrid(Screen):
             bar_inactive_color=palette('highlight',.35),
             do_scroll_y=True,
             do_scroll_x=False)
+        self.widgets['view_right_scroll']=view_right_scroll
 
         view_right_scroll_layout=GridLayout(
             cols=1,
             spacing=10,
             size_hint_y=None,
             padding=10)
+        self.widgets['view_right_scroll_layout']=view_right_scroll_layout
         view_right_scroll_layout.bind(minimum_height=lambda layout,min_height:setattr(layout,'height',min_height))
 
         _index_color=0
@@ -4688,8 +4692,17 @@ class ControlGrid(Screen):
             background_color=palette('accent',.65),
             markup=True)
         view_right_add_note.ref='view_right_add_note'
-        # view_right_add_note.bind(on_release=layout.animate_success_clear)
-        # view_right_add_note.bind(on_release=self.view_update_save)
+        view_right_add_note.bind(on_release=self.add_note_prompt)
+
+        view_right_add_note_input=AutoWrapTextInput(
+            disabled=False,
+            multiline=True,
+            hint_text='Enter New Note (Press Enter to save)',
+            size_hint =(.8, .35),
+            pos_hint = {'center_x':.5, 'center_y':.7},
+            font_size=32)
+        self.widgets['view_right_add_note_input']=view_right_add_note_input
+        view_right_add_note_input.bind(focus=partial(self.create_note,data))
 
         ##### bottom #####
 
@@ -4698,11 +4711,13 @@ class ControlGrid(Screen):
             size_hint =(.7, .1),
             pos_hint = {'center_x':.5, 'y':.05},
             background_down='',
-            background_color=palette('neutral',.85),
+            background_color=palette('dark_shade',1),
+            color=palette('light_tint',1),
             markup=True)
         save_view_button.ref='save_view_button'
         save_view_button.bind(on_release=layout.animate_success_clear)
-        save_view_button.bind(on_release=self.view_update_save)
+        save_view_button.bind(on_release=partial(self.view_update_save,data))
+        save_view_button.bind(state=self._swap_color_dark_secondary)
 
         #top
         layout.add_widget(x_btn)
@@ -4729,8 +4744,44 @@ class ControlGrid(Screen):
         #bottom
         layout.add_widget(save_view_button)
 
-    def view_update_save(self,*args):
-        print('save and update?')
+    def add_note_prompt(self,*args):
+        w=self.widgets
+        ni=w['view_right_add_note_input']
+        if ni in self.children:
+            return
+        self.add_widget(ni)
+        ni.focused=True
+
+    def create_note(self,data,_,focused,*args):
+        w=self.widgets
+        ni=w['view_right_add_note_input']
+        note=ni.text
+        if focused:
+            return
+        if ni.text:
+            data['notes'][str(datetime.now())]=note
+        _index_color=0
+        w['view_right_scroll_layout'].clear_widgets()
+        for k,v in data['notes'].items():
+            _index_color+=1
+            time_date_padding=' '*30
+            n=ScrollableLabel(
+                text=f'[size=24][b]\n{v}\n\n[/b][size=20]'+str(datetime.fromisoformat(k).replace(microsecond=0).strftime(f'%I:%M %p{time_date_padding}%B %d, %Y'))+'\n',
+                markup=True,
+                halign='center',
+                bg_color=palette('secondary') if _index_color%2 else palette('light_tint'),
+                color=palette('light_tint') if _index_color%2 else palette('secondary'))
+            w['view_right_scroll_layout'].add_widget(n)
+        if ni.text:
+            w['view_right_scroll'].scroll_y=0
+            ni.text=''
+        if ni.parent:
+            ni.parent.remove_widget(ni)
+
+
+    def view_update_save(self,data,*args):
+        data['service_date']=str(datetime.now())
+        self.save_service_details(data)
 
     def view_countdown_update(self,label,data,*args):
         sd=datetime.fromisoformat(data['service_date'])
@@ -4751,6 +4802,12 @@ class ControlGrid(Screen):
             label.bg_color=palette('highlight',.95)
             return
         label.text='[size=24]'+str(remaining_time)
+
+    def _swap_color_dark_secondary(self,button,*args):
+            if button.state=='down':
+                button.shape_color.rgba=palette('secondary',1)
+            if button.state=='normal':
+                button.shape_color.rgba=palette('dark_shade',1)
 
     def msg_icon_notifications(self,*args):
         unseen_messages=[i for i in messages.active_messages if i.seen==False]
