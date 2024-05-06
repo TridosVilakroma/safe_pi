@@ -4522,6 +4522,7 @@ class ControlGrid(Screen):
             size_hint =(.775, .875),
             pos_hint = {'center_x':.5, 'center_y':.5},
             fade_in=True)
+        self.widgets['view_modal_layout']=layout
         layout.clocks=[]
         self.add_widget(layout)
         layout._icon=icon
@@ -4714,10 +4715,23 @@ class ControlGrid(Screen):
             background_color=palette('dark_shade',1),
             color=palette('light_tint',1),
             markup=True)
+        self.widgets['save_view_button']=save_view_button
         save_view_button.ref='save_view_button'
-        save_view_button.bind(on_release=layout.animate_success_clear)
-        save_view_button.bind(on_release=partial(self.view_update_save,data))
+        save_view_button.bind(on_press=partial(self.view_save_start_clock,data),on_touch_up=self.view_save_delete_clock)
         save_view_button.bind(state=self._swap_color_dark_secondary)
+
+        view_saving_hint=RoundedLabelColor(
+            bg_color=palette('secondary',.95),
+            color=palette('light_tint'),
+            size_hint =(.4, .3),
+            pos_hint = {'center_x':.5, 'center_y':.65},
+            markup=True)
+        self.widgets['view_saving_hint']=view_saving_hint
+
+        save_progress=CircularProgressBar()
+        save_progress._widget_size=200
+        save_progress._progress_colour=palette('highlight',1)
+        self.widgets['save_progress']=save_progress
 
         #top
         layout.add_widget(x_btn)
@@ -4778,10 +4792,41 @@ class ControlGrid(Screen):
         if ni.parent:
             ni.parent.remove_widget(ni)
 
+    def view_save_progress_bar_update(self,dt,*args):
+        self.widgets['save_progress'].pos=self.widgets['save_view_button'].last_touch.pos
+        if not self.widgets['save_progress'].parent:
+            self.add_widget(self.widgets['save_progress'])
+        if self.widgets['save_progress'].value >= 1000: # Checks to see if progress_bar.value has met 1000
+            return False # Returning False schedule is canceled and won't repeat
+        self.widgets['save_progress'].value += 1000/3*dt # Updates progress_bar's progress
+
+    def view_save_start_clock(self,data,*args):
+        w=self.widgets
+        l=w['view_saving_hint']
+        time=datetime.now().strftime('%I:%M %p  %B %d, %Y')
+        text='[size=30][b]Updating Service date to:\n\n'
+        l.text=text+time
+        self.add_widget(l)
+        self.ud['view_save_clock']=Clock.schedule_once(partial(self.view_update_save,data),3)
+        self.ud['event_bar']=Clock.schedule_interval(self.view_save_progress_bar_update,.0001)
+
+
+    def view_save_delete_clock(self,*args):
+        w=self.widgets
+        if w['view_saving_hint'] in self.children:
+            self.remove_widget(w['view_saving_hint'])
+        if 'view_save_clock' in self.ud:
+            Clock.unschedule(self.ud['view_save_clock'])
+        if 'event_bar' in self.ud:
+            Clock.unschedule(self.ud['event_bar'])
+            self.widgets['save_progress'].value=0
+            self.remove_widget(self.widgets['save_progress'])
 
     def view_update_save(self,data,*args):
+        self.view_save_delete_clock()
         data['service_date']=str(datetime.now())
         self.save_service_details(data)
+        self.widgets['view_modal_layout'].animate_success_clear()
 
     def view_countdown_update(self,label,data,*args):
         sd=datetime.fromisoformat(data['service_date'])
