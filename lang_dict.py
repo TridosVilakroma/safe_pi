@@ -94,6 +94,7 @@ Import into >>logs/sys_report/report.jpg[/color][/size]''',
     'view_service_date_label' : "[size=20][color=#000000]Current Service Date:",
     'view_service_time_label' : "[size=20][color=#000000]Time Completed:",
     'view_service_creation_date_label' : "[size=20][color=#000000]Origin Date:",
+    'view_service_expiration_date_label' : "[size=20][color=#000000]Expiration Date:",
     'view_right_add_note' : "[size=20][color=#000000]+ Add Note",
     'save_view_button' : "[size=24][b]Confirm Service Completed",
     'maint_overlay_warning_text' : """[size=30][color=#ffffff]Maintenance Override disables heat 
