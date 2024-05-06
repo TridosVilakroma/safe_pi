@@ -4594,12 +4594,18 @@ class ControlGrid(Screen):
             pos_hint = {'x':.025, 'center_y':.925},)
         view_interval_label.ref='view_interval_label'
 
+        d={
+            "day"     :  1,
+            "week"    :  .143,
+            "month"   :  .033,
+            "year"    :  .00273972602}
+
         view_interval=MinimumBoundingLabel(
             color=palette('secondary'),
             size_hint =(.25, .075),
             pos_hint = {'right':.95, 'center_y':.925},
             markup=True,
-            text='[size=24]Every '+data['current_interval']+' '+data['increment']+'s')
+            text='[size=24]Every '+str(max(math.floor(int(data['current_interval'])*d[data['increment']]),1))+' '+data['increment']+'s')
 
         view_service_date_label=MinimumBoundingLabel(
             text=current_language['view_service_date_label'],
