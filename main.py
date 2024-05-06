@@ -4919,11 +4919,11 @@ class ControlGrid(Screen):
         if remaining_time.days<=0:
             remaining_time=timedelta()
         if remaining_time>ci/2:
-            label.bg_color=palette('complement',.25)
+            label.bg_color=palette('complement',.4)
         elif remaining_time>ci/10:
-            label.bg_color=palette('primary',.25)
+            label.bg_color=palette('primary',.4)
         elif remaining_time>timedelta():
-            label.bg_color=palette('highlight',.25)
+            label.bg_color=palette('highlight',.4)
         else:
             label.text='[size=24]Due Now'
             label.bg_color=palette('highlight',.95)
