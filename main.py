@@ -3782,6 +3782,32 @@ class ProxyFloatLayout(FloatLayout):
                 elif key == 'center_y':
                     c.center_y = y + value * sh
 
+class ScrollableLabel(Label):
+    bg_color=ColorProperty()
+    def __init__(self,bg_color= palette('secondary',.95),**kwargs):
+        super(ScrollableLabel,self).__init__(**kwargs)
+        self.bg_color=bg_color
+        self.size_hint=(1,None)
+        self.bind(texture_size=self.setter('size'))
+
+        with self.canvas.before:
+            self.shape_color = Color(*self.bg_color)
+            self.shape = RoundedRectangle(pos=self.pos, size=self.size, radius=[20])
+            self.bind(pos=self.update_shape, size=self.update_shape)
+
+    def update_shape(self, *args):
+        self.shape.pos = self.pos
+        self.shape.size = self.size
+
+    def on_bg_color(self, *args):
+        #before __init__ is called the bg_color changes, so we wait until __init__() to proceed
+        if hasattr(self,'shape_color'):
+            self.shape_color.rgba=self.bg_color
+
+    def on_texture_size(self,*args):
+        self.height=self.texture_size[1]
+
+
 #<<<<<<<<<< SCREENS >>>>>>>>>>#
 
 class ControlGrid(Screen):
@@ -4562,6 +4588,45 @@ class ControlGrid(Screen):
         self.view_countdown_update(view_countdown,data)
         layout.clocks.append(Clock.schedule_interval(partial(self.view_countdown_update,view_countdown,data),1))
 
+        view_interval_label=MinimumBoundingLabel(
+            text=current_language['view_interval_label'],
+            markup=True,
+            pos_hint = {'x':.025, 'center_y':.925},)
+        view_interval_label.ref='view_interval_label'
+
+        view_interval=MinimumBoundingLabel(
+            color=palette('secondary'),
+            size_hint =(.25, .075),
+            pos_hint = {'right':.95, 'center_y':.925},
+            markup=True,
+            text='[size=24]Every '+data['current_interval']+' '+data['increment']+'s')
+
+        view_service_date_label=MinimumBoundingLabel(
+            text=current_language['view_service_date_label'],
+            markup=True,
+            pos_hint = {'x':.025, 'center_y':.875},)
+        view_service_date_label.ref='view_service_date_label'
+
+        view_service_date=MinimumBoundingLabel(
+            color=palette('secondary'),
+            size_hint =(.25, .075),
+            pos_hint = {'right':.95, 'center_y':.875},
+            markup=True,
+            text='[size=24]'+str(datetime.fromisoformat(data['service_date']).date().strftime('%b %d, %Y')))
+
+        view_service_time_label=MinimumBoundingLabel(
+            text=current_language['view_service_time_label'],
+            markup=True,
+            pos_hint = {'x':.025, 'center_y':.825},)
+        view_service_time_label.ref='view_service_time_label'
+
+        view_service_time=MinimumBoundingLabel(
+            color=palette('secondary'),
+            size_hint =(.25, .075),
+            pos_hint = {'right':.95, 'center_y':.825},
+            markup=True,
+            text='[size=24]'+str(datetime.fromisoformat(data['service_date']).replace(microsecond=0).strftime('%I:%M %p')))
+
         ##### middle #####
 
         view_seperator_line=Image(
@@ -4573,6 +4638,52 @@ class ControlGrid(Screen):
 
         ##### right #####
 
+        view_right_notes_title=MinimumBoundingLabel(
+            text='[size=24][color=#000000]N o t e s',
+            markup=True,
+            pos_hint = {'center_x':.75, 'top':.85},)
+        view_title.ref='view_title'
+
+        view_right_scroll=OutlineScroll(
+            size_hint =(.45,.47),
+            pos_hint = {'right':.975, 'top':.8},
+            bg_color=palette('base',.15),
+            bar_width=8,
+            bar_color=palette('highlight',.75),
+            bar_inactive_color=palette('highlight',.35),
+            do_scroll_y=True,
+            do_scroll_x=False)
+
+        view_right_scroll_layout=GridLayout(
+            cols=1,
+            spacing=10,
+            size_hint_y=None,
+            padding=10)
+        view_right_scroll_layout.bind(minimum_height=lambda layout,min_height:setattr(layout,'height',min_height))
+
+        _index_color=0
+        for k,v in data['notes'].items():
+            _index_color+=1
+            time_date_padding=' '*30
+            n=ScrollableLabel(
+                text=f'[size=24][b]\n{v}\n\n[/b][size=20]'+str(datetime.fromisoformat(k).replace(microsecond=0).strftime(f'%I:%M %p{time_date_padding}%B %d, %Y'))+'\n',
+                markup=True,
+                halign='center',
+                bg_color=palette('secondary') if _index_color%2 else palette('light_tint'),
+                color=palette('light_tint') if _index_color%2 else palette('secondary')
+            )
+            view_right_scroll_layout.add_widget(n)
+
+        view_right_add_note=RoundedButton(
+            text=current_language['view_right_add_note'],
+            size_hint =(.2, .1),
+            pos_hint = {'right':.975, 'y':.225},
+            background_down='',
+            background_color=palette('accent',.65),
+            markup=True)
+        view_right_add_note.ref='view_right_add_note'
+        # view_right_add_note.bind(on_release=layout.animate_success_clear)
+        # view_right_add_note.bind(on_release=self.view_update_save)
 
         ##### bottom #####
 
@@ -4596,9 +4707,19 @@ class ControlGrid(Screen):
         view_left_scroll.add_widget(view_left_scroll_layout)
         view_left_scroll_layout.add_widget(view_countdown_label)
         view_left_scroll_layout.add_widget(view_countdown)
+        view_left_scroll_layout.add_widget(view_interval_label)
+        view_left_scroll_layout.add_widget(view_interval)
+        view_left_scroll_layout.add_widget(view_service_date_label)
+        view_left_scroll_layout.add_widget(view_service_date)
+        view_left_scroll_layout.add_widget(view_service_time_label)
+        view_left_scroll_layout.add_widget(view_service_time)
         #mid
         layout.add_widget(view_seperator_line)
         #right
+        layout.add_widget(view_right_notes_title)
+        layout.add_widget(view_right_scroll)
+        view_right_scroll.add_widget(view_right_scroll_layout)
+        layout.add_widget(view_right_add_note)
         #bottom
         layout.add_widget(save_view_button)
 
