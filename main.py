@@ -4649,6 +4649,21 @@ class ControlGrid(Screen):
             markup=True,
             text='[size=24]'+str(datetime.fromisoformat(data['creation_date']).replace(microsecond=0).strftime('%I:%M %p, %B %d, %Y')))
 
+        view_service_expiration_date_label=MinimumBoundingLabel(
+            text=current_language['view_service_expiration_date_label'],
+            markup=True,
+            pos_hint = {'x':.025, 'center_y':.725},)
+        view_service_expiration_date_label.ref='view_service_expiration_date_label'
+
+        view_service_expiration_date=MinimumBoundingLabel(
+            color=palette('secondary'),
+            size_hint =(.25, .075),
+            pos_hint = {'right':.95, 'center_y':.725},
+            markup=True)
+        if data['expiration']:
+            view_service_expiration_date.text='[size=24]'+str((datetime.fromisoformat(data['creation_date'])+timedelta(days=int(data['expiration']))).strftime('%B %d, %Y'))
+        else: view_service_expiration_date.text='[size=24]Does Not Expire'
+
         ##### middle #####
 
         view_seperator_line=Image(
@@ -4763,6 +4778,8 @@ class ControlGrid(Screen):
         view_left_scroll_layout.add_widget(view_service_time)
         view_left_scroll_layout.add_widget(view_service_creation_date_label)
         view_left_scroll_layout.add_widget(view_service_creation_date)
+        view_left_scroll_layout.add_widget(view_service_expiration_date_label)
+        view_left_scroll_layout.add_widget(view_service_expiration_date)
         #mid
         layout.add_widget(view_seperator_line)
         #right
