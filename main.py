@@ -4664,6 +4664,50 @@ class ControlGrid(Screen):
             view_service_expiration_date.text='[size=24]'+str((datetime.fromisoformat(data['creation_date'])+timedelta(days=int(data['expiration']))).strftime('%B %d, %Y'))
         else: view_service_expiration_date.text='[size=24]Does Not Expire'
 
+        view_service_security_label=MinimumBoundingLabel(
+            text=current_language['view_service_security_label'],
+            markup=True,
+            pos_hint = {'x':.025, 'center_y':.675},)
+        view_service_security_label.ref='view_service_security_label'
+
+        view_service_security=MinimumBoundingLabel(
+            color=palette('secondary'),
+            size_hint =(.25, .075),
+            pos_hint = {'right':.95, 'center_y':.675},
+            markup=True)
+        if data['security']=='':
+            view_service_security.text='[size=24]None'
+        elif data['security']=='admin':
+            view_service_security.text='[size=24]Admin Pin Required'
+        elif data['security']=='vendor':
+            view_service_security.text='[size=24]Vendor Pin Enabled'
+
+        view_service_vendor_label=MinimumBoundingLabel(
+            text=current_language['view_service_vendor_label'],
+            markup=True,
+            pos_hint = {'x':.025, 'center_y':.625},)
+        view_service_vendor_label.ref='view_service_vendor_label'
+
+        view_service_vendor=MinimumBoundingLabel(
+            color=palette('secondary'),
+            size_hint =(.25, .075),
+            pos_hint = {'right':.95, 'center_y':.625},
+            markup=True,
+            text=f'[size=24]{data["vendor_name"]}' if data['vendor_name'] else '[size=24]None')
+
+        view_service_vendor_pin_label=MinimumBoundingLabel(
+            text=current_language['view_service_vendor_pin_label'],
+            markup=True,
+            pos_hint = {'x':.025, 'center_y':.575},)
+        view_service_vendor_pin_label.ref='view_service_vendor_pin_label'
+
+        view_service_vendor_pin=MinimumBoundingLabel(
+            color=palette('secondary'),
+            size_hint =(.25, .075),
+            pos_hint = {'right':.95, 'center_y':.575},
+            markup=True,
+            text=f'[size=24]* * * * * *' if data['vendor_pin'] else '[size=24]None')
+
         ##### middle #####
 
         view_seperator_line=Image(
@@ -4780,6 +4824,12 @@ class ControlGrid(Screen):
         view_left_scroll_layout.add_widget(view_service_creation_date)
         view_left_scroll_layout.add_widget(view_service_expiration_date_label)
         view_left_scroll_layout.add_widget(view_service_expiration_date)
+        view_left_scroll_layout.add_widget(view_service_security_label)
+        view_left_scroll_layout.add_widget(view_service_security)
+        view_left_scroll_layout.add_widget(view_service_vendor_label)
+        view_left_scroll_layout.add_widget(view_service_vendor)
+        view_left_scroll_layout.add_widget(view_service_vendor_pin_label)
+        view_left_scroll_layout.add_widget(view_service_vendor_pin)
         #mid
         layout.add_widget(view_seperator_line)
         #right
