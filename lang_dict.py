@@ -90,6 +90,10 @@ Import into >>logs/sys_report/report.jpg[/color][/size]''',
     'schedule_details_notes_label' : "[size=20][color=#000000]Additional Notes:",
     'schedule_details_icon_label' : "[size=20][color=#000000]Schedule Icon:",
     'view_countdown_label' : "[size=20][color=#000000]Service Due In:",
+    'view_interval_label' : "[size=20][color=#000000]Frequency:",
+    'view_service_date_label' : "[size=20][color=#000000]Current Service Date:",
+    'view_service_time_label' : "[size=20][color=#000000]Time Completed:",
+    'view_right_add_note' : "[size=20][color=#000000]+ Add Note",
     'save_view_button' : "[size=24][b][color=#000000]Service Completed",
     'maint_overlay_warning_text' : """[size=30][color=#ffffff]Maintenance Override disables heat 
 sensors allowing neccessary maintenance 
