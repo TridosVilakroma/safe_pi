@@ -4918,6 +4918,12 @@ class ControlGrid(Screen):
                 halign='center',
                 bg_color=palette('secondary') if _index_color%2 else palette('light_tint'),
                 color=palette('light_tint') if _index_color%2 else palette('secondary'))
+            if k in data['unseen_notes']:
+                def _clear_unseen(uuid,*args):
+                    if uuid in data['unseen_notes']:
+                        data['unseen_notes'].remove(uuid)
+                n.add_widget(NotificationBadge(rel_pos=(-.08,.85),rel_size=(.2,.2)))
+                n.bind(on_release=lambda *args,uuid=k: _clear_unseen(uuid))
             w['view_right_scroll_layout'].add_widget(n)
         if ni.text:
             w['view_right_scroll'].scroll_y=0
