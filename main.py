@@ -14823,6 +14823,9 @@ def settings_setter(config):
     report_status=config.getboolean('config','report_pending')
     App.get_running_app().report_pending=report_status
 
+    if config.getboolean('config','limited',fallback=False):
+        Clock.schedule_interval(schedule.updater.update,10)
+
 def language_setter(*args,config=None):
     def widget_walker(widget,current_language):
         if isinstance(widget,trouble_template):
