@@ -35,6 +35,7 @@ from version.version import version as VERSION
 UpdateService.current_version=VERSION
 from notifications.handler import Notifications as Notifications
 from utils.color_themes import palette
+import schedule.updater
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
 if os.name=='posix':
@@ -7968,6 +7969,7 @@ class PreferenceScreen(Screen):
         def schedule_mode_on_func(button):
             App.get_running_app().limited=True
             config.set('config','limited','True')
+            Clock.schedule_interval(schedule.updater.update,10)
             with open(preferences_path,'w') as configfile:
                 config.write(configfile)
         schedule_mode_on.bind(on_release=schedule_mode_on_func)
@@ -7975,6 +7977,7 @@ class PreferenceScreen(Screen):
         def schedule_mode_off_func(button):
             App.get_running_app().limited=False
             config.set('config','limited','False')
+            Clock.unschedule(schedule.updater.update)
             with open(preferences_path,'w') as configfile:
                 config.write(configfile)
         schedule_mode_off.bind(on_release=schedule_mode_off_func)
