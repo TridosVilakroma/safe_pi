@@ -4933,9 +4933,7 @@ class ControlGrid(Screen):
     def view_update_save(self,data,*args):
         self.view_save_delete_clock()
         data['service_date']=str(datetime.now())
-        self.save_service_details(data)
         self.widgets['view_modal_layout'].animate_success_clear()
-        App.get_running_app().notifications.toast('[size=20]Schedule Updated')
 
     def view_countdown_update(self,label,data,*args):
         if not data['service_date']:
