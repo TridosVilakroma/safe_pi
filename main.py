@@ -2305,13 +2305,14 @@ class ScrollMenuBubble(Bubble):
 class PinLock(RoundedColorLayoutModal):
     end_point_one=ListProperty([])
     end_point_two=ListProperty([])
-    def __init__(self,callback=None,hidden=True,**kwargs):
+    def __init__(self,callback=None,hidden=True,secondary_pin='',**kwargs):
         if 'set_pin' in kwargs:
             self.set_pin=kwargs.pop('set_pin')
         if 'alt_pin' in kwargs:
             self.alt_pin=kwargs.pop('alt_pin')
         super(PinLock,self).__init__(bg_color=palette('secondary',1),**kwargs)
         self.hidden=hidden
+        self.secondary_pin=secondary_pin
         self.widgets={}
         self.pin=[]
         self.entry_slots={
@@ -2602,6 +2603,8 @@ class PinLock(RoundedColorLayoutModal):
                     App.get_running_app().notifications.toast('[b][size=20]Pins do not match','error')
                     return
         if pin==App.get_running_app().config_.get('account','admin_pin',fallback='000000'):
+            self.clear_with_success()
+        if pin==self.secondary_pin:
             self.clear_with_success()
 
     def clear_with_success(self,*args):
@@ -4497,7 +4500,14 @@ class ControlGrid(Screen):
                 source=i['icon'],
                 size_hint=(.7,.7),
                 data=i)
-            service_icon.bind(on_release=self.open_schedule_detail_view)
+            if i['security']:
+                service_icon.bind(
+                    on_release=lambda service_icon,*args:self.add_widget(
+                        PinLock(
+                            partial(self.open_schedule_detail_view,service_icon),
+                                secondary_pin=service_icon.data['vendor_pin'])))
+            else:
+                service_icon.bind(on_release=self.open_schedule_detail_view)
             layout.add_widget(service_icon,load=True)
         if w['add_service_icon'] not in layout.sub_children:
             asi=w['add_service_icon']
@@ -4917,6 +4927,7 @@ class ControlGrid(Screen):
         data['service_date']=str(datetime.now())
         self.save_service_details(data)
         self.widgets['view_modal_layout'].animate_success_clear()
+        App.get_running_app().notifications.toast('[size=20]Schedule Updated')
 
     def view_countdown_update(self,label,data,*args):
         sd=datetime.fromisoformat(data['service_date'])
