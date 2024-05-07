@@ -78,8 +78,18 @@ def format_message(data:dict,level:int,uuid:str,*args):
 def save_message(msg,*args):
     with open('logs/configurations/pushed_messages.json','r+') as data_base:
         data=json.load(data_base)
+        if msg['uuid'] in data:
+            return
         msg['timestamp']=str(datetime.now())
         data[msg['uuid']]=msg
+        data_base.seek(0)
+        json.dump(data, data_base, indent=4, skipkeys=True)
+        data_base.truncate()
+
+def remove_message(uuid,*args):
+    with open('logs/configurations/pushed_messages.json','r+') as data_base:
+        data=json.load(data_base)
+        del data[uuid]
         data_base.seek(0)
         json.dump(data, data_base, indent=4, skipkeys=True)
         data_base.truncate()
@@ -111,5 +121,3 @@ def update(*args):
     for k,i in data['0']:
         msg=format_message(data['0'][k],3,k)
         save_message(msg)
-
-update()
