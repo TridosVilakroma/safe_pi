@@ -361,7 +361,7 @@ messages=MessageHandler()
 #     "title":"title",
 #     "body":"body",
 #     "card":"card",
-#     "gravity":"gravity",
+#     "gravity":1,
 #     "lifetime":"5"}
 
 # messages.push(test_data)
