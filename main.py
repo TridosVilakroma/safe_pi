@@ -4478,10 +4478,12 @@ class ControlGrid(Screen):
                 f.seek(0)
                 json.dump(loaded_data, f, indent=4)
                 f.truncate()
+                App.get_running_app().notifications.toast('[size=20]Schedule Saved')
         except Exception as e:
             logger.exception(e)
             print(Exception)
             print('e: ',e)
+            App.get_running_app().notifications.toast('[size=20]Schedule Failed to Saved','error')
 
     def load_service_details(self,*args):
         try:
@@ -4638,8 +4640,11 @@ class ControlGrid(Screen):
             color=palette('secondary'),
             size_hint =(.25, .075),
             pos_hint = {'right':.95, 'center_y':.875},
-            markup=True,
-            text='[size=24]'+str(datetime.fromisoformat(data['service_date']).date().strftime('%b %d, %Y')))
+            markup=True)
+        if data['service_date']:
+            view_service_date.text='[size=24]'+str(datetime.fromisoformat(data['service_date']).date().strftime('%b %d, %Y'))
+        else:
+            view_service_date.text='[size=24]Service Pending'
 
         view_service_time_label=MinimumBoundingLabel(
             text=current_language['view_service_time_label'],
@@ -4651,8 +4656,11 @@ class ControlGrid(Screen):
             color=palette('secondary'),
             size_hint =(.25, .075),
             pos_hint = {'right':.95, 'center_y':.825},
-            markup=True,
-            text='[size=24]'+str(datetime.fromisoformat(data['service_date']).replace(microsecond=0).strftime('%I:%M %p')))
+            markup=True)
+        if data['service_date']:
+            view_service_time.text='[size=24]'+str(datetime.fromisoformat(data['service_date']).replace(microsecond=0).strftime('%I:%M %p'))
+        else:
+            view_service_time.text='[size=24]Service Pending'
 
         view_service_creation_date_label=MinimumBoundingLabel(
             text=current_language['view_service_creation_date_label'],
@@ -4930,6 +4938,10 @@ class ControlGrid(Screen):
         App.get_running_app().notifications.toast('[size=20]Schedule Updated')
 
     def view_countdown_update(self,label,data,*args):
+        if not data['service_date']:
+            label.text='[size=24]Due Now'
+            label.bg_color=palette('highlight',.95)
+            return
         sd=datetime.fromisoformat(data['service_date'])
         ci=timedelta(int(data['current_interval']))
         due_date=sd+ci
