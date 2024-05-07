@@ -4576,6 +4576,14 @@ class ControlGrid(Screen):
             proxied=layout,
             size_hint_y=3)
 
+        for i in range(20):
+            _i_offset_=.05*i
+            l=LabelColor(
+            size_hint =(1, .075),
+            pos_hint = {'center_y':.975-_i_offset_},
+            bg_color=palette('neutral',.25) if i%2== 0 else palette('base',.25))
+            view_left_scroll_layout.add_widget(l)
+
         view_countdown_label=MinimumBoundingLabel(
             text=current_language['view_countdown_label'],
             markup=True,
