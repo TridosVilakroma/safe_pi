@@ -19,7 +19,7 @@ recurrence:    length of Interval
 '''
 
 
-import configparser,os,json,logging
+import configparser,os,json,logging,traceback
 from datetime import date,datetime,timedelta
 from dataclasses import dataclass,field
 
@@ -283,6 +283,8 @@ Press the restart button to continue.''',
                 i['card'],
                 i['gravity'],
                 0)
+            msg.seen=i.get("seen",False)
+            msg.uuid=i.get("uuid",'')
             msg.lifetime=i['lifetime']
             msg_list.append(msg)
         return msg_list
@@ -339,6 +341,17 @@ Press the restart button to continue.''',
             data_base.seek(0)
             json.dump(data, data_base, indent=4, skipkeys=True)
             data_base.truncate()
+
+    def save_pushed_seen(self,uuid,*args):
+        try:
+            with open(pushed_messages_path,'r+') as data_base:
+                data=json.load(data_base)
+                data[uuid]["seen"]=True
+                data_base.seek(0)
+                json.dump(data, data_base, indent=4, skipkeys=True)
+                data_base.truncate()
+        except:
+            traceback.print_exc()
 
     def get_gravity(self,item):
         return item.gravity
