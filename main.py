@@ -1303,7 +1303,7 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
         anim.start(self)
 
     def opaque(self,*args):
-        anim=Animation(alpha_value=.85,d=self.anim_d)
+        anim=Animation(alpha_value=.98,d=self.anim_d)
         anim.start(self)
 
     def unopaque(self,*args):
@@ -1311,7 +1311,7 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
         anim.start(self)
 
     def darken(self,*args):
-        anim=Animation(bg_color=[0,0,0,.85],d=self.anim_d)
+        anim=Animation(bg_color=[0,0,0,.98],d=self.anim_d)
         anim.start(self)
 
     def lighten(self,*args):
@@ -1408,6 +1408,9 @@ class Messenger(ButtonBehavior,FloatLayout,LabelColor):
     def load_selected_msg(self,message,*args):
         self.filter_badges()
         message.seen=True
+        if hasattr(message,"uuid"):
+            if message.uuid:
+                messages.save_pushed_seen(message.uuid)
         try:
             self.remove_widget(self.widgets['selected_msg_title'])
             self.remove_widget(self.widgets['selected_msg_body'])
