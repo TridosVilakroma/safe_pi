@@ -96,8 +96,21 @@ def remove_message(uuid,*args):
 
 #################### notificatons ####################
 
-def add_icon_badge(data,*args):
-    pass
+_schedule_layout=None #schedule_box_layout
+NB=None #NotificationBadge
+def add_icon_badge(*args):
+    for i in _schedule_layout.sub_children:
+        if not hasattr(i,'data'):
+            continue
+        if 'unseen_notes' in i.data:
+            if i.data['unseen_notes']:
+                if hasattr(i,'widgets'):
+                    if 'notification_badge' in i.widgets:
+                        continue
+                i.add_widget(NB(rel_pos=(.725,.725),rel_size=(.265,.265)))
+            elif hasattr(i,'widgets'):
+                if 'notification_badge' in i.widgets:
+                    i.widgets['notification_badge'].clear()
 
 def remove_icon_badge(data,*args):
     pass
@@ -121,3 +134,4 @@ def update(*args):
     for k,i in data['0']:
         msg=format_message(data['0'][k],3,k)
         save_message(msg)
+    add_icon_badge()

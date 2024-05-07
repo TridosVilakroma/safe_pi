@@ -3343,19 +3343,24 @@ class ScheduleCreationLayout(ModalDenseRoundedColorLayout):
         if not _notes:
             _notes="Schedule Created"
 
+        _now=datetime.now()
+
         service_details={
             "title"              :  _strip(self.service_data['title']),
             "icon"               :  _strip(w['schedule_details_icon_input'].source),
             "increment"          :  _increment,
             "current_interval"   :  _interval,
-            "creation_date"      :  datetime.now().isoformat(),
+            "creation_date"      :  _now.isoformat(),
             "expiration"         :  _expiration,
             "service_date"       :  _service_date,
             "security"           :  _security,
             "vendor_name"        :  _strip(w['schedule_details_vendor_name_input'].text),
             "vendor_pin"         :  _strip(w['schedule_details_custom_pin_input'].password),
-            "notes"              :  {str(datetime.now()):_notes}
+            "notes"              :  {str(_now):_notes},
+            "unseen_notes"       :  []
             }
+        if _notes !="Schedule Created":
+            service_details['unseen_notes'].append(str(_now))
 
         App.get_running_app().context_screen.get_screen('main').save_service_details(service_details)
         App.get_running_app().context_screen.get_screen('main').load_service_details()
@@ -3702,6 +3707,7 @@ class ServicesIconButton(IconButton):
         super(ServicesIconButton,self).__init__(**kwargs)
         self.data=data
         self.pos_hint={'center_x':.5,'center_y':.65}
+        self.widgets={}
 
     def on_state(self,button,state,*args):
         if state=='down':
@@ -3789,11 +3795,12 @@ class ProxyFloatLayout(FloatLayout):
                 elif key == 'center_y':
                     c.center_y = y + value * sh
 
-class ScrollableLabel(Label):
+class ScrollableLabel(ButtonBehavior,Label):
     bg_color=ColorProperty()
     def __init__(self,bg_color= palette('secondary',.95),**kwargs):
         super(ScrollableLabel,self).__init__(**kwargs)
         self.bg_color=bg_color
+        self.widgets={}
         self.size_hint=(1,None)
         self.bind(texture_size=lambda *args:self.setter('height')(self, self.texture_size[1]))
         self.bind(width=lambda *x: self.setter('text_size')(self, (self.width*.99, None)))
@@ -3815,6 +3822,9 @@ class ScrollableLabel(Label):
     def on_texture_size(self,*args):
         self.height=self.texture_size[1]
 
+    def on_release(self,*args):
+        if 'notification_badge' in self.widgets:
+            self.widgets['notification_badge'].clear()
 
 #<<<<<<<<<< SCREENS >>>>>>>>>>#
 
@@ -4084,6 +4094,8 @@ class ControlGrid(Screen):
             spacing=[22,40],
             pos_hint={'center_x':.5,'center_y':.45})
         self.widgets['schedule_box_layout']=schedule_box_layout
+        schedule.updater._schedule_layout=schedule_box_layout
+        schedule.updater.NB=NotificationBadge
 
         schedule_dock=DenseRoundedColorLayout(
             bg_color=palette('secondary',.95),
@@ -4785,6 +4797,12 @@ class ControlGrid(Screen):
                 bg_color=palette('secondary') if _index_color%2 else palette('light_tint'),
                 color=palette('light_tint') if _index_color%2 else palette('secondary')
             )
+            if k in data['unseen_notes']:
+                def _clear_unseen(uuid,*args):
+                    if uuid in data['unseen_notes']:
+                        data['unseen_notes'].remove(uuid)
+                n.add_widget(NotificationBadge(rel_pos=(-.08,.85),rel_size=(.2,.2)))
+                n.bind(on_release=lambda *args,uuid=k: _clear_unseen(uuid))
             view_right_scroll_layout.add_widget(n)
 
         view_right_add_note=RoundedButton(
@@ -4884,8 +4902,11 @@ class ControlGrid(Screen):
         note=ni.text
         if focused:
             return
+        uuid=str(datetime.now())
         if ni.text:
-            data['notes'][str(datetime.now())]=note
+            data['notes'][uuid]=note
+            if uuid not in data['unseen_notes']:
+                data['unseen_notes'].append(uuid)
         _index_color=0
         w['view_right_scroll_layout'].clear_widgets()
         for k,v in data['notes'].items():
