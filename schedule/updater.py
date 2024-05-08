@@ -128,10 +128,10 @@ def update(*args):
     for k,i in data['11_50'].items():
         msg=format_message(data['11_50'][k],1,k)
         save_message(msg)
-    for k,i in data['0_10']:
+    for k,i in data['0_10'].items():
         msg=format_message(data['0_10'][k],2,k)
         save_message(msg)
-    for k,i in data['0']:
+    for k,i in data['0'].items():
         msg=format_message(data['0'][k],3,k)
         save_message(msg)
     add_icon_badge()
