@@ -4494,7 +4494,6 @@ class ControlGrid(Screen):
                 f.seek(0)
                 json.dump(loaded_data, f, indent=4)
                 f.truncate()
-                App.get_running_app().notifications.toast('[size=20]Schedule Saved')
         except Exception as e:
             logger.exception(e)
             print(Exception)
@@ -4949,7 +4948,6 @@ class ControlGrid(Screen):
         self.ud['view_save_clock']=Clock.schedule_once(partial(self.view_update_save,data),3)
         self.ud['event_bar']=Clock.schedule_interval(self.view_save_progress_bar_update,.0001)
 
-
     def view_save_delete_clock(self,*args):
         w=self.widgets
         if w['view_saving_hint'] in self.children:
@@ -4965,6 +4963,7 @@ class ControlGrid(Screen):
         self.view_save_delete_clock()
         data['service_date']=str(datetime.now())
         self.widgets['view_modal_layout'].animate_success_clear()
+        App.get_running_app().notifications.toast('[size=20]Schedule Saved')
 
     def view_countdown_update(self,label,data,*args):
         if not data['service_date']:
@@ -14851,6 +14850,7 @@ def settings_setter(config):
     App.get_running_app().report_pending=report_status
 
     if config.getboolean('config','limited',fallback=False):
+        Clock.schedule_once(schedule.updater.update)
         Clock.schedule_interval(schedule.updater.update,10)
 
 def language_setter(*args,config=None):
