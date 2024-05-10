@@ -30,5 +30,13 @@
         "default_interval":6,
         "default_increment":"Month(s)",
         "default_locked":"No Pin Required"
+    },
+    "pest_control":{
+        "title":"Pest Control",
+        "icon":"media/schedule_icons/schedule_icon_pesticide.png",
+        "intervals":[3,6,12],
+        "default_interval":3,
+        "default_increment":"Month(s)",
+        "default_locked":"No Pin Required"
     }
 }
