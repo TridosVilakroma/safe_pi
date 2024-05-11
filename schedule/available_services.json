@@ -38,5 +38,13 @@
         "default_interval":3,
         "default_increment":"Month(s)",
         "default_locked":"No Pin Required"
+    },
+    "uniform_pickup":{
+        "title":"Uniform Cleaning",
+        "icon":"media/schedule_icons/schedule_icon_uniforms.png",
+        "intervals":[1,2,4],
+        "default_interval":2,
+        "default_increment":"Week(s)",
+        "default_locked":"No Pin Required"
     }
 }
