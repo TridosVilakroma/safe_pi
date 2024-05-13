@@ -3371,13 +3371,12 @@ class ScheduleCreationLayout(ModalDenseRoundedColorLayout):
         x=w['schedule_details_interval_input_left']
         xi=x.increment
         xt=general.strip_markup(x.text)
-        # print('xt: ',xt)
         if t == xi:
             return
         #traslation neccessary
         key=f"{xi}_{t}"
         d={
-            # "Day(s)_Day(s)"     :   1,
+            "Day(s)_Day(s)"     :   1,
             "Day(s)_Week(s)"    :  .143,
             "Day(s)_Month(s)"   :  .033,
             "Day(s)_Year(s)"    :  .00273972602,
@@ -3392,21 +3391,19 @@ class ScheduleCreationLayout(ModalDenseRoundedColorLayout):
             "Year(s)_Month(s)"  :   12
         }
 
-        # translated=float(xt)*d[key]
-        # t_rounded=round(translated)
+        translated=float(xt)*d[key]
+        t_rounded=round(translated)
 
-        # specific_rounding={
-        #     "Month(s)"    :  (13,12),
-        #     "Day(s)"      :  (360,365),
-        #     "Week(s)"     :  (48,52)
-        # }
-        # if xi in specific_rounding:
-        #     if specific_rounding[xi][0]==xt:
-        #         print('found', specific_rounding[xi])
-        #     else:
-        #         print(xt,specific_rounding[xi])
+        specific_rounding={
+            "Month(s)"    :  {13:12},
+            "Day(s)"      :  {360:365,364:365,182:180,28:30},
+            "Week(s)"     :  {48:52,13:12,24:26}
+        }
+        if t in specific_rounding.keys():
+            if t_rounded in specific_rounding[t].keys():
+                t_rounded=specific_rounding[t][t_rounded]
 
-        Clock.schedule_once(lambda *args:setattr(x,'text','[b][size=16]'+str(max(int(float(xt)*d[key]),1))))
+        Clock.schedule_once(lambda *args:setattr(x,'text','[b][size=16]'+str(max(t_rounded,1))))
         Clock.schedule_once(lambda *args:setattr(x,'increment',t))
         Clock.schedule_once(self.interval_input_left_value_setter)
 
