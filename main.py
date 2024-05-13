@@ -3371,11 +3371,13 @@ class ScheduleCreationLayout(ModalDenseRoundedColorLayout):
         x=w['schedule_details_interval_input_left']
         xi=x.increment
         xt=general.strip_markup(x.text)
+        # print('xt: ',xt)
         if t == xi:
             return
         #traslation neccessary
         key=f"{xi}_{t}"
         d={
+            # "Day(s)_Day(s)"     :   1,
             "Day(s)_Week(s)"    :  .143,
             "Day(s)_Month(s)"   :  .033,
             "Day(s)_Year(s)"    :  .00273972602,
@@ -3389,6 +3391,21 @@ class ScheduleCreationLayout(ModalDenseRoundedColorLayout):
             "Year(s)_Week(s)"   :   52,
             "Year(s)_Month(s)"  :   12
         }
+
+        # translated=float(xt)*d[key]
+        # t_rounded=round(translated)
+
+        # specific_rounding={
+        #     "Month(s)"    :  (13,12),
+        #     "Day(s)"      :  (360,365),
+        #     "Week(s)"     :  (48,52)
+        # }
+        # if xi in specific_rounding:
+        #     if specific_rounding[xi][0]==xt:
+        #         print('found', specific_rounding[xi])
+        #     else:
+        #         print(xt,specific_rounding[xi])
+
         Clock.schedule_once(lambda *args:setattr(x,'text','[b][size=16]'+str(max(int(float(xt)*d[key]),1))))
         Clock.schedule_once(lambda *args:setattr(x,'increment',t))
         Clock.schedule_once(self.interval_input_left_value_setter)
