@@ -4657,7 +4657,7 @@ class ControlGrid(Screen):
             size_hint =(.25, .075),
             pos_hint = {'right':.95, 'center_y':.925},
             markup=True,
-            text='[size=24]Every '+str(max(math.floor(int(data['current_interval'])*d[data['increment']]),1))+' '+data['increment']+'s')
+            text='[size=24]Every '+str(max(round(float(data['current_interval'])*d[data['increment']]),1))+' '+data['increment']+'s')
 
         view_service_date_label=MinimumBoundingLabel(
             text=current_language['view_service_date_label'],
