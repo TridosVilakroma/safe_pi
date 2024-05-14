@@ -1,5 +1,4 @@
 import pyrebase as Firebase
-import version.updater as UpdateService
 from requests.exceptions import HTTPError
 try:
     import firestore
