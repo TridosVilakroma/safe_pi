@@ -24,10 +24,10 @@ class ServerInterface:
         self.realtime_db = firebase.database()
         self.firestore_db=False
         self.user=self.user_template={
-            "email"   :  "",
-            "localId" :  "",
-            "idToken" :  "",
-            "localId" :  ""}
+            "email"        :  "",
+            "localId"      :  "",
+            "idToken"      :  "",
+            "refreshToken" :  ""}
 
 
     @property
@@ -60,7 +60,7 @@ class ServerInterface:
 
     def fire_store_init(self,*args):
         try:
-            self.firestore = firestore.firestore_init(self.user,self.config['projectId'])
+            self.firestore_db = firestore.firestore_init(self.user,self.config['projectId'])
         except Exception as e:
             print('firestore exception: ',e)
 
@@ -79,18 +79,4 @@ class ServerInterface:
         except HTTPError as e:
             print('firestore exception: ',e)
 
-    # def set_version_info(self,*args):
-    #     data=self.db.child('version').get().val()
-    #     UpdateService.available_version=data['version']
-    #     UpdateService.download_integity=data['checksum']
-    #     if UpdateService.available_version!=UpdateService.current_version:
-    #             UpdateService.update_available=1
-
-    # def get_version_info(self, response):
-    #     if 'version' in response['path']:
-    #         UpdateService.available_version=response['data']
-    #         if UpdateService.available_version!=UpdateService.current_version:
-    #             UpdateService.update_available=1
-    #     if 'checksum' in response['path']:
-    #         UpdateService.download_integity=response['data']
 
