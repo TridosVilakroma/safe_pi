@@ -36,6 +36,8 @@ UpdateService.current_version=VERSION
 from notifications.handler import Notifications as Notifications
 from utils.color_themes import palette
 import schedule.updater
+from server.service import Handler as ServerHandler
+ServerHandler=ServerHandler()
 
 Config.set('kivy', 'keyboard_mode', 'systemanddock')
 if os.name=='posix':
@@ -5044,6 +5046,9 @@ class ControlGrid(Screen):
             pos_hint = {'x':0, 'y':.4},)
         self.widgets['about_text']=about_text
         about_text.ref='about_overlay_text'
+        # about_text.text=ServerHandler.text_setter(about_text,'address')
+        # Clock.schedule_interval(ServerHandler.get_and_cache_address,1)
+        # ServerHandler.get_user_document()
 
         version_info=Label(text=current_language['version_info_white'],
                 markup=True,
@@ -10707,6 +10712,7 @@ class AccountScreen(Screen):
     def __init__(self, **kwargs):
         super(AccountScreen,self).__init__(**kwargs)
         self.cols = 2
+        self.ud={}
         self.widgets={}
         self.scheduled_funcs=[]
         bg_image = Image(source=background_image, allow_stretch=True, keep_ratio=False)
@@ -10885,12 +10891,12 @@ class AccountScreen(Screen):
         side_bar_connect.bind(animating=partial(general.stripargs,side_bar_connect.clear_widgets))
 
         side_bar_connect_title=Label(
-            text=current_language['side_bar_connect_title'],
+            text=current_language['side_bar_create_title'],
             markup=True,
             size_hint =(1, 1),
             pos_hint = {'center_x':.5, 'center_y':.5},)
         self.widgets['side_bar_connect_title']=side_bar_connect_title
-        side_bar_connect_title.ref='side_bar_connect_title'
+        side_bar_connect_title.ref='side_bar_create_title'
 
         side_bar_connect_seperator=Image(
             source=gray_seperator_line,
@@ -11051,8 +11057,6 @@ class AccountScreen(Screen):
         self.widgets['side_bar_connect_email_input']=side_bar_connect_email_input
         side_bar_connect_email_input.bind(focus=self.side_bar_connect_email_input_clear)
 
-
-
         side_bar_connect_password=MinimumBoundingLabel(
             text='[b][size=16]Password:',
             markup=True,
@@ -11155,6 +11159,37 @@ class AccountScreen(Screen):
             pos_hint = {'center_x':.5, 'center_y':.075})
         side_bar_unlink_expand_lines.center=side_bar_unlink_expand_button.center
         self.widgets['side_bar_unlink_expand_lines']=side_bar_unlink_expand_lines
+
+        side_bar_unlink_body=MinimumBoundingLabel(
+            text=current_language['side_bar_unlink_body'],
+            markup=True,
+            pos_hint = {'x':.05, 'center_y':.525},)
+        self.widgets['side_bar_unlink_body']=side_bar_unlink_body
+        side_bar_unlink_body.ref='side_bar_unlink_body'
+
+        side_bar_unlink_vertical_seperator=Image(
+            source=gray_seperator_line_vertical,
+            allow_stretch=True,
+            keep_ratio=False,
+            size_hint =(.0005, .4),
+            pos_hint = {'center_x':.5, 'center_y':.55})
+        self.widgets['side_bar_unlink_vertical_seperator']=side_bar_unlink_vertical_seperator
+
+        side_bar_unlink_confirm=RoundedButton(
+            text=current_language['side_bar_unlink_confirm'],
+            size_hint =(.4, .075),
+            pos_hint = {'center_x':.75, 'center_y':.55},
+            background_normal='',
+            background_color=palette('highlight',.9),
+            markup=True)
+        self.widgets['side_bar_unlink_confirm']=side_bar_unlink_confirm
+        side_bar_unlink_confirm.ref='side_bar_unlink_confirm'
+        side_bar_unlink_confirm.bind(on_press=partial(self.unlink_start_clock),on_touch_up=self.unlink_delete_clock)
+
+        unlink_progress=CircularProgressBar()
+        unlink_progress._widget_size=200
+        unlink_progress._progress_colour=palette('highlight',1)
+        self.widgets['unlink_progress']=unlink_progress
 
         side_bar_add=ExpandableRoundedColorLayout(
             size_hint =(.9, .15),
@@ -11655,7 +11690,10 @@ class AccountScreen(Screen):
                 w['side_bar_unlink_title'],
                 w['side_bar_unlink_seperator'],
                 w['side_bar_unlink_expand_button'],
-                w['side_bar_unlink_expand_lines']]
+                w['side_bar_unlink_expand_lines'],
+                w['side_bar_unlink_body'],
+                w['side_bar_unlink_vertical_seperator'],
+                w['side_bar_unlink_confirm']]
             for i in all_widgets:
                 side_bar_unlink.add_widget(i)
         elif not side_bar_unlink.expanded:
@@ -12040,22 +12078,6 @@ class AccountScreen(Screen):
             w['side_bar_add'].lock()
             w['side_bar_remove'].lock()
 
-        #check for presence of email
-        if w['information_email'].text:
-            w['side_bar_unlink'].disabled=False
-            w['side_bar_add'].disabled=False
-            w['side_bar_remove'].disabled=False
-            w['side_bar_unlink'].shape_color.rgba=palette('dark_shade',.9)
-            w['side_bar_add'].shape_color.rgba=palette('dark_shade',.9)
-            w['side_bar_remove'].shape_color.rgba=palette('dark_shade',.9)
-        else:
-            w['side_bar_unlink'].disabled=True
-            w['side_bar_add'].disabled=True
-            w['side_bar_remove'].disabled=True
-            w['side_bar_unlink'].shape_color.rgba=palette('secondary',.8)
-            w['side_bar_add'].   shape_color.rgba=palette('secondary',.8)
-            w['side_bar_remove'].shape_color.rgba=palette('secondary',.8)
-
     def generate_uid_qr(self,data,*args):
         qr=segno.make_qr(data)
         qr.save(
@@ -12090,19 +12112,35 @@ class AccountScreen(Screen):
             with open(preferences_path,'w') as configfile:
                 config.write(configfile)
 
-    def on_pre_enter(self, *args):
+    def unlink_progress_bar_update(self,dt,*args):
+        self.widgets['unlink_progress'].pos=self.widgets['side_bar_unlink_confirm'].last_touch.pos
+        if not self.widgets['unlink_progress'].parent:
+            self.add_widget(self.widgets['unlink_progress'])
+        if self.widgets['unlink_progress'].value >= 1000: # Checks to see if progress_bar.value has met 1000
+            return False # Returning False schedule is canceled and won't repeat
+        self.widgets['unlink_progress'].value += 1000/3*dt # Updates progress_bar's progress
+
+    def unlink_start_clock(self,data,*args):
+        self.ud['unlink_clock']=Clock.schedule_once(self.unlinking_func,3)
+        self.ud['event_bar']=Clock.schedule_interval(self.unlink_progress_bar_update,.0001)
+
+    def unlink_delete_clock(self,*args):
         w=self.widgets
-        self.unlocked=False
-        if App.get_running_app().config_.get('account','email',fallback=False):
-            w['information_email'].text=App.get_running_app().config_['account']['email']
-            w['information_password'].text=App.get_running_app().config_['account']['password']
-            w['side_bar_connect_title'].text=current_language['side_bar_connect_title']
-            w['side_bar_connect_title'].ref='side_bar_connect_title'
-        else:
-            w['side_bar_connect_title'].text=current_language['side_bar_create_title']
-            w['side_bar_connect_title'].ref='side_bar_create_title'
-        self.check_admin_mode()
-        return super().on_pre_enter(*args)
+        if 'unlink_clock' in self.ud:
+            Clock.unschedule(self.ud['unlink_clock'])
+        if 'event_bar' in self.ud:
+            Clock.unschedule(self.ud['event_bar'])
+            self.widgets['unlink_progress'].value=0
+            self.remove_widget(self.widgets['unlink_progress'])
+
+    def unlinking_func(self,*args):
+        #TODO
+        w=self.widgets
+        ServerHandler.unlink_account
+        App.get_running_app().notifications.toast(f'[size=20]Account Unlinked','info')
+        self.side_bar_unlink_expand_button_func()
+
+
 
     def auth_server(self,*args):
         self.clear_link_code()
@@ -12268,15 +12306,39 @@ class AccountScreen(Screen):
         w=self.widgets
         email=w['side_bar_connect_login_email_input'].text
         password=w['side_bar_connect_login_password_input'].text
-        response=server.authUser(email,password)
-        # App.get_running_app().notifications.toast(response['message'])
+        ServerHandler.log_in(email,password)
 
     def side_bar_connect_send_func(self,*args):
         w=self.widgets
-        email=w['side_bar_connect_email_input'].text
-        password=w['side_bar_connect_password_input'].text
-        self.auth_server_new_account(email,password)
-        server.send_verification_email()
+        email=w['side_bar_connect_email_input'].text.strip()
+        password=w['side_bar_connect_password_input'].text.strip()
+        ServerHandler.create_account(email,password)
+
+    def on_pre_enter(self, *args):
+        w=self.widgets
+        self.unlocked=False
+        if App.get_running_app().config_.get('account','email',fallback=False):
+            w['information_email'].text=App.get_running_app().config_['account']['email']
+            w['information_password'].text=App.get_running_app().config_['account']['password']
+            w['side_bar_connect'].disabled=True
+            w['side_bar_connect'].shape_color.rgba=palette('secondary',.8)
+            w['side_bar_unlink'].disabled=False
+            w['side_bar_add'].disabled=False
+            w['side_bar_remove'].disabled=False
+            w['side_bar_unlink'].shape_color.rgba=palette('dark_shade',.9)
+            w['side_bar_add'].shape_color.rgba=palette('dark_shade',.9)
+            w['side_bar_remove'].shape_color.rgba=palette('dark_shade',.9)
+        else:
+            w['side_bar_connect_title'].text=current_language['side_bar_create_title']
+            w['side_bar_connect_title'].ref='side_bar_create_title'
+            w['side_bar_unlink'].disabled=True
+            w['side_bar_add'].disabled=True
+            w['side_bar_remove'].disabled=True
+            w['side_bar_unlink'].shape_color.rgba=palette('secondary',.8)
+            w['side_bar_add'].   shape_color.rgba=palette('secondary',.8)
+            w['side_bar_remove'].shape_color.rgba=palette('secondary',.8)
+        self.check_admin_mode()
+        return super().on_pre_enter(*args)
 
 class NetworkScreen(Screen):
     def __init__(self, **kwargs):
@@ -14832,6 +14894,7 @@ class Hood_Control(App):
         Clock.schedule_once(partial(Window.add_widget,self.notifications))
         Clock.schedule_interval(self.notifications.update,.1)
         Clock.schedule_interval(logic_supervisor,10)
+        # Clock.schedule_interval(ServerHandler.update,2)
         ScreenSaver.start(timeout=(self.config_.getint('preferences','screensaver_timeout',fallback=10)*60))
         return self.context_screen
 
