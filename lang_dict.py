@@ -244,6 +244,17 @@ unlocks server access with several benefits[/b]
     Reduce downtime and increase uptime!''',
 'status_title' : "[size=20][color=#ffffff][b]Status",
 'side_bar_unlink_title' : "[size=20][color=#ffffff][b]Unlink Account",
+'side_bar_unlink_body' : '''[size=16][color=#ffffff][b]Are you sure you want to unlink your Hood Control account?
+
+This will remove your device from the account, and
+prevent diagnostics, updates, and remote access.
+Schedules will continue to run on your device,
+however they will not be synced to the account.
+
+You can re-link your account at any time
+by singing in with your account credentials
+''',
+'side_bar_unlink_confirm' : "[size=20][color=#ffffff][b]Hold To Unlink Account",
 'side_bar_connect_title' : "[size=20][color=#ffffff][b]Connect Account",
 'side_bar_create_title' : "[size=20][color=#ffffff][b]Create Account",
 'side_bar_add_title' : "[size=20][color=#ffffff][b]Add Device",
@@ -259,7 +270,7 @@ unlocks server access with several benefits[/b]
 
 [b]4[/b]: Select "Add Account" within the App.
     Follow the on-screen prompts to either scan
-    the QR code or enter the Link Code manually.
+    the QR code or enter the Link Code manually.s
     You may need to grant camera access to scan the QR code.
 
 [b]5[/b]: A prompt will appear on this screen.
