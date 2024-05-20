@@ -51,24 +51,28 @@ class ServerInterface:
             self.user = self.auth.sign_in_with_email_and_password(email, password)
         except HTTPError as e:
             print('httperror: ',e)
+            return e
 
     def register_user(self, email: str, password: str, *args):
         try:
             self.user = self.auth.create_user_with_email_and_password(email, password)
         except HTTPError as e:
             print('httperror: ',e)
+            return e
 
     def fire_store_init(self,*args):
         try:
             self.firestore_db = firestore.firestore_init(self.user,self.config['projectId'])
-        except Exception as e:
+        except HTTPError as e:
             print('firestore exception: ',e)
+            return e
 
     def send_verification_email(self):
         try:
             self.auth.send_email_verification(self.token)
         except HTTPError as e:
-            print('firestore exception: ',e)
+            print('httperror: ',e)
+            return e
 
     def refresh_token(self,*args):
         try:
@@ -77,6 +81,12 @@ class ServerInterface:
             self.user["idToken"]=refresh_response["idToken"]
             self.user["refreshToken"]=refresh_response["refreshToken"]
         except HTTPError as e:
-            print('firestore exception: ',e)
+            print('httperror: ',e)
+            return e
 
-
+    def get_user_document(self):
+        try:
+            return self.firestore_db.collection("shared_data").document(self.user["localId"]).get().to_dict()
+        except HTTPError as e:
+            print('httperror: ',e)
+            return e
