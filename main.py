@@ -11675,9 +11675,12 @@ class AccountScreen(Screen):
 
     def side_bar_unlink_populate(self,*args):
         sbu_parent=self.widgets['side_bar_box']
-        darken=Animation(rgba=palette('dark_shade',1))
-        lighten=Animation(rgba=palette('dark_shade',.85))
         side_bar_unlink=self.widgets['side_bar_unlink']
+        darken=Animation(rgba=palette('dark_shade',1))
+        if side_bar_unlink.disabled:
+            lighten=Animation(rgba=palette('secondary',.9))
+        else:
+            lighten=Animation(rgba=palette('dark_shade',.8))
         side_bar_unlink.clear_widgets()
         if side_bar_unlink.expanded:
             self.remove_widget(sbu_parent)
@@ -12134,11 +12137,18 @@ class AccountScreen(Screen):
             self.remove_widget(self.widgets['unlink_progress'])
 
     def unlinking_func(self,*args):
-        #TODO
         w=self.widgets
-        ServerHandler.unlink_account
-        App.get_running_app().notifications.toast(f'[size=20]Account Unlinked','info')
+        app=App.get_running_app()
+        config=app.config_
+        config.set('account','email','')
+        config.set('account','password','')
+        with open(preferences_path,'w') as configfile:
+            config.write(configfile)
+        ServerHandler.unlink_account()
+        app.notifications.toast(f'[size=20]Account Unlinked','info')
+        self.unlink_delete_clock()
         self.side_bar_unlink_expand_button_func()
+        self.on_pre_enter()
 
 
 
@@ -12317,26 +12327,31 @@ class AccountScreen(Screen):
     def on_pre_enter(self, *args):
         w=self.widgets
         self.unlocked=False
-        if App.get_running_app().config_.get('account','email',fallback=False):
-            w['information_email'].text=App.get_running_app().config_['account']['email']
-            w['information_password'].text=App.get_running_app().config_['account']['password']
+        config=App.get_running_app().config_
+        if config.get('account','email',fallback=False):
+            w['information_email'].text=config['account']['email']
+            w['information_password'].text=config['account']['password']
             w['side_bar_connect'].disabled=True
-            w['side_bar_connect'].shape_color.rgba=palette('secondary',.8)
             w['side_bar_unlink'].disabled=False
             w['side_bar_add'].disabled=False
             w['side_bar_remove'].disabled=False
+            w['side_bar_connect'].shape_color.rgba=palette('secondary',.8)
             w['side_bar_unlink'].shape_color.rgba=palette('dark_shade',.9)
             w['side_bar_add'].shape_color.rgba=palette('dark_shade',.9)
             w['side_bar_remove'].shape_color.rgba=palette('dark_shade',.9)
         else:
+            w['information_email'].text=''
+            w['information_password'].text=''
             w['side_bar_connect_title'].text=current_language['side_bar_create_title']
             w['side_bar_connect_title'].ref='side_bar_create_title'
+            w['side_bar_connect'].disabled=False
             w['side_bar_unlink'].disabled=True
             w['side_bar_add'].disabled=True
             w['side_bar_remove'].disabled=True
-            w['side_bar_unlink'].shape_color.rgba=palette('secondary',.8)
-            w['side_bar_add'].   shape_color.rgba=palette('secondary',.8)
-            w['side_bar_remove'].shape_color.rgba=palette('secondary',.8)
+            w['side_bar_connect'].shape_color.rgba=palette('dark_shade',.8)
+            w['side_bar_unlink'].shape_color.rgba=palette('secondary',.9)
+            w['side_bar_add'].   shape_color.rgba=palette('secondary',.9)
+            w['side_bar_remove'].shape_color.rgba=palette('secondary',.9)
         self.check_admin_mode()
         return super().on_pre_enter(*args)
 
@@ -14975,6 +14990,6 @@ finally:
     logger.debug("devices saved")
     logic.clean_exit()
     logger.debug("pins set as inputs")
-    server.clean_exit()
+    # server.clean_exit()
     logger.debug("streams closed")
     quit()
