@@ -80,7 +80,7 @@ class Observable:
 
 class Handler:
     def __init__(self) -> None:
-        self._config=(configparser.ConfigParser(),time.time())
+        self._config=[configparser.ConfigParser(),time.time()]
         self._config[0].read(preferences_path)
         self.interface=interface.ServerInterface()
         self.cache=ServerCache
@@ -92,8 +92,12 @@ class Handler:
         self.monitored_collections={}
         self.errors={
             "auth":False,
-
         }
+        self.status_datums=[
+            'Status',
+            'online',
+            'account',
+            'devices']
 
         # self.interface.sign_in_user('calebstock91@gmail.com','test_password')
         # self.interface.fire_store_init()
@@ -199,7 +203,11 @@ class Handler:
     ##########     gui     ##########
 
     @mainthread
-    def _set_text(self,widget,text:str='',*args):
+    def _set_text(self,widget,cached_val,*args):
+        if cached_val:
+            text=cached_val[0]
+        else:
+            text=''
         widget().text=str(text)
 
     def text_setter(self,widget,cache_key:str,*args):
@@ -234,6 +242,29 @@ class Handler:
 
 
     ##########     utility     ##########
+
+    def resolve_statuses(self,*args):
+
+        #status
+        if self.errors['auth']:
+            self.cache_value('Status','Status: [color=ff0000]Offline')
+        else:
+            self.cache_value('Status','Status: [color=00ff00]Online')
+
+        #online status
+        if self.errors['auth']:
+            self.cache_value('online','Online: [color=ff0000]Disconnected')
+        else:
+            self.cache_value('online','Online: [color=00ff00]Connected')
+
+        #account status
+        if self.errors['auth']:
+            self.cache_value('account','Account: [color=ff0000]Errors')
+        else:
+            self.cache_value('account','Account: [color=00ff00]Success')
+
+        #device status
+        self.cache_value('devices','Connected Devices: [color=00ff00]0')
 
     def verify_server_connection(self,*args):
         if not self.auto_verify:
@@ -477,6 +508,7 @@ class Handler:
     def update(self,*args):
         self.verify_server_connection()
         self.update_tasks()
+        self.resolve_statuses()
 
 
 
