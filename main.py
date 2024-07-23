@@ -10719,6 +10719,7 @@ class AccountScreen(Screen):
         self.unlocked=False
         self._link_code=''
         self.generate_link_timer=time.time()
+        self._refresh_status=Thread()
 
         back=RoundedButton(
             text=current_language['settings_back'],
@@ -10856,17 +10857,19 @@ class AccountScreen(Screen):
             spacing=10,
             size_hint_y=None,
             padding=5)
+        self.widgets['status_scroll_layout']=status_scroll_layout
 
         # Make sure the height is such that there is something to scroll.
         status_scroll_layout.bind(minimum_height=status_scroll_layout.setter('height'))
 
-        for i in range(20):#status_request:
+        for i in ServerHandler.status_datums:#status_request:
             btn = RoundedButton(
                 background_normal='',
                 background_color=palette('secondary',1),
-                text=str(i),
                 size_hint_y=None,
-                height=40)
+                height=40,
+                markup=True)
+            btn.text=ServerHandler.text_setter(btn,str(i))
             # btn.bind(on_release=partial(self.load_selected_msg,i))
             status_scroll_layout.add_widget(btn)
 
@@ -12324,7 +12327,41 @@ class AccountScreen(Screen):
         password=w['side_bar_connect_password_input'].text.strip()
         ServerHandler.create_account(email,password)
 
+    def refresh_status_data(self,*args):
+        return
+        if self._refresh_status.is_alive():
+            return
+
+        @mainthread
+        def set_labels(ssid,status,signal):
+            self.widgets['information_ssid'].text='[b][size=16]'+ssid
+            self.widgets['information_status'].text='[b][size=16]'+status
+            self.widgets['information_signal'].text='[b][size=16]'+signal
+
+        def refreshing():
+            entry_len=30
+            ssid=f'   SSID: {network.get_ssid()}'
+            status=f'Status: {network.get_status()}'
+            if network.is_connected():
+                signal=f'Signal: {network.get_signal()}/100'
+            else:signal=f'Signal: {network.get_signal()}'
+            while len(ssid)<entry_len:
+                ssid=ssid[:8]+' '+ssid[8:]
+            if len(ssid)>entry_len:
+                ssid=ssid[:28]+'...'
+            while len(status)<entry_len:
+                status=status[:8]+' '+status[8:]
+            while len(signal)<entry_len:
+                signal=signal[:8]+' '+signal[8:]
+
+            set_labels(ssid,status,signal)
+
+        self._refresh_ap=Thread(target=refreshing,daemon=True)
+        self._refresh_ap.start()
+
     def on_pre_enter(self, *args):
+        self.status_event=Clock.schedule_interval(self.refresh_status_data,5)
+        Clock.schedule_once(self.refresh_status_data)
         w=self.widgets
         self.unlocked=False
         config=App.get_running_app().config_
@@ -12354,6 +12391,11 @@ class AccountScreen(Screen):
             w['side_bar_remove'].shape_color.rgba=palette('secondary',.9)
         self.check_admin_mode()
         return super().on_pre_enter(*args)
+
+    def on_leave(self, *args):
+        if hasattr(self,'status_event'):
+            self.status_event.cancel()
+        return super().on_leave(*args)
 
 class NetworkScreen(Screen):
     def __init__(self, **kwargs):
