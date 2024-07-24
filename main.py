@@ -9627,7 +9627,8 @@ class DocumentScreen(Screen):
                             _file=f"[b]File:[/b] {entry['file']}"
                             _func=f"[b]Function:[/b] {entry['function']}"
                             _line=f"[b]Line:[/b] {entry['line']}"
-                            entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n    {_text}  \n\n    {general.pad_str(_file,40)}{_line} \n    {_func}  \n"
+                            _suppressed=entry.get('suppressed',False)
+                            entry_text=f"\n    [size=24][color=#000000]{_time}  {(' '*25)+'Suppressed '+str(_suppressed)+' similar logs' if _suppressed else ''}\n\n    {_text}  \n\n    {general.pad_str(_file,40)}{_line} \n    {_func}  \n"
                             color=palette('dark_shade',.5) if index%2==0 else (0,0,0,.25)
                             _data.append({'text':entry_text,'color':color})
                         data_chunker(_data)
@@ -9763,7 +9764,8 @@ class DocumentScreen(Screen):
                                 _text=f"[i][size=26]{entry['text']}[/size][/i]"
                                 _file=f"[b]File:[/b] {entry['file']}"
                                 _func=f"[b]Function:[/b] {entry['function']}"
-                                entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n\n    {_text}  \n\n\n    {_file} \n"
+                                _suppressed=entry.get('suppressed',False)
+                                entry_text=f"\n    [size=24][color=#000000]{_time}  {(' '*25)+'Suppressed '+str(_suppressed)+' similar logs' if _suppressed else ''}\n\n\n    {_text}  \n\n\n    {_file} \n"
                                 color=palette('dark_shade',.5) if index%2==0 else (0,0,0,.25)
                                 _data.append({'text':entry_text,'color':color})
                         data_chunker(_data)
@@ -9906,7 +9908,8 @@ class DocumentScreen(Screen):
                                 _line=f"[b]Line:[/b] {entry['line']}"
                                 _level=f"[b]Level:[/b] {entry['level']}"
                                 _exc=bool('exc_info' in entry)
-                                entry_text=f"\n    [size=24][color=#000000]{_time}  \n\n    {_text}  \n\n    {general.pad_str(_file,49)}{_line} \n    {general.pad_str(_func,47)}{_level}  \n"
+                                _suppressed=entry.get('suppressed',False)
+                                entry_text=f"\n    [size=24][color=#000000]{_time}  {(' '*25)+'Suppressed '+str(_suppressed)+' similar logs' if _suppressed else ''}\n\n    {_text}  \n\n    {general.pad_str(_file,49)}{_line} \n    {general.pad_str(_func,47)}{_level}  \n"
                                 color=palette('dark_shade',.5) if index%2==0 else (0,0,0,.25)
                                 _data.append({'text':entry_text,'color':color})
                                 if _exc:
