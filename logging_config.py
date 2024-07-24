@@ -1,4 +1,4 @@
-import logging,json,os
+import logging,json,os,time
 from logging.handlers import RotatingFileHandler
 
 #build log dir-tree if necessary
@@ -57,6 +57,10 @@ class JsonFormatter(logging.Formatter):
         if record.stack_info:
             message_dict["stack_info"] = self.formatStack(record.stack_info)
 
+        if hasattr(record, 'suppressed'):
+            if record.suppressed>0:
+                message_dict["suppressed"] = record.suppressed
+
         return json.dumps(message_dict, default=str)
 
 class LevelFilter(logging.Filter):
@@ -66,6 +70,29 @@ class LevelFilter(logging.Filter):
         self.filter_level=filter_level
     def filter(self, record):
         return record.levelno == self.filter_level
+
+class DuplicateFilter(logging.Filter):
+    '''Custom filter to reduce log spam'''
+
+    def __init__(self, name: str = "") -> None:
+        super().__init__(name)
+        self.log_registry = {}
+        self.log_interval = 5
+
+    def filter(self, record):
+        current_time = time.time()
+        current_log = record.msg
+        last_logged_time = self.log_registry.get(current_log, {}).get('current_time', None)
+        times_suppressed = self.log_registry.get(current_log, {}).get('times_suppressed', 0)
+
+        if last_logged_time is not None:
+            if current_time - last_logged_time < self.log_interval:
+                self.log_registry[current_log]['times_suppressed']+=1
+                return False
+
+        self.log_registry[current_log] = {'current_time':current_time,'times_suppressed':0}
+        record.suppressed=times_suppressed
+        return True
 
 debug_handler=RotatingFileHandler('logs/log_files/debug/debug.log', maxBytes=2*1024*1024, backupCount=3)
 debug_handler.setLevel(logging.DEBUG)
@@ -81,6 +108,8 @@ debug_formatter=JsonFormatter(
 debug_handler.setFormatter(debug_formatter)
 debug_filter=LevelFilter(logging.DEBUG)
 debug_handler.addFilter(debug_filter)
+debug_duplicate_filter=DuplicateFilter()
+debug_handler.addFilter(debug_duplicate_filter)
 
 info_handler=RotatingFileHandler('logs/log_files/info/info.log', maxBytes=2*1024*1024, backupCount=3)
 info_handler.setLevel(logging.INFO)
@@ -92,6 +121,8 @@ info_formatter=JsonFormatter(
 info_handler.setFormatter(info_formatter)
 info_filter=LevelFilter(logging.INFO)
 info_handler.addFilter(info_filter)
+info_duplicate_filter=DuplicateFilter()
+info_handler.addFilter(info_duplicate_filter)
 
 error_handler=RotatingFileHandler('logs/log_files/errors/error.log', maxBytes=2*1024*1024, backupCount=3)
 error_handler.setLevel(logging.WARNING)#get all levels >= warning
@@ -106,6 +137,8 @@ error_formatter=JsonFormatter(
     "thread": "threadName",
     "threadID": "thread"})
 error_handler.setFormatter(error_formatter)
+error_duplicate_filter=DuplicateFilter()
+error_handler.addFilter(error_duplicate_filter)
 
 logger=logging.getLogger('logger')
 logger.setLevel(logging.DEBUG)
