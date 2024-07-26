@@ -7999,6 +7999,63 @@ class PreferenceScreen(Screen):
             _swap_color(schedule_mode_on)
 
 
+        duplicate_log_filter_title=Label(
+            text=current_language['duplicate_log_filter_title'],
+            pos_hint = {'center_x':.5, 'center_y':.3},
+            markup=True)
+        self.widgets['duplicate_log_filter_title']=duplicate_log_filter_title
+        duplicate_log_filter_title.ref='duplicate_log_filter_title'
+
+        def dlfv_translate(value):
+            val_dict={
+                0:  'Off',
+                1:  '30 Seconds',
+                2:  '1 Minute',
+                3:  '10 Minutes',
+                4:  '30 Minutes',
+                5:  '1 Hour',
+                6:  '8 Hours',
+                7:  '12 Hours',
+                8:  '1 Day',
+                9:  '1 Week',
+                10: '1 Month'}
+            return val_dict[int(value)]
+
+        duplicate_log_filter_value=Label(
+            text='[size=30][b][color=#ffffff]'+dlfv_translate(config.get('preferences','duplicate_log_filter',fallback='5')),
+            pos_hint = {'center_x':.5, 'center_y':.245},
+            markup=True)
+        self.widgets['duplicate_log_filter_value']=duplicate_log_filter_value
+
+        duplicate_log_filter_setter=Slider(
+            size_hint =(.4, .125),
+            pos_hint = {'center_x':.5, 'y':.12},
+            cursor_image=slider_handle_yellow,
+            sensitivity='handle',
+            min=0,
+            max=10,
+            step=1,
+            value=config.getint('preferences','duplicate_log_filter',fallback=5))
+        self.widgets['duplicate_log_filter_setter']=duplicate_log_filter_setter
+
+
+
+        def duplicate_log_filter_setter_display_func(slider,touch,*args):
+            if touch.grab_current != slider:
+                return
+            duplicate_log_filter_value.text='[size=30][b][color=#ffffff]'+dlfv_translate(slider.value)
+        duplicate_log_filter_setter.bind(on_touch_move=duplicate_log_filter_setter_display_func)
+
+        def duplicate_log_filter_setter_save_func(slider,touch,*args):
+            if touch.grab_current != slider:
+                return
+            config.set('preferences','duplicate_log_filter',str(int(slider.value)))
+            with open(preferences_path,'w') as configfile:
+                config.write(configfile)
+            logging_config.DuplicateFilter.log_interval=slider.value
+            logger.debug(f'duplicate log filter set to: {dlfv_translate(slider.value)}')
+        duplicate_log_filter_setter.bind(on_touch_up=duplicate_log_filter_setter_save_func)
+
         # def on_dismiss(self,*args):
         #     overlay_menu.canvas.before.remove_group("msg")
 
@@ -8009,6 +8066,9 @@ class PreferenceScreen(Screen):
         self.widgets['overlay_layout'].add_widget(schedule_mode_title)
         self.widgets['overlay_layout'].add_widget(schedule_mode_on)
         self.widgets['overlay_layout'].add_widget(schedule_mode_off)
+        self.widgets['overlay_layout'].add_widget(duplicate_log_filter_title)
+        self.widgets['overlay_layout'].add_widget(duplicate_log_filter_value)
+        self.widgets['overlay_layout'].add_widget(duplicate_log_filter_setter)
         overlay_menu.open()
 
         def schedule_mode_on_func(button):
