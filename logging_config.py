@@ -1,5 +1,12 @@
-import logging,json,os,time
+import logging,json,os,time,configparser
 from logging.handlers import RotatingFileHandler
+
+if os.name == 'nt':
+    preferences_path='logs/configurations/hood_control.ini'
+if os.name == 'posix':
+    preferences_path='/home/pi/Pi-ro-safe/logs/configurations/hood_control.ini'
+config = configparser.ConfigParser()
+config.read(preferences_path)
 
 #build log dir-tree if necessary
 os.makedirs("logs/log_files/debug", exist_ok=True)
@@ -74,10 +81,27 @@ class LevelFilter(logging.Filter):
 class DuplicateFilter(logging.Filter):
     '''Custom filter to reduce log spam'''
 
+    from kivy.app import App
+    log_interval = config.getint('preferences','duplicate_log_filter',fallback=5)
+
+    interval_scale={
+        0:  0,       #off
+        1:  30,      #30 seconds
+        2:  60,      #1 minute
+        3:  600,     #10 minutes
+        4:  1800,    #30 minutes
+        5:  3600,    #1 hour
+        6:  28800,   #8 hours
+        7:  43200,   #12 hours
+        8:  86400,   #1 day
+        9:  604800,  #1 week
+        10: 2592000  #1 month
+    }
+
+
     def __init__(self, name: str = "") -> None:
         super().__init__(name)
         self.log_registry = {}
-        self.log_interval = 5
 
     def filter(self, record):
         current_time = time.time()
@@ -86,7 +110,7 @@ class DuplicateFilter(logging.Filter):
         times_suppressed = self.log_registry.get(current_log, {}).get('times_suppressed', 0)
 
         if last_logged_time is not None:
-            if current_time - last_logged_time < self.log_interval:
+            if current_time - last_logged_time < self.interval_scale[self.log_interval]:
                 self.log_registry[current_log]['times_suppressed']+=1
                 return False
 
