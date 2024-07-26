@@ -86,7 +86,7 @@ class Message:
         self.card=card
         self.gravity=gravity
         self.recurrence=recurrence
-        self.seen=False
+        self.seen=False if name!='Guide' else True
 
 class InteractiveMessage:
     def __init__(self,name,title,body,card,gravity,callbacks) -> 'InteractiveMessage':
