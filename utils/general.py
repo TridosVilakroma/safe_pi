@@ -1,4 +1,4 @@
-import os,re,logging
+import os,re,logging,shutil,tempfile
 
 logger=logging.getLogger('logger')
 
@@ -204,3 +204,25 @@ def strip_markup(text):
             processed_text+=item
         return processed_text.strip()
 
+def write_config(config, file_path):
+    temp_file = None
+    try:
+        # Create a temporary file
+        temp_file = tempfile.NamedTemporaryFile('w', delete=False, dir=os.path.dirname(file_path))
+        temp_file_path = temp_file.name
+
+        # Write configuration to the temporary file
+        config.write(temp_file)
+        temp_file.close()
+
+        # Rename the temporary file to the desired file path
+        os.replace(temp_file_path, file_path)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        # Clean up the temporary file if an error occurred
+        if temp_file and os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+    finally:
+        # Ensure the temporary file is closed
+        if temp_file and not temp_file.closed:
+            temp_file.close()
