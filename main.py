@@ -5616,8 +5616,7 @@ class SettingsScreen(Screen):
             config=App.get_running_app().config_
             current_language=lang_dict.english
             config.set('preferences','language','english')
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
             language_setter()
             self.widgets['overlay_menu'].dismiss()
         english.bind(on_release=english_func)
@@ -5627,8 +5626,7 @@ class SettingsScreen(Screen):
             config=App.get_running_app().config_
             current_language=lang_dict.spanish
             config.set('preferences','language','spanish')
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
             language_setter()
             self.widgets['overlay_menu'].dismiss()
         spanish.bind(on_release=spanish_func)
@@ -7457,8 +7455,7 @@ class PreferenceScreen(Screen):
             config=App.get_running_app().config_
             logic.heat_sensor_timer=300
             config.set('preferences','heat_timer','300')
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
             self.widgets['overlay_menu'].dismiss()
         duration_1.bind(on_release=duration_1_func)
 
@@ -7466,8 +7463,7 @@ class PreferenceScreen(Screen):
             config=App.get_running_app().config_
             logic.heat_sensor_timer=900
             config.set('preferences','heat_timer','900')
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
             self.widgets['overlay_menu'].dismiss()
         duration_2.bind(on_release=duration_2_func)
 
@@ -7475,8 +7471,7 @@ class PreferenceScreen(Screen):
             config=App.get_running_app().config_
             logic.heat_sensor_timer=1800
             config.set('preferences','heat_timer','1800')
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
             self.widgets['overlay_menu'].dismiss()
         duration_3.bind(on_release=duration_3_func)
 
@@ -7810,14 +7805,12 @@ class PreferenceScreen(Screen):
 
         def msg_evoke_on_func(button):
             config.set('preferences','evoke','True')
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
         msg_evoke_on.bind(on_release=msg_evoke_on_func)
 
         def msg_evoke_off_func(button):
             config.set('preferences','evoke','False')
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
         msg_evoke_off.bind(on_release=msg_evoke_off_func)
 
         def screensaver_timer_setter_display_func(slider,touch,*args):
@@ -7830,8 +7823,7 @@ class PreferenceScreen(Screen):
             if touch.grab_current != slider:
                 return
             config.set('preferences','screensaver_timeout',str(slider.value))
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
             ScreenSaver.timeout=slider.value*60
             ScreenSaver.service()
         screensaver_timer_setter.bind(on_touch_up=screensaver_timer_setter_save_func)
@@ -7847,8 +7839,7 @@ class PreferenceScreen(Screen):
                 return
             logic.heat_sensor_timer=slider.value*60
             config.set('preferences','heat_timer',str(slider.value*60))
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
         heat_sensor_timer_setter.bind(on_touch_up=heat_sensor_timer_setter_save_func)
 
         def on_dismiss(self,*args):
@@ -7946,8 +7937,7 @@ class PreferenceScreen(Screen):
             if touch.grab_current != slider:
                 return
             config.set('preferences','input_filter_timeout',str(slider.value))
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
             logic.input_interference_filter=slider.value
             logger.debug(f'input interference filter set to: {slider.value}')
             logic.fs.heat_debounce_timer=slider.value
@@ -8050,8 +8040,7 @@ class PreferenceScreen(Screen):
             if touch.grab_current != slider:
                 return
             config.set('preferences','duplicate_log_filter',str(int(slider.value)))
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
             logging_config.DuplicateFilter.log_interval=slider.value
             logger.debug(f'duplicate log filter set to: {dlfv_translate(slider.value)}')
         duplicate_log_filter_setter.bind(on_touch_up=duplicate_log_filter_setter_save_func)
@@ -8075,16 +8064,14 @@ class PreferenceScreen(Screen):
             App.get_running_app().limited=True
             config.set('config','limited','True')
             Clock.schedule_interval(schedule.updater.update,10)
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
         schedule_mode_on.bind(on_release=schedule_mode_on_func)
 
         def schedule_mode_off_func(button):
             App.get_running_app().limited=False
             config.set('config','limited','False')
             Clock.unschedule(schedule.updater.update)
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
         schedule_mode_off.bind(on_release=schedule_mode_off_func)
     def settings_back(self,button):
         self.parent.transition = SlideTransition(direction='down')
@@ -8411,8 +8398,7 @@ class PinScreen(Screen):
             logic.heat_sensor_timer=10
             config=self.root.config_
             config.set('preferences','heat_timer','10')
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
             self.widgets['heat_override_overlay'].dismiss()
         heat_override_confirm.bind(on_release=heat_override_confirm_func)
 
@@ -8512,8 +8498,7 @@ class PinScreen(Screen):
         def report_pending_setter_func():
             config=App.get_running_app().config_
             config.set('config','report_pending',f'{App.get_running_app().report_pending}')
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
 
         mount_overlay=PinPop('mount')
         self.popups.append(mount_overlay)
@@ -8729,8 +8714,7 @@ class PinScreen(Screen):
             st=report_state_input.text
             config=App.get_running_app().config_
             config.set("config","report_state",st)
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
             try:
                 if App.get_running_app().context_screen.get_screen('report').imprint_state_labels():
                     App.get_running_app().notifications.toast(f'[size=20]Report state set:\n\n[b]{st}','info')
@@ -8978,8 +8962,7 @@ class PinScreen(Screen):
                 timestamp=datetime.now()
                 timestamp=timestamp.replace(day=1,month=int(month),year=int(year))
                 config.set('timestamps','System Inspection',f'{timestamp }')
-                with open(preferences_path,'w') as configfile:
-                    config.write(configfile)
+                general.write_config(config,preferences_path)
                 if App.get_running_app().context_screen.get_screen('report').create_current_report():
                     App.get_running_app().notifications.toast(f'[b][size=20]Inspection date set to\n    {month}-{day}-{year}')
                 else:
@@ -11646,13 +11629,11 @@ class AccountScreen(Screen):
     def email_validate(self,button,*args):
         config=App.get_running_app().config_
         config.set('account','email',f'{button.text}')
-        with open(preferences_path,'w') as configfile:
-            config.write(configfile)
+        general.write_config(config,preferences_path)
     def password_validate(self,button,*args):
         config=App.get_running_app().config_
         config.set('account','password',f'{button.text}')
-        with open(preferences_path,'w') as configfile:
-            config.write(configfile)
+        general.write_config(config,preferences_path)
 
     def side_bar_connect_populate(self,*args):
         self.clear_hints()
@@ -11959,8 +11940,7 @@ class AccountScreen(Screen):
                 config=App.get_running_app().config_
                 config.set('account','uuid',server.uid)
                 config.set('account','link_code',stripped_link_code)
-                with open(preferences_path,'w') as configfile:
-                    config.write(configfile)
+                general.write_config(config,preferences_path)
                 qr_data=server.uid+stripped_link_code
                 logger.debug(qr_data)
                 self.generate_uid_qr(qr_data)
@@ -11990,8 +11970,7 @@ class AccountScreen(Screen):
             root=App.get_running_app()
             config=root.config_
             config['account']['admin_pin']=pin
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
             root.notifications.toast('[b][size=20]Pin Saved')
 
         self.add_widget(PinLock(set_pin))
@@ -12178,8 +12157,7 @@ class AccountScreen(Screen):
             gen.shape_color.rgba=palette('accent',.85)
             config=App.get_running_app().config_
             config.set('account','link_code','')
-            with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+            general.write_config(config,preferences_path)
 
     def unlink_progress_bar_update(self,dt,*args):
         self.widgets['unlink_progress'].pos=self.widgets['side_bar_unlink_confirm'].last_touch.pos
@@ -12208,8 +12186,7 @@ class AccountScreen(Screen):
         config=app.config_
         config.set('account','email','')
         config.set('account','password','')
-        with open(preferences_path,'w') as configfile:
-            config.write(configfile)
+        general.write_config(config,preferences_path)
         ServerHandler.unlink_account()
         app.notifications.toast(f'[size=20]Account Unlinked','info')
         self.unlink_delete_clock()
@@ -12277,8 +12254,7 @@ class AccountScreen(Screen):
     def clear_link_code(self,*args):
         config=App.get_running_app().config_
         config.set('account','link_code','')
-        with open(preferences_path,'w') as configfile:
-            config.write(configfile)
+        general.write_config(config,preferences_path)
 
     def side_bar_connect_login_send_disabled(self,button,disabled,*args):
         if  button.disabled:
@@ -13337,8 +13313,7 @@ class NetworkScreen(Screen):
         status=True if btn == on else False
         self.set_network_status(status)
         config.set('network','status',str(status))
-        with open(preferences_path,'w') as configfile:
-                config.write(configfile)
+        general.write_config(config,preferences_path)
 
     def bg_color(self,button,*args):
         if hasattr(button,'expanded'):

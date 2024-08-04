@@ -22,6 +22,7 @@ recurrence:    length of Interval
 import configparser,os,json,logging,traceback
 from datetime import date,datetime,timedelta
 from dataclasses import dataclass,field
+import utils.general as general
 
 logger=logging.getLogger('logger')
 
@@ -358,8 +359,7 @@ Press the restart button to continue.''',
 
     def write(self,key,value=datetime.now()):
         self.config.set('timestamps',f'{key}',f'{value}')
-        with open(preferences_path,'w') as configfile:
-            self.config.write(configfile)
+        general.write_config(self.config,preferences_path)
 
     @property
     def active_messages(self):
