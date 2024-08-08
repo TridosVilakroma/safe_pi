@@ -250,3 +250,10 @@ def write_json(data, file_path):
         if temp_file and not temp_file.closed:
             temp_file.close()
 
+def read_json(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError, IOError) as e:
+        print(f"An error occurred: {e}")
+        return {}
