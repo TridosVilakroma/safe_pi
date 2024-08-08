@@ -4439,8 +4439,7 @@ class ControlGrid(Screen):
         layout.clear_widgets()
         services_path='schedule/available_services.json'
         try:
-            with open(services_path,'r') as f:
-                services=json.load(f)
+            services = general.read_json(services_path)
         except OSError:
             return
         try:
@@ -4504,8 +4503,8 @@ class ControlGrid(Screen):
 
     def save_service_details(self,data,*args):
         try:
-            with open('logs/configurations/scheduled_services.json','r+') as f:
-                loaded_data = json.load(f)
+            loaded_data = general.read_json('logs/configurations/scheduled_services.json')
+            if data['creation_date'] in loaded_data:
                 loaded_data[data['creation_date']]=data
             general.write_json(loaded_data,'logs/configurations/scheduled_services.json')
         except Exception as e:
@@ -4516,8 +4515,7 @@ class ControlGrid(Screen):
 
     def load_service_details(self,*args):
         try:
-            with open('logs/configurations/scheduled_services.json','r') as f:
-                loaded_data = json.load(f)
+            loaded_data = general.read_json('logs/configurations/scheduled_services.json')
         except Exception as e:
             logger.exception(e)
             print(Exception)
@@ -6444,8 +6442,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             logic.available_pins.append(device.pin)
         logic.available_pins.sort()
         os.remove(rf"logs/devices/{device.name}.json")
-        with open(rf"logs/devices/device_list.json","r+") as read_file:
-            d_list=json.load(read_file)
+        d_list = general.read_json(rf"logs/devices/device_list.json")
+        if device.name in d_list:
             del d_list[device.name]
         general.write_json(d_list,rf"logs/devices/device_list.json")
         self.aggregate_devices()
@@ -6665,8 +6663,8 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             "trigger":current_device.trigger.lower()}
         general.write_json(data,rf"logs/devices/{current_device.name}.json")
         general.write_json(data,rf"logs/devices/backups/{current_device.name}.json")
-        with open(rf"logs/devices/device_list.json","r+") as read_file:
-            d_list=json.load(read_file)
+        d_list = general.read_json(rf"logs/devices/device_list.json")
+        if current_device.name in d_list:
             d_list[current_device.name]=current_device.device_types[current_device.type]
         general.write_json(d_list,rf"logs/devices/device_list.json")
         self.aggregate_devices()
@@ -6966,12 +6964,11 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
             os.rename(rf"logs/devices/{device.name}.json",rf"logs/devices/{current_device.name}.json")
         general.write_json(data,rf"logs/devices/{current_device.name}.json")
         general.write_json(data,rf"logs/devices/backups/{current_device.name}.json")
-        with open(rf"logs/devices/device_list.json","r+") as read_file:
-            d_list=json.load(read_file)
-            if device.name!=current_device.name:
-                d_list[current_device.name]=d_list.pop(device.name)
-            else:
-                d_list[current_device.name]=current_device.device_types[current_device.type]
+        d_list = general.read_json(rf"logs/devices/device_list.json")
+        if device.name!=current_device.name:
+            d_list[current_device.name]=d_list.pop(device.name)
+        else:
+            d_list[current_device.name]=current_device.device_types[current_device.type]
         general.write_json(d_list,rf"logs/devices/device_list.json")
         device.name=current_device.name
         if device.pin != current_device.pin:
