@@ -1,5 +1,6 @@
 import os,time,json,logging
 import os.path
+import utils.general as general
 
 logger=logging.getLogger('logger')
 
@@ -29,8 +30,7 @@ class DryContact():
             "trigger":self.trigger,
             "load_error":self.load_error}
         try:
-            with open(rf"logs/devices/{self.name}.json","w") as write_file:
-                json.dump(data, write_file,indent=0)
+            general.write_json(data,rf"logs/devices/{self.name}.json")
         except (json.decoder.JSONDecodeError,FileNotFoundError,OSError):
             logger.exception('Failed to write device data')
 

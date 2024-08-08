@@ -1,6 +1,8 @@
-import os,time,json
-from sys import settrace
+import os,time,json,logging
 import os.path
+import utils.general as general
+
+logger=logging.getLogger('logger')
 
 class GasValve():
     color=(0/255, 0/255, 0/255,.85)
@@ -11,6 +13,8 @@ class GasValve():
         self.pin=pin
         self.mode="out"
         self.color=color
+        self.trigger='None'
+        self.load_error=False
         self.log={}
         self.unsafe_state_trigger=0
         self.state=0
@@ -24,9 +28,12 @@ class GasValve():
             "gpio_pin":self.pin,
             "run_time":self.run_time,
             "color":self.color,
-            "trigger":self.trigger}
-        with open(rf"logs/devices/{self.name}.json","w") as write_file:
-            json.dump(data, write_file,indent=0)
+            "trigger":self.trigger,
+            "load_error":self.load_error}
+        try:
+            general.write_json(data,rf"logs/devices/{self.name}.json")
+        except (json.decoder.JSONDecodeError,FileNotFoundError,OSError):
+            logger.exception('Failed to write device data')
 
     def initialize(self):
         data=self.read()
@@ -36,24 +43,42 @@ class GasValve():
             self.run_time=float(data["run_time"])
             self.color=data["color"]
             self.trigger=data.get("trigger","high")
+            self.load_error=data.get("load_error",False)
+        else:
+            self.load_error=True
 
     def read(self):
         try:
             with open(rf"logs/devices/{self.name}.json","r") as read_file:
                 data = json.load(read_file)
-            return data
-        except FileNotFoundError:
-            return None
+        except (json.decoder.JSONDecodeError,FileNotFoundError,OSError):
+            logger.exception('Failed to read device data')
+            self.load_error=True
+            data={}
+        if not data:
+            data=self.read_backup()
+            if data:
+                data['load_error']=True
+                return data
+        return data
+
+    def read_backup(self):
+        try:
+            with open(rf"logs/devices/backups/{self.name}.json","r") as read_file:
+                data = json.load(read_file)
+        except (json.decoder.JSONDecodeError,FileNotFoundError,OSError):
+            logger.exception('Failed to read device data')
+            self.load_error=True
+            data={}
+        return data
 
     def on(self):
         if self.state==0:
-            print("gv on")
             self.state=1
             self.last_state_change=time.time()
 
     def off(self):
         if self.state==1:
-            print("gv off")
             self.latched=False
             self.state=0
             self.last_state_change=time.time()
