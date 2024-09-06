@@ -6664,8 +6664,7 @@ Only proceed if necessary; This action cannot be undone.[/color][/size]""",
         general.write_json(data,rf"logs/devices/{current_device.name}.json")
         general.write_json(data,rf"logs/devices/backups/{current_device.name}.json")
         d_list = general.read_json(rf"logs/devices/device_list.json")
-        if current_device.name in d_list:
-            d_list[current_device.name]=current_device.device_types[current_device.type]
+        d_list[current_device.name]=current_device.device_types[current_device.type]
         general.write_json(d_list,rf"logs/devices/device_list.json")
         self.aggregate_devices()
         self.widgets['overlay_menu'].dismiss()
